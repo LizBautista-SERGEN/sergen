@@ -18,6 +18,14 @@ const Hero = () => {
           transition={{ duration: 0.8 }}
           className="max-w-3xl"
         >
+          <motion.img
+            src="/lovable-uploads/12ae4369-c1d4-4066-b8c6-b5d4060a8d15.png"
+            alt="Sergen Logo"
+            className="mx-auto mb-8 w-64 sm:w-80"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          />
           <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
             Soluciones en Eficiencia Energética
           </span>
