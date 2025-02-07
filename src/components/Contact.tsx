@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,7 +78,7 @@ const Contact = () => {
             </div>
             <Button
               type="submit"
-              className="w-full bg-sergen-600 text-white hover:bg-sergen-700"
+              className="w-full bg-sergen-500 text-white hover:bg-sergen-600"
             >
               Enviar Mensaje
             </Button>

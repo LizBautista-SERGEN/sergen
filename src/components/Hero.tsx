@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
@@ -35,7 +36,7 @@ const Hero = () => {
           transition={{ delay: 1 }}
           className="absolute bottom-8 animate-float cursor-pointer rounded-full bg-white p-2 shadow-lg transition-transform hover:scale-110"
         >
-          <ChevronDown className="h-6 w-6 text-sergen-600" />
+          <ChevronDown className="h-6 w-6 text-sergen-500" />
         </motion.button>
       </div>
     </section>

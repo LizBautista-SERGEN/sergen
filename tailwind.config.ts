@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -25,16 +26,16 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         sergen: {
-          50: "#f0fdfa",
-          100: "#ccfbf1",
-          200: "#99f6e4",
-          300: "#5eead4",
-          400: "#2dd4bf",
-          500: "#14b8a6",
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
-          900: "#134e4a",
+          50: "#FFF5E6",
+          100: "#FFE5BF",
+          200: "#FFD699",
+          300: "#FFC773",
+          400: "#FFB84D",
+          500: "#f39200", // Main brand color
+          600: "#CC7A00",
+          700: "#A66300",
+          800: "#804C00",
+          900: "#593400",
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",
