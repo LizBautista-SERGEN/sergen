@@ -9,7 +9,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-gradient-to-br from-white to-sergen-50">
+    <section className="relative min-h-screen pt-16 overflow-hidden bg-gradient-to-br from-white to-sergen-50">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px)] bg-[size:30px_30px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       <div className="container relative z-10 mx-auto flex min-h-screen flex-col items-center justify-center px-4 text-center">
         <motion.div
