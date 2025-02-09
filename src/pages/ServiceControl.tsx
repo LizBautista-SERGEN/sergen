@@ -7,6 +7,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { RiskManagement } from "@/components/dashboard/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/PowerCharts";
 import { ServiceInfo } from "@/components/dashboard/ServiceInfo";
+import { ServiceChatbot } from "@/components/dashboard/ServiceChatbot";
 import { EnergyData } from "@/types/energy";
 
 const ServiceControl = () => {
@@ -67,6 +68,7 @@ const ServiceControl = () => {
                 <ServiceInfo 
                   energyData={energyData}
                 />
+                <ServiceChatbot />
               </div>
             </div>
           </div>
