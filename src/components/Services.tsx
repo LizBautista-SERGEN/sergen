@@ -27,12 +27,14 @@ const Services = () => {
       description:
         "Analizamos y optimizamos tus contratos energéticos para maximizar el ahorro.",
       icon: <FileSpreadsheet className="h-6 w-6" />,
+      path: "/servicios/contractual"
     },
     {
       title: "Proyectos de Eficiencia",
       description:
         "Implementamos soluciones integrales para mejorar la eficiencia energética.",
       icon: <Lightbulb className="h-6 w-6" />,
+      path: "/servicios/efficiency"
     },
   ];
 
