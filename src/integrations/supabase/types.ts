@@ -52,25 +52,64 @@ export type Database = {
       }
       profiles: {
         Row: {
+          activity: string | null
+          business_name: string | null
+          contact_name: string | null
+          contract_expiration: string | null
+          contracted_power: string | null
+          corporate_email: string | null
           created_at: string
+          electricity_provider: string | null
           email: string
           has_access: boolean
           id: string
+          notice_period: string | null
+          phone: string | null
+          position: string | null
+          profile: string | null
           role: Database["public"]["Enums"]["app_role"]
+          ruc: string | null
+          updated_at: string | null
         }
         Insert: {
+          activity?: string | null
+          business_name?: string | null
+          contact_name?: string | null
+          contract_expiration?: string | null
+          contracted_power?: string | null
+          corporate_email?: string | null
           created_at?: string
+          electricity_provider?: string | null
           email: string
           has_access?: boolean
           id: string
+          notice_period?: string | null
+          phone?: string | null
+          position?: string | null
+          profile?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          ruc?: string | null
+          updated_at?: string | null
         }
         Update: {
+          activity?: string | null
+          business_name?: string | null
+          contact_name?: string | null
+          contract_expiration?: string | null
+          contracted_power?: string | null
+          corporate_email?: string | null
           created_at?: string
+          electricity_provider?: string | null
           email?: string
           has_access?: boolean
           id?: string
+          notice_period?: string | null
+          phone?: string | null
+          position?: string | null
+          profile?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          ruc?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
