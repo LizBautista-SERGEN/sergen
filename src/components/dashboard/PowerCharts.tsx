@@ -53,9 +53,9 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#f39200' : 
              '#156082',
-      borderColor: item.selected ? '#FFFFFF' : 'transparent',
+      borderColor: item.selected ? '#5F5F5F' : 'transparent',
       borderWidth: item.selected ? 4 : 0,
-      filter: item.selected ? 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.5))' : undefined
+      filter: item.selected ? 'drop-shadow(0 0 4px rgba(95, 95, 95, 0.5))' : undefined
     }));
   };
 
@@ -139,3 +139,4 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
+
