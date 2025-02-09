@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell } from 'recharts';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
 import { EnergyData } from "@/types/energy";
 
 interface PowerChartsProps {
@@ -40,6 +40,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
 
     const data = currentMonthData.map(data => ({
       date: format(new Date(data.date), 'dd/MM'),
+      fullDate: new Date(data.date),
       value: data.demand || 0
     }));
 
@@ -53,6 +54,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       ...item,
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#FFC000' : 
+             date && isSameDay(item.fullDate, date) ? '#FEC6A1' :
              '#156082'
     }));
   };
@@ -94,7 +96,10 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
-            <Tooltip />
+            <Tooltip 
+              formatter={(value) => [`${value} kW`, 'Potencia']}
+              labelFormatter={(label) => `Fecha: ${label}`}
+            />
             <Bar dataKey="value">
               {getBarChartData().map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -106,3 +111,4 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
+
