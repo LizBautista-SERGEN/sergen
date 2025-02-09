@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
 import { EnergyData } from "@/types/energy";
 
@@ -38,9 +38,22 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       return isSameMonth(dataDate, date);
     });
 
-    return currentMonthData.map(data => ({
+    const data = currentMonthData.map(data => ({
       date: format(new Date(data.date), 'dd/MM'),
       value: data.demand || 0
+    }));
+
+    // Sort the data by value to find max and second max
+    const sortedData = [...data].sort((a, b) => b.value - a.value);
+    const maxValue = sortedData[0]?.value;
+    const secondMaxValue = sortedData[1]?.value;
+
+    // Add color information to the data
+    return data.map(item => ({
+      ...item,
+      color: item.value === maxValue ? '#C00000' : 
+             item.value === secondMaxValue ? '#FFC000' : 
+             '#156082'
     }));
   };
 
@@ -82,7 +95,11 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
             <XAxis dataKey="date" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="value" fill="#156082" />
+            <Bar dataKey="value">
+              {getBarChartData().map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
           </BarChart>
         </CardContent>
       </Card>
