@@ -135,7 +135,7 @@ const DashboardPage = () => {
           <div className="col-span-3">
             <Card className="mb-4">
               <CardHeader className="pb-2">
-                <CardTitle>Información de cliente</CardTitle>
+                <CardTitle className="text-center">Información de cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="space-y-2 flex flex-col items-center">
@@ -157,19 +157,19 @@ const DashboardPage = () => {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle>Gestión de riesgo</CardTitle>
+                <CardTitle className="text-center">Gestión de riesgo</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="space-y-2">
-                  <div>
+                <div className="space-y-2 flex flex-col items-center">
+                  <div className="text-center">
                     <p className="text-sm text-gray-500">Potencia Máxima</p>
                     <p className="text-2xl font-bold text-blue-900">7390.37</p>
                   </div>
-                  <div>
+                  <div className="text-center">
                     <p className="text-sm text-gray-500">Rango horario</p>
                     <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">Sin modulación</p>
                   </div>
-                  <div>
+                  <div className="text-center">
                     <p className="text-sm text-gray-500">Riesgo de coincidente</p>
                     <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">BAJO</p>
                   </div>
@@ -213,23 +213,23 @@ const DashboardPage = () => {
           <div className="col-span-3">
             <Card className="mb-4">
               <CardHeader className="pb-2">
-                <CardTitle>Información de servicio</CardTitle>
+                <CardTitle className="text-center">Información de servicio</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="space-y-2">
-                  <div>
+                <div className="space-y-2 flex flex-col items-center">
+                  <div className="text-center">
                     <p className="text-sm text-gray-500">Fecha de contratación</p>
                     <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">01/08/2023</p>
                   </div>
-                  <div>
+                  <div className="text-center">
                     <p className="text-sm text-gray-500">Días sin modulación</p>
                     <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">15 días</p>
                   </div>
-                  <div>
+                  <div className="text-center">
                     <p className="text-sm text-gray-500">Técnico designado</p>
                     <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">Ing. Jose Torres</p>
                   </div>
-                  <div>
+                  <div className="text-center">
                     <p className="text-sm text-gray-500">Fin de suscripción</p>
                     <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">31/08/2024</p>
                   </div>
