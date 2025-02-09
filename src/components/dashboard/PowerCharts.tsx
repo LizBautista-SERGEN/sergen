@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
 import { EnergyData } from "@/types/energy";
 
@@ -59,6 +59,20 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     }));
   };
 
+  const CustomBackground = (props: any) => {
+    const { x, y, width, height, selected } = props;
+    if (!selected) return null;
+    return (
+      <Rectangle
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill="rgba(0, 0, 0, 0.1)"
+      />
+    );
+  };
+
   return (
     <>
       <Card className="mb-6">
@@ -100,11 +114,21 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
               formatter={(value) => [`${value} kW`, 'Potencia']}
               labelFormatter={(label) => `Fecha: ${label}`}
             />
+            {getBarChartData().map((entry, index) => (
+              <CustomBackground
+                key={`background-${index}`}
+                x={index * (650 / getBarChartData().length)}
+                y={0}
+                width={650 / getBarChartData().length}
+                height={300}
+                selected={entry.selected}
+              />
+            ))}
             <Bar dataKey="value">
               {getBarChartData().map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={entry.selected ? 'rgba(0, 0, 0, 0.1)' : entry.color}
+                  fill={entry.color}
                 />
               ))}
             </Bar>
@@ -114,3 +138,4 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
+
