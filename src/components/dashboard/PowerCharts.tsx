@@ -53,9 +53,9 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#F39200' : 
              '#156082',
-      borderColor: item.selected ? 'rgba(255, 165, 0, 0.6)' : 'transparent',
+      borderColor: item.selected ? 'rgba(0, 0, 0, 0.6)' : 'transparent',
       borderWidth: item.selected ? 4 : 0,
-      filter: item.selected ? 'drop-shadow(0 0 4px rgba(255, 165, 0, 0.5))' : undefined
+      filter: item.selected ? 'drop-shadow(0 0 4px rgba(0, 0, 0, 0.5))' : undefined
     }));
   };
 
