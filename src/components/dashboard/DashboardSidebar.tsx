@@ -9,22 +9,22 @@ const links = [
   { 
     label: "Perfil", 
     href: "/perfil",
-    icon: <User className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+    icon: <User className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   },
   { 
     label: "Gestión Energética", 
     href: "/gestion",
-    icon: <Plug className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+    icon: <Plug className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   },
   { 
     label: "Cápsulas", 
     href: "/capsulas",
-    icon: <Book className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+    icon: <Book className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   },
   { 
     label: "Informes", 
     href: "/informes",
-    icon: <FileText className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+    icon: <FileText className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   }
 ];
 
@@ -34,7 +34,7 @@ const SidebarLink = ({ link, isOpen }: { link: typeof links[0], isOpen: boolean 
   return (
     <button
       onClick={() => navigate(link.href)}
-      className="flex items-center justify-start gap-2 group/sidebar py-2 w-full hover:bg-gray-100 rounded-lg px-3"
+      className="flex items-center justify-start gap-3 group/sidebar py-3 w-full hover:bg-gray-100 rounded-lg px-4"
     >
       {link.icon}
       <motion.span
@@ -59,7 +59,7 @@ export const DashboardSidebar = () => {
         "h-full px-4 py-4 flex flex-col bg-white border-r border-gray-200 transition-all",
       )}
       animate={{
-        width: isOpen ? "300px" : "60px",
+        width: isOpen ? "300px" : "80px", // Increased from 60px to 80px
       }}
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
@@ -68,7 +68,7 @@ export const DashboardSidebar = () => {
         <div className="border-b pb-4">
           <h2 className="text-lg font-semibold px-3">Panel de Control</h2>
         </div>
-        <div className="mt-8 flex flex-col gap-2">
+        <div className="mt-8 flex flex-col gap-3">
           {links.map((link, idx) => (
             <SidebarLink key={idx} link={link} isOpen={isOpen} />
           ))}
