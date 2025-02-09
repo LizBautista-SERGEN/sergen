@@ -13,11 +13,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface EnergyData {
-  id: number;
+  id: string;           // Cambiado de number a string para coincidir con UUID de Supabase
   date: string;
   consumption: number;
   demand: number;
   cost: number;
+  created_at: string;   // Añadido para coincidir con la estructura de Supabase
+  user_id: string;      // Añadido para coincidir con la estructura de Supabase
 }
 
 const DashboardPage = () => {
