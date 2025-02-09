@@ -1,3 +1,4 @@
+
 import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff, Calendar } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -11,6 +12,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
 
 const reportSections = [
   {
@@ -44,6 +46,23 @@ const InformesPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
   const [isSuperUser, setIsSuperUser] = useState(false);
+
+  // Fetch report template
+  const { data: template } = useQuery({
+    queryKey: ['reportTemplate'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('report_templates')
+        .select('*')
+        .single();
+      
+      if (error) {
+        toast.error("Error al cargar la plantilla del informe");
+        throw error;
+      }
+      return data;
+    }
+  });
 
   useEffect(() => {
     checkUserRole();
@@ -227,12 +246,14 @@ const InformesPage = () => {
                     <div id="report-content" className="space-y-8">
                       <div data-section="portada" className={`text-center mb-16 ${hiddenSections.includes('portada') ? 'opacity-50' : ''}`}>
                         <img 
-                          src="/public/og-image.png" 
+                          src="/og-image.png" 
                           alt="Logo" 
                           className="mx-auto mb-8 h-24"
                         />
-                        <h1 className="text-3xl font-bold mb-4">Informe de Gestión Energética</h1>
-                        <h2 className="text-xl mb-2">[Nombre de la Empresa]</h2>
+                        <h1 className="text-3xl font-bold mb-4">{template?.name || 'Informe de Gestión Energética'}</h1>
+                        <h2 className="text-xl mb-2">{template?.client_name || '[Nombre de la Empresa]'}</h2>
+                        <p className="text-gray-600 mb-2">Código: {template?.code || '[Código]'}</p>
+                        <p className="text-gray-600 mb-4">{template?.location || '[Ubicación]'}</p>
                         <p className="text-gray-600">{format(selectedDate, 'MMMM yyyy', { locale: es })}</p>
                       </div>
 
