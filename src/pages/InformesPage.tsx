@@ -254,8 +254,10 @@ const InformesPage = () => {
                           <h1 className="text-4xl font-bold tracking-wider uppercase">{template?.name || 'INFORME DE GESTIÓN ENERGÉTICA'}</h1>
                           <h2 className="text-3xl font-semibold uppercase">{template?.client_name || 'ULTRA FRIO S.A.C'}</h2>
                           <p className="text-2xl uppercase">{template?.code || 'CS 06-01-2025'}</p>
-                          <p className="text-2xl uppercase mt-52">{format(selectedDate, 'MMMM yyyy', { locale: es }).toUpperCase()}</p>
-                          <p className="text-2xl uppercase">{template?.location || 'LIMA'}</p>
+                          <div className="mt-80">
+                            <p className="text-2xl uppercase">{format(selectedDate, 'MMMM yyyy', { locale: es }).toUpperCase()}</p>
+                            <p className="text-2xl uppercase mt-4">{template?.location || 'LIMA'}</p>
+                          </div>
                         </div>
                       </div>
 
