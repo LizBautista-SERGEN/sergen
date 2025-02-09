@@ -19,7 +19,7 @@ interface ExplanationVideo {
 interface Course {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   video_url: string | null;
   explanation_videos: ExplanationVideo[];
   course_units: {
@@ -43,7 +43,7 @@ const CoursePage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: course, isLoading } = useQuery<Course | null>({
+  const { data: course, isLoading } = useQuery<Course>({
     queryKey: ['course', courseId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -78,23 +78,40 @@ const CoursePage = () => {
         return null;
       }
 
-      const sortedCourse = {
-        ...data,
-        explanation_videos: data.explanation_videos || [],
+      // Transform the data to match our Course interface
+      const transformedCourse: Course = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        video_url: data.video_url,
+        explanation_videos: Array.isArray(data.explanation_videos) 
+          ? data.explanation_videos.map((video: any) => ({
+              title: video.title || '',
+              description: video.description || '',
+              url: video.url || ''
+            }))
+          : [],
         course_units: data.course_units
-          ?.sort((a, b) => a.order_index - b.order_index)
-          .map(unit => ({
-            ...unit,
+          ?.sort((a: any, b: any) => a.order_index - b.order_index)
+          .map((unit: any) => ({
+            id: unit.id,
+            title: unit.title,
+            order_index: unit.order_index,
             lessons: unit.lessons
-              ?.sort((a, b) => a.order_index - b.order_index)
-              .map(lesson => ({
-                ...lesson,
+              ?.sort((a: any, b: any) => a.order_index - b.order_index)
+              .map((lesson: any) => ({
+                id: lesson.id,
+                title: lesson.title,
+                type: lesson.type,
+                duration: lesson.duration,
+                video_url: lesson.video_url,
+                order_index: lesson.order_index,
                 completed: lesson.user_lesson_progress?.[0]?.completed || false
-              }))
-          }))
+              })) || []
+          })) || []
       };
 
-      return sortedCourse;
+      return transformedCourse;
     }
   });
 
