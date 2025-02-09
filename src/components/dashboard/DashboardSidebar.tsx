@@ -34,7 +34,7 @@ const SidebarLink = ({ link, isOpen }: { link: typeof links[0], isOpen: boolean 
   return (
     <button
       onClick={() => navigate(link.href)}
-      className="flex items-center justify-start gap-3 group/sidebar py-3 w-full hover:bg-gray-100 rounded-lg px-4"
+      className="flex items-center justify-start gap-3 group/sidebar py-4 w-full hover:bg-gray-100 rounded-lg px-4"
     >
       {link.icon}
       <motion.span
@@ -56,7 +56,7 @@ export const DashboardSidebar = () => {
   return (
     <motion.div
       className={cn(
-        "h-full px-4 py-4 flex flex-col bg-white border-r border-gray-200 transition-all",
+        "h-full px-4 py-6 flex flex-col bg-white border-r border-gray-200 transition-all",
       )}
       animate={{
         width: isOpen ? "300px" : "80px",
@@ -74,7 +74,7 @@ export const DashboardSidebar = () => {
         >
           <h2 className="text-lg font-semibold px-3">Panel de Control</h2>
         </motion.div>
-        <div className="mt-8 flex flex-col gap-3">
+        <div className="mt-8 flex flex-col gap-4">
           {links.map((link, idx) => (
             <SidebarLink key={idx} link={link} isOpen={isOpen} />
           ))}
