@@ -1,15 +1,14 @@
-
 import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff, Calendar } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner";
 import html2pdf from 'html2pdf.js';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -111,6 +110,21 @@ const InformesPage = () => {
     );
   };
 
+  const years = Array.from({ length: 11 }, (_, i) => 2020 + i);
+  const months = Array.from({ length: 12 }, (_, i) => i);
+
+  const handleMonthChange = (month: string) => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(parseInt(month));
+    setSelectedDate(newDate);
+  };
+
+  const handleYearChange = (year: string) => {
+    const newDate = new Date(selectedDate);
+    newDate.setFullYear(parseInt(year));
+    setSelectedDate(newDate);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-gray-50 flex w-full">
@@ -124,19 +138,46 @@ const InformesPage = () => {
                     <h2 className="font-semibold">Seleccionar Fecha</h2>
                     <Calendar className="h-5 w-5 text-gray-500" />
                   </div>
-                  <CalendarComponent
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => date && setSelectedDate(date)}
-                    className="rounded-md border"
-                    locale={es}
-                    ISOWeek
-                    captionLayout="dropdown-buttons"
-                    fromYear={2020}
-                    toYear={2030}
-                    showOutsideDays={false}
-                    disabled
-                  />
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Año</label>
+                      <Select
+                        value={selectedDate.getFullYear().toString()}
+                        onValueChange={handleYearChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map(year => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Mes</label>
+                      <Select
+                        value={selectedDate.getMonth().toString()}
+                        onValueChange={handleMonthChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue>
+                            {format(selectedDate, 'MMMM', { locale: es })}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map(month => (
+                            <SelectItem key={month} value={month.toString()}>
+                              {format(new Date(2024, month, 1), 'MMMM', { locale: es })}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div className="mt-4 text-center text-sm text-gray-600">
                     Informe seleccionado: {format(selectedDate, 'MMMM yyyy', { locale: es })}
                   </div>
