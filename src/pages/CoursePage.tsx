@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { CourseHeader } from "@/components/course/CourseHeader";
 import { CourseProgress } from "@/components/course/CourseProgress";
 import { LessonList } from "@/components/course/LessonList";
+import { ExplanationVideos } from "@/components/course/ExplanationVideos";
 
 const CoursePage = () => {
   const { courseId } = useParams();
@@ -49,7 +50,6 @@ const CoursePage = () => {
         return null;
       }
 
-      // Sort units and lessons by order_index
       const sortedCourse = {
         ...data,
         course_units: data.course_units
@@ -140,6 +140,7 @@ const CoursePage = () => {
             <div className="max-w-4xl mx-auto">
               <CourseHeader title={course.title} description={course.description} />
               <CourseProgress progress={progress} />
+              <ExplanationVideos videos={course.explanation_videos || []} />
               <div className="mt-8">
                 <LessonList 
                   units={course.course_units} 
