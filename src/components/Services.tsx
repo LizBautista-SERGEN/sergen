@@ -19,7 +19,8 @@ const Services = () => {
       title: "Control de Demanda",
       description:
         "Se proporciona a los usuarios pueden ahorrar en sus facturas de energía al desplazar la demanda a las horas de poca actividad",
-      icon: <Gauge className="h-6 w-6" />
+      icon: <Gauge className="h-6 w-6" />,
+      path: "/servicios/demanda"
     },
     {
       title: "Gestión Contractual",
