@@ -82,7 +82,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
             <XAxis dataKey="date" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="value" fill="#1e3a8a" />
+            <Bar dataKey="value" fill="#156082" />
           </BarChart>
         </CardContent>
       </Card>
