@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
 import { format, isFuture, isPast, isSameDay, subDays, addDays } from "date-fns";
 import { es } from 'date-fns/locale';
-import { User, FileText, Plug, Capsule, Menu } from "lucide-react";
+import { User, FileText, Plug, Book, Menu } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -29,7 +30,7 @@ interface EnergyData {
 const menuItems = [
   { icon: User, label: "Perfil", route: "/perfil" },
   { icon: Plug, label: "Gestión Energética", route: "/gestion" },
-  { icon: Capsule, label: "Cápsulas", route: "/capsulas" },
+  { icon: Book, label: "Cápsulas", route: "/capsulas" },
   { icon: FileText, label: "Informes", route: "/informes" },
 ];
 
