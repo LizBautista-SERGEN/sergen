@@ -227,7 +227,10 @@ const DashboardPage = () => {
                     future: (date) => isFuture(date),
                     modulated: (date) => isPast(date) && isDateModulated(date),
                     notModulated: (date) => isPast(date) && !isDateModulated(date),
-                    selected: (date) => date?.toDateString() === date?.toDateString()
+                    selected: (date, selectedDate) => {
+                      if (!date || !selectedDate) return false;
+                      return date.toDateString() === selectedDate.toDateString();
+                    }
                   }}
                   modifiersStyles={modifierStyles}
                 />
