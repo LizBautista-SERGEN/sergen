@@ -72,7 +72,7 @@ export const DashboardSidebar = () => {
             opacity: isOpen ? 1 : 0,
           }}
         >
-          <h2 className="text-lg font-semibold px-3">Panel de Control</h2>
+          <h2 className="text-lg font-semibold px-3 text-white">Panel de Control</h2>
         </motion.div>
         <div className="mt-8 flex flex-col gap-4">
           {links.map((link, idx) => (
