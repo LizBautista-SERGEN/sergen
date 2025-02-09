@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
+import { format, isFuture, isPast, startOfToday } from "date-fns";
 
 interface EnergyData {
   id: string;
@@ -46,6 +47,25 @@ const DashboardPage = () => {
 
     fetchUserData();
   }, [navigate]);
+
+  // Función para determinar el estilo del día
+  const getDayStyle = (day: Date) => {
+    const today = startOfToday();
+    
+    // Si es un día futuro, retorna gris
+    if (isFuture(day)) {
+      return "text-[#8E9196]";
+    }
+
+    // Para días pasados, simulamos la modulación (aquí puedes usar tus datos reales)
+    if (isPast(day)) {
+      // Simulamos que los días pares fueron modulados (rojo) y los impares no (verde)
+      const dayOfMonth = parseInt(format(day, 'd'));
+      return dayOfMonth % 2 === 0 ? "text-[#ea384c]" : "text-[#34D399]";
+    }
+
+    return "";
+  };
 
   // Sample data for charts
   const lineChartData = [
@@ -190,7 +210,29 @@ const DashboardPage = () => {
                   selected={date}
                   onSelect={setDate}
                   className="rounded-md border"
+                  modifiers={{
+                    custom: (date) => true,
+                  }}
+                  modifiersStyles={{
+                    custom: (date) => ({
+                      color: getDayStyle(date),
+                    }),
+                  }}
                 />
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#8E9196]"></div>
+                    <span className="text-sm">Días futuros</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#ea384c]"></div>
+                    <span className="text-sm">Con modulación</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#34D399]"></div>
+                    <span className="text-sm">Sin modulación</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
