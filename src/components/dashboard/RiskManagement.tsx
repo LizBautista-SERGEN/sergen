@@ -32,7 +32,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
       
       if (!dayData) return;
 
-      setBackgroundColor(dayData.is_modulated ? "#C00000" : "#156082");
+      setBackgroundColor(dayData.is_modulated ? "#156082" : "#C00000");
 
       const intervals = [];
       for (let hour = 18; hour <= 23; hour++) {
@@ -67,31 +67,11 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     };
 
     updateNonModulatedDays();
-
-    const calculateTimeUntil5PM = () => {
-      const now = new Date();
-      const next5PM = new Date(now);
-      next5PM.setHours(17, 0, 0, 0);
-      
-      if (now.getHours() >= 17) {
-        next5PM.setDate(next5PM.getDate() + 1);
-      }
-      
-      return next5PM.getTime() - now.getTime();
-    };
-
-    const timer = setTimeout(() => {
-      updateNonModulatedDays();
-      const dailyTimer = setInterval(updateNonModulatedDays, 24 * 60 * 60 * 1000);
-      return () => clearInterval(dailyTimer);
-    }, calculateTimeUntil5PM());
-
-    return () => clearTimeout(timer);
   }, [energyData]);
 
   const modifierStyles = {
     future: { color: "#8E9196" },
-    modulated: { color: "#C00000" },
+    modulated: { color: "#156082" },
     notModulated: { color: "#34D399" },
     selected: {
       backgroundColor: "#FEC6A1",
@@ -153,7 +133,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
           />
           <div className="mt-4 space-y-2">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#C00000]"></div>
+              <div className="w-3 h-3 rounded-full bg-[#156082]"></div>
               <span className="text-sm">Con modulación</span>
             </div>
             <div className="flex items-center gap-2">
