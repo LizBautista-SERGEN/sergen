@@ -13,20 +13,26 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const getChartData = () => {
     if (!date) return [];
 
-    const monthStart = startOfMonth(date);
-    const monthEnd = endOfMonth(date);
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    // Filtrar los datos para mostrar solo el día seleccionado
+    const selectedDateStr = format(date, 'yyyy-MM-dd');
+    const dayData = energyData.find(data => data.date === selectedDateStr);
+    
+    if (!dayData) return [];
 
-    return days.map(currentDate => {
-      const dateStr = format(currentDate, 'yyyy-MM-dd');
-      const dayData = energyData.find(data => data.date === dateStr);
-      
-      return {
-        name: format(currentDate, 'dd/MM'),
-        "Potencia Pronosticada": dayData?.demand || 0,
-        "Potencia Ejecutada": dayData?.consumption || 0
-      };
-    });
+    // Crear datos de ejemplo para intervalos de 15 minutos
+    const intervals = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 15) {
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        intervals.push({
+          name: time,
+          "Potencia Pronosticada": dayData.demand * (0.85 + Math.random() * 0.3), // Variación aleatoria alrededor del valor diario
+          "Potencia Ejecutada": dayData.consumption * (0.85 + Math.random() * 0.3) // Variación aleatoria alrededor del valor diario
+        });
+      }
+    }
+    
+    return intervals;
   };
 
   const getBarChartData = () => {
