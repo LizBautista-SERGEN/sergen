@@ -21,20 +21,7 @@ const LoginPage = () => {
 
     try {
       if (isLogin) {
-        // First check if the user exists
-        const { data: existingUser, error: checkError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', email)
-          .single();
-
-        if (!existingUser) {
-          toast.error("No existe una cuenta con este correo. Por favor regístrese primero.");
-          setIsLogin(false);
-          setLoading(false);
-          return;
-        }
-
+        // Handle login
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -57,7 +44,20 @@ const LoginPage = () => {
           toast.success("Inicio de sesión exitoso");
         }
       } else {
-        // Sign up process
+        // Handle signup
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .single();
+
+        if (existingProfile) {
+          toast.error("Este correo ya está registrado. Por favor, inicie sesión.");
+          setIsLogin(true);
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -72,7 +72,7 @@ const LoginPage = () => {
         if (error) throw error;
 
         if (data.user) {
-          toast.success("Cuenta creada exitosamente. Por favor inicia sesión.");
+          toast.success("Cuenta creada exitosamente. Por favor verifica tu correo electrónico.");
           setIsLogin(true);
         }
       }
@@ -86,7 +86,7 @@ const LoginPage = () => {
         errorMessage = 'Este correo ya está registrado. Por favor, inicie sesión.';
         setIsLogin(true);
       } else if (error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Contraseña incorrecta. Por favor, verifique sus datos.';
+        errorMessage = 'Credenciales inválidas. Por favor, verifique su correo y contraseña.';
       } else if (error.message.includes('Password should be at least 6 characters')) {
         errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
       } else if (error.message.includes('Email not confirmed')) {
