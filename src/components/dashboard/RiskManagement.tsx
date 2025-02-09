@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { EnergyData } from "@/types/energy";
-import { format, startOfMonth, isBefore, isAfter, isFuture, isPast, isSameDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, isBefore, isAfter, isFuture, isPast, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 
 interface RiskManagementProps {
@@ -53,14 +53,16 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
 
   useEffect(() => {
     const now = new Date();
-    const monthStart = startOfMonth(now);
+    const currentMonth = startOfMonth(now);
+    const monthEnd = endOfMonth(currentMonth);
     
     let count = 0;
     energyData.forEach(data => {
       const dataDate = new Date(data.date);
       if (!data.is_modulated && 
-          isAfter(dataDate, monthStart) && 
-          isBefore(dataDate, now)) {
+          !isFuture(dataDate) &&
+          isAfter(dataDate, currentMonth) && 
+          isBefore(dataDate, monthEnd)) {
         count++;
       }
     });
@@ -145,4 +147,3 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     </>
   );
 };
-
