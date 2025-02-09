@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -17,6 +16,7 @@ const ProfilePage = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [deletingDocument, setDeletingDocument] = useState<string | null>(null);
 
   useEffect(() => {
     getProfile();
@@ -176,6 +176,36 @@ const ProfilePage = () => {
       });
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      setDeletingDocument(documentId);
+
+      const { error } = await supabase
+        .from('documents')
+        .update({ deleted: true })
+        .eq('id', documentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Documento eliminado correctamente",
+      });
+
+      // Refresh documents list
+      getDocuments();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el documento",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingDocument(null);
     }
   };
 
@@ -359,24 +389,36 @@ const ProfilePage = () => {
                       <h3 className="font-semibold mb-4">CONTRATOS Y ADENDAS:</h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {documents
-                          .filter(doc => doc.document_type === 'contract')
+                          .filter(doc => doc.document_type === 'contract' && !doc.deleted)
                           .map((doc) => (
-                            <a 
-                              key={doc.id}
-                              href={`${supabase.storage.from('contracts').getPublicUrl(doc.file_path).data.publicUrl}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group block"
-                            >
-                              <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="aspect-square flex items-center justify-center mb-4 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-                                  <FileText className="w-12 h-12 text-blue-600" />
+                            <div key={doc.id} className="group relative">
+                              <a 
+                                href={`${supabase.storage.from('contracts').getPublicUrl(doc.file_path).data.publicUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block"
+                              >
+                                <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                                  <div className="aspect-square flex items-center justify-center mb-4 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                                    <FileText className="w-12 h-12 text-blue-600" />
+                                  </div>
+                                  <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-blue-600">
+                                    {doc.filename}
+                                  </div>
                                 </div>
-                                <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-blue-600">
-                                  {doc.filename}
-                                </div>
-                              </div>
-                            </a>
+                              </a>
+                              <button
+                                onClick={() => handleDeleteDocument(doc.id)}
+                                className="absolute -top-2 -right-2 p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
+                                disabled={deletingDocument === doc.id}
+                              >
+                                {deletingDocument === doc.id ? (
+                                  <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                )}
+                              </button>
+                            </div>
                           ))}
                       </div>
                       <div className="mt-6">
@@ -405,24 +447,36 @@ const ProfilePage = () => {
                       <h3 className="font-semibold mb-4">FACTURA DE SUMINISTRO ELÉCTRICO:</h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {documents
-                          .filter(doc => doc.document_type === 'invoice')
+                          .filter(doc => doc.document_type === 'invoice' && !doc.deleted)
                           .map((doc) => (
-                            <a 
-                              key={doc.id}
-                              href={`${supabase.storage.from('invoices').getPublicUrl(doc.file_path).data.publicUrl}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group block"
-                            >
-                              <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="aspect-square flex items-center justify-center mb-4 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
-                                  <FileText className="w-12 h-12 text-green-600" />
+                            <div key={doc.id} className="group relative">
+                              <a 
+                                href={`${supabase.storage.from('invoices').getPublicUrl(doc.file_path).data.publicUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block"
+                              >
+                                <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                                  <div className="aspect-square flex items-center justify-center mb-4 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+                                    <FileText className="w-12 h-12 text-green-600" />
+                                  </div>
+                                  <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
+                                    {doc.filename}
+                                  </div>
                                 </div>
-                                <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
-                                  {doc.filename}
-                                </div>
-                              </div>
-                            </a>
+                              </a>
+                              <button
+                                onClick={() => handleDeleteDocument(doc.id)}
+                                className="absolute -top-2 -right-2 p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
+                                disabled={deletingDocument === doc.id}
+                              >
+                                {deletingDocument === doc.id ? (
+                                  <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                )}
+                              </button>
+                            </div>
                           ))}
                       </div>
                       <div className="mt-6">

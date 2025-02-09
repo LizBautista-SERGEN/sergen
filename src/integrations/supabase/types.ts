@@ -12,6 +12,7 @@ export type Database = {
       documents: {
         Row: {
           created_at: string
+          deleted: boolean | null
           document_type: string
           file_path: string
           filename: string
@@ -21,6 +22,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted?: boolean | null
           document_type: string
           file_path: string
           filename: string
@@ -30,6 +32,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted?: boolean | null
           document_type?: string
           file_path?: string
           filename?: string
