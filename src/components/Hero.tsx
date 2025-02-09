@@ -9,7 +9,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen pt-16 overflow-hidden">
+    <section className="relative min-h-screen overflow-hidden pt-16">
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
@@ -39,7 +39,7 @@ const Hero = () => {
           <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-6xl">
             Optimizamos tu consumo energético
           </h1>
-          <p className="mb-8 text-xl text-gray-200">
+          <p className="animate-pulse mb-8 text-2xl font-semibold text-sergen-100 bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
             Transformamos la gestión energética de tu empresa con soluciones
             innovadoras y sostenibles
           </p>

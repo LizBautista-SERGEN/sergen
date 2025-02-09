@@ -10,6 +10,7 @@ const SuccessStories = () => {
         "Implementamos soluciones de eficiencia energética que resultaron en una reducción del 40% en el consumo mensual.",
       icon: <Factory className="h-12 w-12" />,
       savings: "40%",
+      image: "/lovable-uploads/energy-efficiency.jpg"
     },
     {
       title: "Centro Comercial Optimización Total",
@@ -17,6 +18,7 @@ const SuccessStories = () => {
         "Optimizamos los sistemas de climatización e iluminación, logrando un ahorro anual significativo en costos energéticos.",
       icon: <Building2 className="h-12 w-12" />,
       savings: "35%",
+      image: "/lovable-uploads/energy-efficiency.jpg"
     },
     {
       title: "Edificio Corporativo Smart Energy",
@@ -24,6 +26,7 @@ const SuccessStories = () => {
         "Instalación de sistemas inteligentes de gestión energética que permitieron una reducción sustancial en el consumo.",
       icon: <Building className="h-12 w-12" />,
       savings: "45%",
+      image: "/lovable-uploads/energy-efficiency.jpg"
     },
   ];
 
@@ -48,13 +51,22 @@ const SuccessStories = () => {
               <div className="group relative overflow-hidden rounded-lg bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl">
                 <div className="absolute inset-0 bg-gradient-to-br from-sergen-50/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <div className="relative z-10">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="rounded-lg bg-sergen-100 p-3 text-sergen-700">
-                      {story.icon}
+                  <div className="mb-4">
+                    <div className="aspect-video w-full overflow-hidden rounded-lg mb-4">
+                      <img 
+                        src={story.image} 
+                        alt={story.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     </div>
-                    <span className="text-3xl font-bold text-sergen-600">
-                      {story.savings}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <div className="rounded-lg bg-sergen-100 p-3 text-sergen-700">
+                        {story.icon}
+                      </div>
+                      <span className="text-3xl font-bold text-sergen-600">
+                        {story.savings}
+                      </span>
+                    </div>
                   </div>
                   <h3 className="mb-3 text-xl font-semibold text-gray-900">
                     {story.title}
