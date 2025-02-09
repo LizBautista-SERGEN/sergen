@@ -42,6 +42,7 @@ const DashboardPage = () => {
         return;
       }
 
+      console.log("Fetched energy data:", data); // For debugging
       setEnergyData(data || []);
     };
 
@@ -57,30 +58,18 @@ const DashboardPage = () => {
 
   // Function to determine the class for each day
   const getDayClassName = (date: Date): string => {
-    if (isFuture(date)) return "future";
+    if (isFuture(date)) return "future-day";
     if (isPast(date)) {
-      return isDateModulated(date) ? "modulated" : "not-modulated";
+      return isDateModulated(date) ? "modulated-day" : "not-modulated-day";
     }
     return "";
   };
 
   // Styles for different day states in the calendar
   const modifierStyles = {
-    custom: {
-      color: "#000000",
-      "&[aria-selected='true']": {
-        color: "white",
-      },
-      "&.future": {
-        color: "#8E9196",
-      },
-      "&.modulated": {
-        color: "#ea384c",
-      },
-      "&.not-modulated": {
-        color: "#34D399",
-      },
-    },
+    future: { color: "#8E9196" },
+    modulated: { color: "#ea384c" },
+    notModulated: { color: "#34D399" }
   };
 
   // Sample data for charts
@@ -227,10 +216,9 @@ const DashboardPage = () => {
                   onSelect={setDate}
                   className="rounded-md border"
                   modifiers={{
-                    custom: (date) => true,
                     future: (date) => isFuture(date),
                     modulated: (date) => isPast(date) && isDateModulated(date),
-                    'not-modulated': (date) => isPast(date) && !isDateModulated(date),
+                    notModulated: (date) => isPast(date) && !isDateModulated(date),
                   }}
                   modifiersStyles={modifierStyles}
                 />
