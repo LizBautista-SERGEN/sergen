@@ -1,20 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Lock, Upload } from "lucide-react";
+import { Lock, Upload, Trash2, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const ProfilePage = () => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
 
   useEffect(() => {
     getProfile();
+    getDocuments();
   }, []);
 
   const getProfile = async () => {
@@ -43,6 +48,133 @@ const ProfilePage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getDocuments = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDocuments(data || []);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los documentos",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'contract' | 'invoice') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (type !== 'profile') {
+      // Validate file type for documents
+      const allowedTypes = ['application/pdf'];
+      if (type === 'invoice') {
+        allowedTypes.push('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      }
+      
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Error",
+          description: "Formato de archivo no permitido",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // Validate image type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Por favor sube una imagen",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      if (type === 'profile') setUploadingAvatar(true);
+      else setUploadingDocument(true);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+      formData.append('userId', session.user.id);
+
+      const { error } = await supabase.functions.invoke('upload-file', {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Archivo subido correctamente",
+      });
+
+      if (type === 'profile') {
+        getProfile();
+      } else {
+        getDocuments();
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo subir el archivo",
+        variant: "destructive",
+      });
+    } finally {
+      if (type === 'profile') setUploadingAvatar(false);
+      else setUploadingDocument(false);
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      setUploadingAvatar(true);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', session.user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Foto de perfil eliminada",
+      });
+
+      getProfile();
+    } catch (error) {
+      console.error('Error deleting avatar:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la foto de perfil",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -107,12 +239,41 @@ const ProfilePage = () => {
           <div className="flex gap-8">
             <Card className="w-72 h-fit bg-gradient-to-b from-sergen-100 to-sergen-50 p-6">
               <div className="flex flex-col items-center">
-                <div className="w-32 h-32 bg-sergen-500 rounded-full mb-4 relative">
-                  <button className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg">
-                    <Upload className="w-4 h-4 text-gray-600" />
-                  </button>
+                <div className="w-32 h-32 relative">
+                  <Avatar className="w-32 h-32">
+                    <AvatarImage src={profile?.avatar_url} />
+                    <AvatarFallback>{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                  <input
+                    type="file"
+                    id="avatar-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'profile')}
+                  />
+                  <div className="absolute -bottom-2 right-0 flex gap-2">
+                    <label 
+                      htmlFor="avatar-upload" 
+                      className="bg-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-gray-50"
+                    >
+                      {uploadingAvatar ? (
+                        <Loader2 className="w-4 h-4 text-gray-600 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4 text-gray-600" />
+                      )}
+                    </label>
+                    {profile?.avatar_url && (
+                      <button
+                        onClick={handleDeleteAvatar}
+                        className="bg-white rounded-full p-2 shadow-lg hover:bg-gray-50"
+                        disabled={uploadingAvatar}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <h2 className="text-xl font-semibold">{profile?.business_name || "Ultrafrio S.A.C."}</h2>
+                <h2 className="text-xl font-semibold mt-4">{profile?.business_name || "Ultrafrio S.A.C."}</h2>
               </div>
             </Card>
 
@@ -195,33 +356,84 @@ const ProfilePage = () => {
                   <div className="space-y-8">
                     <div>
                       <h3 className="font-semibold mb-4">CONTRATOS Y ADENDAS:</h3>
-                      <div className="flex gap-4">
-                        <div className="text-center">
-                          <img src="/pdf-icon.png" alt="PDF" className="w-12 h-12 mx-auto mb-2" />
-                          <div className="text-sm">Contrato 2017</div>
-                        </div>
-                        <div className="text-center">
-                          <img src="/pdf-icon.png" alt="PDF" className="w-12 h-12 mx-auto mb-2" />
-                          <div className="text-sm">Adenda 2020</div>
-                        </div>
+                      <div className="flex gap-4 flex-wrap">
+                        {documents
+                          .filter(doc => doc.document_type === 'contract')
+                          .map((doc) => (
+                            <div key={doc.id} className="text-center">
+                              <a 
+                                href={`${supabase.storage.from('contracts').getPublicUrl(doc.file_path).data.publicUrl}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block hover:opacity-80"
+                              >
+                                <FileText className="w-12 h-12 mx-auto mb-2 text-blue-600" />
+                                <div className="text-sm">{doc.filename}</div>
+                              </a>
+                            </div>
+                          ))}
+                      </div>
+                      <div className="mt-4">
+                        <input
+                          type="file"
+                          id="contract-upload"
+                          className="hidden"
+                          accept=".pdf"
+                          onChange={(e) => handleFileUpload(e, 'contract')}
+                        />
+                        <label
+                          htmlFor="contract-upload"
+                          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block cursor-pointer hover:border-gray-400"
+                        >
+                          {uploadingDocument ? (
+                            <Loader2 className="w-12 h-12 mx-auto mb-4 text-gray-400 animate-spin" />
+                          ) : (
+                            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                          )}
+                          <p className="text-gray-600">Arrastra o dale clic para subir un contrato (PDF)</p>
+                        </label>
                       </div>
                     </div>
 
                     <div>
                       <h3 className="font-semibold mb-4">FACTURA DE SUMINISTRO ELÉCTRICO:</h3>
                       <div className="grid grid-cols-4 gap-4">
-                        {['Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre'].map((month) => (
-                          <div key={month} className="text-center">
-                            <img src="/pdf-icon.png" alt="PDF" className="w-12 h-12 mx-auto mb-2" />
-                            <div className="text-sm">{month} 2024</div>
-                          </div>
-                        ))}
+                        {documents
+                          .filter(doc => doc.document_type === 'invoice')
+                          .map((doc) => (
+                            <div key={doc.id} className="text-center">
+                              <a 
+                                href={`${supabase.storage.from('invoices').getPublicUrl(doc.file_path).data.publicUrl}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="block hover:opacity-80"
+                              >
+                                <FileText className="w-12 h-12 mx-auto mb-2 text-green-600" />
+                                <div className="text-sm">{doc.filename}</div>
+                              </a>
+                            </div>
+                          ))}
                       </div>
-                    </div>
-
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-600">Arrastra o dale clic para subir tu archivo.</p>
+                      <div className="mt-4">
+                        <input
+                          type="file"
+                          id="invoice-upload"
+                          className="hidden"
+                          accept=".pdf,.xls,.xlsx"
+                          onChange={(e) => handleFileUpload(e, 'invoice')}
+                        />
+                        <label
+                          htmlFor="invoice-upload"
+                          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block cursor-pointer hover:border-gray-400"
+                        >
+                          {uploadingDocument ? (
+                            <Loader2 className="w-12 h-12 mx-auto mb-4 text-gray-400 animate-spin" />
+                          ) : (
+                            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                          )}
+                          <p className="text-gray-600">Arrastra o dale clic para subir una factura (PDF o Excel)</p>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
