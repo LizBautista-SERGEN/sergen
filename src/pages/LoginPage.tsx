@@ -33,13 +33,14 @@ const LoginPage = () => {
             .from('profiles')
             .select('role')
             .eq('id', data.user.id)
-            .maybeSingle();
+            .single();
 
           if (profile?.role === 'superuser') {
             navigate('/admin/dashboard');
           } else {
             navigate('/dashboard');
           }
+          toast.success("Inicio de sesión exitoso");
         }
       } else {
         // Sign up process
@@ -47,8 +48,9 @@ const LoginPage = () => {
           email,
           password,
           options: {
+            emailRedirectTo: window.location.origin,
             data: {
-              email: email, // Include email in metadata
+              email: email,
             }
           }
         });
@@ -70,6 +72,10 @@ const LoginPage = () => {
         errorMessage = 'Este correo ya está registrado. Por favor, inicie sesión.';
       } else if (error.message.includes('Invalid login credentials')) {
         errorMessage = 'Credenciales inválidas. Por favor, verifique sus datos.';
+      } else if (error.message.includes('Password should be at least 6 characters')) {
+        errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage = 'Por favor, confirme su correo electrónico antes de iniciar sesión.';
       }
       
       toast.error(errorMessage);
