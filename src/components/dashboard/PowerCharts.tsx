@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
-import { format, subDays, addDays, startOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
 import { EnergyData } from "@/types/energy";
 
 interface PowerChartsProps {
@@ -13,48 +13,35 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const getChartData = () => {
     if (!date) return [];
 
-    const startDate = subDays(date, 3);
-    const endDate = addDays(date, 3);
-    const chartData = [];
-    let currentDate = startDate;
+    const monthStart = startOfMonth(date);
+    const monthEnd = endOfMonth(date);
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-    while (currentDate <= endDate) {
+    return days.map(currentDate => {
       const dateStr = format(currentDate, 'yyyy-MM-dd');
       const dayData = energyData.find(data => data.date === dateStr);
       
-      chartData.push({
+      return {
         name: format(currentDate, 'dd/MM'),
         "Potencia Pronosticada": dayData?.demand || 0,
         "Potencia Ejecutada": dayData?.consumption || 0
-      });
-
-      currentDate = addDays(currentDate, 1);
-    }
-
-    return chartData;
+      };
+    });
   };
 
   const getBarChartData = () => {
     if (!date) return [];
 
-    const startDate = startOfMonth(date);
-    const yesterday = subDays(new Date(), 1);
-    const chartData = [];
-    let currentDate = startDate;
+    // Filter data for the current month only
+    const currentMonthData = energyData.filter(data => {
+      const dataDate = new Date(data.date);
+      return isSameMonth(dataDate, date);
+    });
 
-    while (currentDate <= yesterday) {
-      const dateStr = format(currentDate, 'yyyy-MM-dd');
-      const dayData = energyData.find(data => data.date === dateStr);
-      
-      chartData.push({
-        date: format(currentDate, 'dd/MM'),
-        value: dayData?.demand || 0
-      });
-
-      currentDate = addDays(currentDate, 1);
-    }
-
-    return chartData;
+    return currentMonthData.map(data => ({
+      date: format(new Date(data.date), 'dd/MM'),
+      value: data.demand || 0
+    }));
   };
 
   return (
