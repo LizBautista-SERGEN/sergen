@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -121,12 +120,9 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
               future: { color: "#8E9196" },
               modulated: { color: "#C00000" },
               notModulated: { color: "#34D399" },
-              selected: {
+              selected: { 
                 backgroundColor: "#FEC6A1",
-                color: "white",
-                "&:hover": {
-                  backgroundColor: "#FEC6A1"
-                }
+                color: "white"
               }
             }}
           />
@@ -145,4 +141,3 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     </>
   );
 };
-
