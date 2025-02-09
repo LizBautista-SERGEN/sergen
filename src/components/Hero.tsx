@@ -1,6 +1,9 @@
 
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { SplineScene } from "@/components/ui/splite";
+import { Card } from "@/components/ui/card";
+import { Spotlight } from "@/components/ui/spotlight";
 
 const Hero = () => {
   const scrollToServices = () => {
@@ -9,41 +12,40 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen overflow-hidden pt-16">
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/lovable-uploads/9a0562bc-641c-4555-b03c-493ff9d7c481.png')",
-          filter: "brightness(0.4)"
-        }}
-      />
+    <section className="relative min-h-screen overflow-hidden pt-16 bg-[#F39200]">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px)] bg-[size:30px_30px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       <div className="container relative z-10 mx-auto flex min-h-screen flex-col items-center justify-center px-4 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="max-w-3xl"
-        >
-          <motion.img
-            src="/lovable-uploads/12ae4369-c1d4-4066-b8c6-b5d4060a8d15.png"
-            alt="Sergen Logo"
-            className="mx-auto mb-8 w-64 sm:w-80"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+        <Card className="w-full bg-black/[0.96] relative overflow-hidden p-8">
+          <Spotlight
+            className="-top-40 left-0 md:left-60 md:-top-20"
+            fill="white"
           />
-          <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
-            Soluciones en Eficiencia Energética
-          </span>
-          <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-6xl">
-            OPTIMIZAMOS TU CONSUMO ENERGÉTICO
-          </h1>
-          <p className="mb-8 text-2xl font-semibold bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
-            Transformamos la gestión energética de tu empresa con soluciones
-            innovadoras y sostenibles
-          </p>
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-3xl mx-auto"
+          >
+            <motion.img
+              src="/lovable-uploads/12ae4369-c1d4-4066-b8c6-b5d4060a8d15.png"
+              alt="Sergen Logo"
+              className="mx-auto mb-8 w-64 sm:w-80"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+            />
+            <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
+              Soluciones en Eficiencia Energética
+            </span>
+            <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-6xl">
+              OPTIMIZAMOS TU CONSUMO ENERGÉTICO
+            </h1>
+            <p className="mb-8 text-2xl font-semibold bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
+              Transformamos la gestión energética de tu empresa con soluciones
+              innovadoras y sostenibles
+            </p>
+          </motion.div>
+        </Card>
         <motion.button
           onClick={scrollToServices}
           initial={{ opacity: 0 }}
