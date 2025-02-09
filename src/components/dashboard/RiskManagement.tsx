@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -79,7 +80,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
           <div className="space-y-2 flex flex-col items-center">
             <div className="text-center w-[200px]">
               <p className="text-[#8E9196] text-sm">Potencia Máxima</p>
-              <p className="text-2xl font-bold text-white bg-[#C00000] border border-gray-200 rounded px-4 h-[42px] flex items-center justify-center">{maxPower}</p>
+              <p className="text-2xl font-bold text-white" style={{ backgroundColor }}>{maxPower}</p>
             </div>
             <div className="text-center w-[200px]">
               <p className="text-[#8E9196] text-sm">Rango horario</p>
@@ -91,7 +92,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
             </div>
             <div className="text-center w-[200px]">
               <p className="text-sm text-gray-500">Días modulados</p>
-              <p style={{ backgroundColor: '#C00000' }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center border">
+              <p style={{ backgroundColor: '#156082' }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center border">
                 {modulatedDays} días
               </p>
             </div>
