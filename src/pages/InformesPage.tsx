@@ -243,7 +243,7 @@ const InformesPage = () => {
                   </div>
                   <ScrollArea className="h-[700px] border rounded-lg p-4">
                     <div id="report-content" className="space-y-8">
-                      <div data-section="portada" className={`text-center ${hiddenSections.includes('portada') ? 'opacity-50' : ''}`}>
+                      <div data-section="portada" className={`text-center min-h-[1056px] relative ${hiddenSections.includes('portada') ? 'opacity-50' : ''}`}>
                         <img 
                           src="/lovable-uploads/947a546b-d4b6-48e2-affc-ad0488c7d420.png"
                           alt="Sergen Logo" 
@@ -254,7 +254,7 @@ const InformesPage = () => {
                           <h2 className="text-3xl font-semibold uppercase">{template?.client_name || 'ULTRA FRIO S.A.C'}</h2>
                           <p className="text-2xl uppercase">{template?.code || 'CS 06-01-2025'}</p>
                         </div>
-                        <div className="mt-[400px]">
+                        <div className="absolute bottom-20 left-0 right-0">
                           <p className="text-2xl uppercase">{format(selectedDate, 'MMMM yyyy', { locale: es }).toUpperCase()}</p>
                         </div>
                       </div>
