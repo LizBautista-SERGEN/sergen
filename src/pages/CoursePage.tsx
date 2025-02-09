@@ -1,11 +1,13 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Play, FileText, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 const CoursePage = () => {
   const { courseId } = useParams();
@@ -16,7 +18,21 @@ const CoursePage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('courses')
-        .select('*')
+        .select(`
+          *,
+          course_units (
+            id,
+            title,
+            lessons (
+              id,
+              title,
+              type,
+              duration,
+              video_url,
+              completed
+            )
+          )
+        `)
         .eq('id', courseId)
         .single();
 
@@ -37,6 +53,18 @@ const CoursePage = () => {
     return <div className="min-h-screen flex items-center justify-center">Curso no encontrado</div>;
   }
 
+  const totalLessons = course.course_units?.reduce(
+    (acc, unit) => acc + unit.lessons.length,
+    0
+  ) || 0;
+
+  const completedLessons = course.course_units?.reduce(
+    (acc, unit) => acc + unit.lessons.filter(lesson => lesson.completed).length,
+    0
+  ) || 0;
+
+  const progress = totalLessons ? (completedLessons / totalLessons) * 100 : 0;
+
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-gray-50 flex w-full">
@@ -52,24 +80,57 @@ const CoursePage = () => {
             </Button>
 
             <div className="max-w-4xl mx-auto">
-              <h1 className="text-3xl font-bold text-sergen-700 mb-6">{course.title}</h1>
-              
-              {course.video_url ? (
-                <div className="aspect-video w-full mb-6">
-                  <iframe
-                    src={course.video_url}
-                    className="w-full h-full rounded-lg"
-                    allowFullScreen
-                  />
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-sergen-700 mb-4">{course.title}</h1>
+                <p className="text-gray-600 mb-4">{course.description}</p>
+                
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold text-gray-700">Progreso del curso</h3>
+                    <span className="text-sm font-medium text-sergen-600">
+                      {Math.round(progress)}% Completado
+                    </span>
+                  </div>
+                  <Progress value={progress} className="h-2 bg-sergen-100" />
                 </div>
-              ) : (
-                <div className="aspect-video w-full bg-gray-200 rounded-lg mb-6 flex items-center justify-center">
-                  <p className="text-gray-500">No hay video disponible</p>
-                </div>
-              )}
+              </div>
 
-              <div className="prose max-w-none">
-                <p className="text-gray-600">{course.description}</p>
+              <div className="space-y-8">
+                {course.course_units?.map((unit, index) => (
+                  <Card key={unit.id} className="p-6">
+                    <h2 className="text-xl font-semibold mb-4 text-sergen-600">
+                      Unidad {index + 1}: {unit.title}
+                    </h2>
+                    <div className="space-y-3">
+                      {unit.lessons.map((lesson) => (
+                        <div
+                          key={lesson.id}
+                          className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          {lesson.completed ? (
+                            <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                              <Check className="h-4 w-4 text-green-600" />
+                            </div>
+                          ) : lesson.type === 'video' ? (
+                            <Play className="h-5 w-5 text-sergen-500" />
+                          ) : (
+                            <FileText className="h-5 w-5 text-sergen-500" />
+                          )}
+                          <div className="flex-1">
+                            <h3 className="text-sm font-medium text-gray-900">
+                              {lesson.title}
+                            </h3>
+                            {lesson.duration && (
+                              <p className="text-xs text-gray-500">
+                                {lesson.duration}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ))}
               </div>
             </div>
           </div>
@@ -80,4 +141,3 @@ const CoursePage = () => {
 };
 
 export default CoursePage;
-
