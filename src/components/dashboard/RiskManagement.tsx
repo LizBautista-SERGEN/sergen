@@ -37,16 +37,34 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
     // Actualizar los valores
     calculateMaxPower();
 
-    // Actualizar el color
-    const now = new Date();
-    const hour = now.getHours();
-    const shouldUpdate = hour >= 17; // 5 PM
-    
-    if (shouldUpdate) {
-      // Aquí deberías obtener el color del calendario
-      // Por ahora usaremos un color por defecto
-      setLabelColor("#888888");
-    }
+    // Actualizar el color basado en la hora
+    const updateLabelColor = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      
+      if (hour >= 17) { // 5 PM
+        // Obtener el color del calendario
+        const calendarColor = "#888888"; // Color por defecto
+        setLabelColor(calendarColor);
+      }
+    };
+
+    updateLabelColor();
+
+    // Configurar actualizaciones automáticas
+    const checkTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      if (hour === 17) { // 5 PM
+        calculateMaxPower();
+        updateLabelColor();
+      }
+    };
+
+    // Configurar el intervalo para verificar cada hora
+    const interval = setInterval(checkTime, 3600000); // 1 hora en milisegundos
+
+    return () => clearInterval(interval);
   }, [date, energyData]);
 
   return (
