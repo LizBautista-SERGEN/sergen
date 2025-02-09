@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
-import { format, subDays, addDays } from "date-fns";
+import { format, subDays, addDays, startOfMonth } from "date-fns";
 import { EnergyData } from "@/types/energy";
 
 interface PowerChartsProps {
@@ -37,12 +37,12 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const getBarChartData = () => {
     if (!date) return [];
 
-    const startDate = subDays(date, 6);
-    const endDate = date;
+    const startDate = startOfMonth(date);
+    const yesterday = subDays(new Date(), 1);
     const chartData = [];
     let currentDate = startDate;
 
-    while (currentDate <= endDate) {
+    while (currentDate <= yesterday) {
       const dateStr = format(currentDate, 'yyyy-MM-dd');
       const dayData = energyData.find(data => data.date === dateStr);
       
