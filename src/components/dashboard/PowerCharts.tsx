@@ -50,11 +50,11 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     return data.map(item => ({
       ...item,
       color: item.value === maxValue ? '#C00000' : 
-             item.value === secondMaxValue ? '#8A898C' : 
+             item.value === secondMaxValue ? '#f39200' : 
              '#156082',
-      borderColor: item.selected ? '#F39200' : 'transparent',
+      borderColor: item.selected ? '#FFFF00' : 'transparent',
       borderWidth: item.selected ? 4 : 0,
-      filter: item.selected ? 'drop-shadow(0 0 4px rgba(243, 146, 0, 0.5))' : undefined
+      filter: item.selected ? 'drop-shadow(0 0 4px rgba(255, 255, 0, 0.5))' : undefined
     }));
   };
 
