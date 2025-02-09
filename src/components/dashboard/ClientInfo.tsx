@@ -14,24 +14,24 @@ export const ClientInfo = () => {
         <div className="space-y-2 flex flex-col items-center">
           <button 
             onClick={() => navigate("/servicios/control")}
-            className="bg-sergen-500 text-white px-4 h-[42px] rounded hover:bg-sergen-600 w-[200px] flex items-center justify-center"
+            className="bg-[#156082] text-white px-4 h-[42px] rounded hover:opacity-90 w-[200px] flex items-center justify-center"
           >
             Control de demanda
           </button>
           <button 
             onClick={() => navigate("/servicios/efficiency")}
-            className="bg-sergen-500 text-white px-4 h-[42px] rounded hover:bg-sergen-600 w-[200px] flex items-center justify-center"
+            className="bg-[#156082] text-white px-4 h-[42px] rounded hover:opacity-90 w-[200px] flex items-center justify-center"
           >
             Ahorro acumulado
           </button>
           <button 
             onClick={() => navigate("/servicios/diagnostico")}
-            className="bg-sergen-500 text-white px-4 h-[42px] rounded hover:bg-sergen-600 w-[200px] flex items-center justify-center"
+            className="bg-[#156082] text-white px-4 h-[42px] rounded hover:opacity-90 w-[200px] flex items-center justify-center"
           >
             Desagregado de gasto
           </button>
           <button 
-            className="bg-sergen-500 text-white px-4 h-[42px] rounded hover:bg-sergen-600 w-[200px] flex items-center justify-center"
+            className="bg-[#156082] text-white px-4 h-[42px] rounded hover:opacity-90 w-[200px] flex items-center justify-center"
           >
             Subir factura
           </button>
