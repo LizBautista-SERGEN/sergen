@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Play, FileText, Check } from "lucide-react";
@@ -44,7 +43,6 @@ const CoursePage = () => {
           )
         `)
         .eq('id', courseId)
-        .order('order_index', { foreignTable: 'course_units.lessons' })
         .single();
 
       if (error) {
