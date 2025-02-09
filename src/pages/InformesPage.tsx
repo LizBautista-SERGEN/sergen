@@ -52,6 +52,9 @@ interface Template {
   name: string;
   content: any;
   sections_enabled: string[];
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
 }
 
 const InformesPage = () => {
@@ -81,7 +84,7 @@ const InformesPage = () => {
   };
 
   const loadTemplates = async () => {
-    const { data: templates, error } = await supabase
+    const { data: templatesData, error } = await supabase
       .from('report_templates')
       .select('*');
 
@@ -90,11 +93,19 @@ const InformesPage = () => {
       return;
     }
 
-    if (templates) {
-      setTemplates(templates);
-      if (templates.length > 0 && !selectedTemplate) {
-        setSelectedTemplate(templates[0]);
-        setHiddenSections(templates[0].sections_enabled || []);
+    if (templatesData) {
+      // Transformar los datos para asegurar que sections_enabled sea un array
+      const formattedTemplates: Template[] = templatesData.map(template => ({
+        ...template,
+        sections_enabled: Array.isArray(template.sections_enabled) 
+          ? template.sections_enabled 
+          : []
+      }));
+
+      setTemplates(formattedTemplates);
+      if (formattedTemplates.length > 0 && !selectedTemplate) {
+        setSelectedTemplate(formattedTemplates[0]);
+        setHiddenSections(formattedTemplates[0].sections_enabled || []);
       }
     }
   };
@@ -106,7 +117,6 @@ const InformesPage = () => {
       return;
     }
 
-    // Ocultar temporalmente las secciones que no deberían aparecer en el PDF
     const hiddenElements = content.querySelectorAll('[data-section]');
     const originalDisplay: { [key: string]: string } = {};
     
@@ -128,7 +138,6 @@ const InformesPage = () => {
     };
 
     html2pdf().set(opt).from(content).save().then(() => {
-      // Restaurar la visibilidad de las secciones
       hiddenElements.forEach((element: Element) => {
         const section = element.getAttribute('data-section');
         if (section && originalDisplay[section]) {
@@ -185,7 +194,7 @@ const InformesPage = () => {
     setSelectedTemplate(template);
     setHiddenSections(template.sections_enabled || []);
     const content = document.getElementById('report-content');
-    if (content && template.content.html) {
+    if (content && template.content?.html) {
       content.innerHTML = template.content.html;
     }
   };
