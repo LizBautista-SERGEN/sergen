@@ -75,69 +75,65 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-6">
-      <div className="h-[calc(50%-1.5rem)]">
-        <Card className="h-full">
-          <CardHeader className="pb-2">
-            <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            <LineChart width={650} height={200} data={getChartData()}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Line 
-                type="monotone" 
-                dataKey="Potencia Pronosticada" 
-                stroke="#8884d8" 
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="Potencia Ejecutada" 
-                stroke="#82ca9d" 
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </CardContent>
-        </Card>
-      </div>
+    <>
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <LineChart width={650} height={300} data={getChartData()}>
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Line 
+              type="monotone" 
+              dataKey="Potencia Pronosticada" 
+              stroke="#8884d8" 
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="Potencia Ejecutada" 
+              stroke="#82ca9d" 
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </CardContent>
+      </Card>
 
-      <div className="h-[calc(50%-1.5rem)]">
-        <Card className="h-full">
-          <CardHeader className="pb-2">
-            <CardTitle>Historial diario de potencia máxima</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            <BarChart width={650} height={200} data={getBarChartData()}>
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value) => [`${value} kW`, 'Potencia']}
-                labelFormatter={(label) => `Fecha: ${label}`}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Historial diario de potencia máxima</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <BarChart width={650} height={300} data={getBarChartData()}>
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip 
+              formatter={(value) => [`${value} kW`, 'Potencia']}
+              labelFormatter={(label) => `Fecha: ${label}`}
+            />
+            {getBarChartData().map((entry, index) => (
+              <CustomBackground
+                key={`background-${index}`}
+                x={index * (650 / getBarChartData().length)}
+                width={650 / getBarChartData().length}
+                selected={entry.selected}
               />
+            ))}
+            <Bar dataKey="value">
               {getBarChartData().map((entry, index) => (
-                <CustomBackground
-                  key={`background-${index}`}
-                  x={index * (650 / getBarChartData().length)}
-                  width={650 / getBarChartData().length}
-                  selected={entry.selected}
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={entry.color}
                 />
               ))}
-              <Bar dataKey="value">
-                {getBarChartData().map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            </Bar>
+          </BarChart>
+        </CardContent>
+      </Card>
+    </>
   );
 };
