@@ -55,7 +55,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       ...item,
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#FFC000' : 
-             '#E5F0F6' // Color pálido base para las barras no seleccionadas
+             '#156082'
     }));
   };
 
@@ -105,11 +105,6 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.color}
-                  style={{
-                    filter: entry.selected ? 'brightness(1.2)' : 'none',
-                    transform: entry.selected ? 'scaleY(1.05)' : 'none',
-                    transformOrigin: 'bottom'
-                  }}
                 />
               ))}
             </Bar>
@@ -119,4 +114,3 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
-
