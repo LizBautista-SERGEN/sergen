@@ -22,7 +22,6 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
     return dayData?.is_modulated || false;
   };
 
-  // Efecto para actualizar la fecha cada día a las 5 PM y al cargar la página
   useEffect(() => {
     const updateData = () => {
       const now = new Date();
@@ -30,10 +29,8 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
       setSubscriptionEndDate(lastDayOfMonth(now));
     };
 
-    // Ejecutar inmediatamente al montar el componente
     updateData();
 
-    // Calcular el tiempo hasta las 5 PM
     const calculateTimeUntil5PM = () => {
       const now = new Date();
       const next5PM = new Date(now);
@@ -46,10 +43,8 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
       return next5PM.getTime() - now.getTime();
     };
 
-    // Configurar el primer temporizador para que se ejecute a las 5 PM
     const timer = setTimeout(() => {
       updateData();
-      // Después de la primera actualización, configurar un intervalo diario
       const dailyTimer = setInterval(updateData, 24 * 60 * 60 * 1000);
       return () => clearInterval(dailyTimer);
     }, calculateTimeUntil5PM());
@@ -87,6 +82,10 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
             <div className="text-center w-[200px]">
               <p className="text-sm text-gray-500">Técnico designado</p>
               <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">Ing. Jose Torres</p>
+            </div>
+            <div className="text-center w-[200px]">
+              <p className="text-sm text-gray-500">Tipo de suscripción</p>
+              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">Básico</p>
             </div>
             <div className="text-center w-[200px]">
               <p className="text-sm text-gray-500">Fin de suscripción</p>

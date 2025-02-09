@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EnergyData } from "@/types/energy";
-import { format } from "date-fns";
+import { format, startOfMonth, isBefore, isAfter } from "date-fns";
 
 interface RiskManagementProps {
   energyData: EnergyData[];
@@ -11,7 +11,7 @@ interface RiskManagementProps {
 
 export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
   const [maxPower, setMaxPower] = useState<number>(0);
-  const [backgroundColor, setBackgroundColor] = useState<string>("#156082"); // Default to blue (not modulated)
+  const [backgroundColor, setBackgroundColor] = useState<string>("#156082");
   const [nonModulatedDays, setNonModulatedDays] = useState(0);
 
   useEffect(() => {
@@ -23,10 +23,8 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
       
       if (!dayData) return;
 
-      // Update background color based on modulation state
       setBackgroundColor(dayData.is_modulated ? "#C00000" : "#156082");
 
-      // Generate data for the day and find max between 18:00 and 23:00
       const intervals = [];
       for (let hour = 18; hour <= 23; hour++) {
         for (let minute = 0; minute < 60; minute += 15) {
@@ -36,20 +34,52 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
       
       const maxValue = Math.max(...intervals);
       setMaxPower(Number(maxValue.toFixed(2)));
-
-      // Count non-modulated days
-      const nonModulatedCount = energyData.filter(data => !data.is_modulated).length;
-      setNonModulatedDays(nonModulatedCount);
     };
 
-    // Calculate initial values
     calculateMaxPower();
-
-    // Set up automatic updates when data changes
-    const interval = setInterval(calculateMaxPower, 60000); // Check every minute
+    const interval = setInterval(calculateMaxPower, 60000);
 
     return () => clearInterval(interval);
   }, [date, energyData]);
+
+  // Nuevo efecto para calcular días sin modulación
+  useEffect(() => {
+    const updateNonModulatedDays = () => {
+      const now = new Date();
+      const monthStart = startOfMonth(now);
+      
+      const nonModulatedCount = energyData.filter(data => {
+        const dataDate = new Date(data.date);
+        return !data.is_modulated && 
+               isAfter(dataDate, monthStart) && 
+               isBefore(dataDate, now);
+      }).length;
+
+      setNonModulatedDays(nonModulatedCount);
+    };
+
+    updateNonModulatedDays();
+
+    const calculateTimeUntil5PM = () => {
+      const now = new Date();
+      const next5PM = new Date(now);
+      next5PM.setHours(17, 0, 0, 0);
+      
+      if (now.getHours() >= 17) {
+        next5PM.setDate(next5PM.getDate() + 1);
+      }
+      
+      return next5PM.getTime() - now.getTime();
+    };
+
+    const timer = setTimeout(() => {
+      updateNonModulatedDays();
+      const dailyTimer = setInterval(updateNonModulatedDays, 24 * 60 * 60 * 1000);
+      return () => clearInterval(dailyTimer);
+    }, calculateTimeUntil5PM());
+
+    return () => clearTimeout(timer);
+  }, [energyData]);
 
   return (
     <Card>
