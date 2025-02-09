@@ -31,9 +31,9 @@ const LoginPage = () => {
         if (data.user) {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('*')
+            .select('role')
             .eq('id', data.user.id)
-            .single();
+            .maybeSingle();
 
           if (profile?.role === 'superuser') {
             navigate('/admin/dashboard');
@@ -42,9 +42,15 @@ const LoginPage = () => {
           }
         }
       } else {
+        // Sign up process
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              email: email, // Include email in metadata
+            }
+          }
         });
 
         if (error) throw error;
@@ -55,7 +61,18 @@ const LoginPage = () => {
         }
       }
     } catch (error: any) {
-      toast.error(error.message || "Error en la autenticación");
+      console.error('Auth error:', error);
+      let errorMessage = 'Error en la autenticación';
+      
+      if (error.message.includes('Email rate limit exceeded')) {
+        errorMessage = 'Demasiados intentos. Por favor, espere unos minutos.';
+      } else if (error.message.includes('User already registered')) {
+        errorMessage = 'Este correo ya está registrado. Por favor, inicie sesión.';
+      } else if (error.message.includes('Invalid login credentials')) {
+        errorMessage = 'Credenciales inválidas. Por favor, verifique sus datos.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
