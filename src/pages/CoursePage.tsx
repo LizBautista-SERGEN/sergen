@@ -3,19 +3,24 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Play, FileText, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/use-toast";
 
 const CoursePage = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: course, isLoading } = useQuery({
     queryKey: ['course', courseId],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('courses')
         .select(`
@@ -23,17 +28,23 @@ const CoursePage = () => {
           course_units (
             id,
             title,
+            order_index,
             lessons (
               id,
               title,
               type,
               duration,
               video_url,
-              completed
+              order_index,
+              user_lesson_progress (
+                completed
+              )
             )
           )
         `)
         .eq('id', courseId)
+        .order('order_index')
+        .throwOnError()
         .single();
 
       if (error) {
@@ -41,7 +52,58 @@ const CoursePage = () => {
         return null;
       }
 
+      // Sort units and lessons by order_index
+      const sortedCourse = {
+        ...data,
+        course_units: data.course_units
+          ?.sort((a, b) => a.order_index - b.order_index)
+          .map(unit => ({
+            ...unit,
+            lessons: unit.lessons
+              ?.sort((a, b) => a.order_index - b.order_index)
+              .map(lesson => ({
+                ...lesson,
+                completed: lesson.user_lesson_progress?.[0]?.completed || false
+              }))
+          }))
+      };
+
+      return sortedCourse;
+    }
+  });
+
+  const toggleLessonCompletion = useMutation({
+    mutationFn: async ({ lessonId, completed }: { lessonId: string, completed: boolean }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('user_lesson_progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lessonId,
+          completed
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course', courseId] });
+      toast({
+        title: "Progreso actualizado",
+        description: "Tu progreso ha sido actualizado correctamente.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating lesson progress:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el progreso. Por favor, intenta de nuevo.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -64,6 +126,13 @@ const CoursePage = () => {
   ) || 0;
 
   const progress = totalLessons ? (completedLessons / totalLessons) * 100 : 0;
+
+  const handleLessonClick = (lesson: any) => {
+    toggleLessonCompletion.mutate({
+      lessonId: lesson.id,
+      completed: !lesson.completed
+    });
+  };
 
   return (
     <SidebarProvider>
@@ -106,6 +175,7 @@ const CoursePage = () => {
                         <div
                           key={lesson.id}
                           className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                          onClick={() => handleLessonClick(lesson)}
                         >
                           {lesson.completed ? (
                             <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
