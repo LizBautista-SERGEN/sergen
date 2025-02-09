@@ -61,7 +61,7 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>Calendario</CardTitle>
+          <CardTitle className="text-center">Calendario</CardTitle>
         </CardHeader>
         <CardContent>
           <Calendar
