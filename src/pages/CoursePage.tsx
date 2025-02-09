@@ -1,166 +1,21 @@
 
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { useToast } from "@/components/ui/use-toast";
 import { CourseHeader } from "@/components/course/CourseHeader";
 import { CourseProgress } from "@/components/course/CourseProgress";
 import { LessonList } from "@/components/course/LessonList";
 import { ExplanationVideos } from "@/components/course/ExplanationVideos";
-
-interface ExplanationVideo {
-  title: string;
-  description: string;
-  url: string;
-}
-
-interface Course {
-  id: string;
-  title: string;
-  description: string | null;
-  video_url: string | null;
-  explanation_videos: ExplanationVideo[];
-  course_units: {
-    id: string;
-    title: string;
-    order_index: number;
-    lessons: {
-      id: string;
-      title: string;
-      type: string;
-      duration: string | null;
-      video_url: string | null;
-      order_index: number;
-      completed: boolean;
-    }[];
-  }[];
-}
+import { useCourseData } from "@/hooks/useCourseData";
+import { useLessonCompletion } from "@/hooks/useLessonCompletion";
+import { calculateCourseProgress } from "@/utils/courseProgress";
+import { useQueryClient } from "@tanstack/react-query";
 
 const CoursePage = () => {
   const { courseId } = useParams();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const { data: course, isLoading } = useQuery<Course>({
-    queryKey: ['course', courseId],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-      
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select(`
-          *,
-          course_units!course_units_course_id_fkey (
-            id,
-            title,
-            order_index,
-            lessons!lessons_unit_id_fkey (
-              id,
-              title,
-              type,
-              duration,
-              video_url,
-              order_index,
-              user_lesson_progress!user_lesson_progress_lesson_id_fkey (
-                completed
-              )
-            )
-          )
-        `)
-        .eq('id', courseId)
-        .single();
-
-      if (courseError) {
-        console.error('Error fetching course:', courseError);
-        throw courseError;
-      }
-
-      const { data: videoProgress, error: videoError } = await supabase
-        .from('user_video_progress')
-        .select('video_index')
-        .eq('course_id', courseId)
-        .eq('user_id', user.id)
-        .eq('completed', true);
-
-      if (videoError) {
-        console.error('Error fetching video progress:', videoError);
-        throw videoError;
-      }
-
-      // Transform the data to match our Course interface
-      const transformedCourse: Course = {
-        id: courseData.id,
-        title: courseData.title,
-        description: courseData.description,
-        video_url: courseData.video_url,
-        explanation_videos: Array.isArray(courseData.explanation_videos) 
-          ? courseData.explanation_videos.map((video: any) => ({
-              title: video.title || '',
-              description: video.description || '',
-              url: video.url || ''
-            }))
-          : [],
-        course_units: courseData.course_units
-          ?.sort((a: any, b: any) => a.order_index - b.order_index)
-          .map((unit: any) => ({
-            id: unit.id,
-            title: unit.title,
-            order_index: unit.order_index,
-            lessons: unit.lessons
-              ?.sort((a: any, b: any) => a.order_index - b.order_index)
-              .map((lesson: any) => ({
-                id: lesson.id,
-                title: lesson.title,
-                type: lesson.type,
-                duration: lesson.duration,
-                video_url: lesson.video_url,
-                order_index: lesson.order_index,
-                completed: lesson.user_lesson_progress?.[0]?.completed || false
-              })) || []
-          })) || []
-      };
-
-      return transformedCourse;
-    }
-  });
-
-  const toggleLessonCompletion = useMutation({
-    mutationFn: async ({ lessonId, completed }: { lessonId: string, completed: boolean }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('user_lesson_progress')
-        .upsert({
-          user_id: user.id,
-          lesson_id: lessonId,
-          completed
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['course', courseId] });
-      toast({
-        title: "Progreso actualizado",
-        description: "Tu progreso ha sido actualizado correctamente.",
-      });
-    },
-    onError: (error) => {
-      console.error('Error updating lesson progress:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el progreso. Por favor, intenta de nuevo.",
-        variant: "destructive"
-      });
-    }
-  });
+  const { data: course, isLoading } = useCourseData(courseId);
+  const toggleLessonCompletion = useLessonCompletion(courseId);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
@@ -174,17 +29,7 @@ const CoursePage = () => {
     queryClient.invalidateQueries({ queryKey: ['course', courseId] });
   };
 
-  const totalItems = (course.course_units?.reduce(
-    (acc, unit) => acc + unit.lessons.length,
-    0
-  ) || 0) + (course.explanation_videos?.length || 0);
-
-  const completedLessons = course.course_units?.reduce(
-    (acc, unit) => acc + unit.lessons.filter(lesson => lesson.completed).length,
-    0
-  ) || 0;
-
-  const progress = totalItems ? ((completedLessons) / totalItems) * 100 : 0;
+  const progress = calculateCourseProgress(course);
 
   const handleLessonClick = (lesson: any) => {
     toggleLessonCompletion.mutate({
