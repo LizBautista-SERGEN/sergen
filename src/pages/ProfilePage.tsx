@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -57,11 +58,17 @@ const ProfilePage = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('documents')
         .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
+        .eq('user_id', session.user.id);
+
+      // Only show non-deleted documents for regular users
+      if (profile?.role !== 'superuser') {
+        query = query.eq('deleted', false);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setDocuments(data || []);
@@ -389,7 +396,7 @@ const ProfilePage = () => {
                       <h3 className="font-semibold mb-4">CONTRATOS Y ADENDAS:</h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {documents
-                          .filter(doc => doc.document_type === 'contract' && !doc.deleted)
+                          .filter(doc => doc.document_type === 'contract' && (!doc.deleted || profile?.role === 'superuser'))
                           .map((doc) => (
                             <div key={doc.id} className="group relative">
                               <a 
@@ -398,26 +405,29 @@ const ProfilePage = () => {
                                 rel="noopener noreferrer"
                                 className="block"
                               >
-                                <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                                <div className={`bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow ${doc.deleted ? 'opacity-50' : ''}`}>
                                   <div className="aspect-square flex items-center justify-center mb-4 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
                                     <FileText className="w-12 h-12 text-blue-600" />
                                   </div>
                                   <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-blue-600">
                                     {doc.filename}
+                                    {doc.deleted && <span className="block text-xs text-red-500">(Eliminado)</span>}
                                   </div>
                                 </div>
                               </a>
-                              <button
-                                onClick={() => handleDeleteDocument(doc.id)}
-                                className="absolute -top-2 -right-2 p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
-                                disabled={deletingDocument === doc.id}
-                              >
-                                {deletingDocument === doc.id ? (
-                                  <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-4 h-4 text-red-600" />
-                                )}
-                              </button>
+                              {!doc.deleted && (
+                                <button
+                                  onClick={() => handleDeleteDocument(doc.id)}
+                                  className="absolute -top-2 -right-2 p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
+                                  disabled={deletingDocument === doc.id}
+                                >
+                                  {deletingDocument === doc.id ? (
+                                    <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  )}
+                                </button>
+                              )}
                             </div>
                           ))}
                       </div>
@@ -447,7 +457,7 @@ const ProfilePage = () => {
                       <h3 className="font-semibold mb-4">FACTURA DE SUMINISTRO ELÉCTRICO:</h3>
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {documents
-                          .filter(doc => doc.document_type === 'invoice' && !doc.deleted)
+                          .filter(doc => doc.document_type === 'invoice' && (!doc.deleted || profile?.role === 'superuser'))
                           .map((doc) => (
                             <div key={doc.id} className="group relative">
                               <a 
@@ -456,26 +466,29 @@ const ProfilePage = () => {
                                 rel="noopener noreferrer"
                                 className="block"
                               >
-                                <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                                <div className={`bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow ${doc.deleted ? 'opacity-50' : ''}`}>
                                   <div className="aspect-square flex items-center justify-center mb-4 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
                                     <FileText className="w-12 h-12 text-green-600" />
                                   </div>
                                   <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
                                     {doc.filename}
+                                    {doc.deleted && <span className="block text-xs text-red-500">(Eliminado)</span>}
                                   </div>
                                 </div>
                               </a>
-                              <button
-                                onClick={() => handleDeleteDocument(doc.id)}
-                                className="absolute -top-2 -right-2 p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
-                                disabled={deletingDocument === doc.id}
-                              >
-                                {deletingDocument === doc.id ? (
-                                  <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-4 h-4 text-red-600" />
-                                )}
-                              </button>
+                              {!doc.deleted && (
+                                <button
+                                  onClick={() => handleDeleteDocument(doc.id)}
+                                  className="absolute -top-2 -right-2 p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
+                                  disabled={deletingDocument === doc.id}
+                                >
+                                  {deletingDocument === doc.id ? (
+                                    <Loader2 className="w-4 h-4 text-red-600 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  )}
+                                </button>
+                              )}
                             </div>
                           ))}
                       </div>
