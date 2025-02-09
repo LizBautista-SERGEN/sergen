@@ -54,14 +54,14 @@ const ServiceControl = () => {
                 <RiskManagement />
               </div>
 
-              <div className="col-span-8">
+              <div className="col-span-7">
                 <PowerCharts 
                   energyData={energyData}
                   date={date}
                 />
               </div>
 
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <ServiceInfo 
                   date={date}
                   setDate={setDate}
@@ -77,3 +77,4 @@ const ServiceControl = () => {
 };
 
 export default ServiceControl;
+
