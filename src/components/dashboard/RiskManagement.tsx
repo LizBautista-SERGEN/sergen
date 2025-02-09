@@ -11,7 +11,7 @@ export const RiskManagement = () => {
         <div className="space-y-2 flex flex-col items-center">
           <div className="text-center w-[200px]">
             <p className="text-sm text-gray-500">Potencia Máxima</p>
-            <p className="text-2xl font-bold text-blue-900">7390.37</p>
+            <p className="text-2xl font-bold text-blue-900 bg-white border border-gray-200 rounded px-4 py-2">7390.37</p>
           </div>
           <div className="text-center w-[200px]">
             <p className="text-sm text-gray-500">Rango horario</p>
