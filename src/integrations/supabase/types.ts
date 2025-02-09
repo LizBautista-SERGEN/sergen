@@ -278,27 +278,36 @@ export type Database = {
       }
       report_templates: {
         Row: {
+          client_name: string | null
+          code: string | null
           content: Json
           created_at: string
           id: string
+          location: string | null
           name: string
           sections_enabled: Json | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          client_name?: string | null
+          code?: string | null
           content: Json
           created_at?: string
           id?: string
+          location?: string | null
           name: string
           sections_enabled?: Json | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          client_name?: string | null
+          code?: string | null
           content?: Json
           created_at?: string
           id?: string
+          location?: string | null
           name?: string
           sections_enabled?: Json | null
           updated_at?: string
