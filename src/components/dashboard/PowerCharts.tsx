@@ -59,17 +59,17 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     }));
   };
 
-  const CustomBackground = ({ x, y, width, selected }: any) => {
-    console.log('CustomBackground props:', { x, y, width, selected }); // Debug log
+  const CustomBackground = ({ x, width, selected }: any) => {
     if (!selected) return null;
     
     return (
       <Rectangle
-        x={x}
+        x={x - 2}  // Ajustado para centrar mejor el fondo
         y={0}
-        width={width}
+        width={width + 4}  // Aumentado para cubrir mejor la barra
         height={300}
-        fill="rgba(0, 0, 0, 0.1)"
+        fill="rgba(255, 165, 0, 0.2)"  // Cambiado a un naranja semi-transparente
+        radius={[4, 4, 0, 0]}  // Agregado bordes redondeados
       />
     );
   };
@@ -115,14 +115,6 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
               formatter={(value) => [`${value} kW`, 'Potencia']}
               labelFormatter={(label) => `Fecha: ${label}`}
             />
-            <Bar dataKey="value">
-              {getBarChartData().map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.color}
-                />
-              ))}
-            </Bar>
             {getBarChartData().map((entry, index) => (
               <CustomBackground
                 key={`background-${index}`}
@@ -131,6 +123,14 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
                 selected={entry.selected}
               />
             ))}
+            <Bar dataKey="value">
+              {getBarChartData().map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={entry.color}
+                />
+              ))}
+            </Bar>
           </BarChart>
         </CardContent>
       </Card>
