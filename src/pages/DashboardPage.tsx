@@ -258,10 +258,6 @@ const DashboardPage = () => {
                 />
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#8E9196]"></div>
-                    <span className="text-sm">Días futuros</span>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#ea384c]"></div>
                     <span className="text-sm">Con modulación</span>
                   </div>
