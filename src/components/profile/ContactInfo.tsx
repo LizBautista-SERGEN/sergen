@@ -7,9 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface ContactInfoProps {
   profile: any;
   onProfileUpdate: () => void;
+  readOnly?: boolean;
 }
 
-export const ContactInfo = ({ profile, onProfileUpdate }: ContactInfoProps) => {
+export const ContactInfo = ({ profile, onProfileUpdate, readOnly = false }: ContactInfoProps) => {
   const { toast } = useToast();
 
   const handleContactUpdate = async (e: React.FormEvent) => {
@@ -62,25 +63,50 @@ export const ContactInfo = ({ profile, onProfileUpdate }: ContactInfoProps) => {
     <form onSubmit={handleContactUpdate} className="grid gap-4">
       <div>
         <label className="font-semibold mb-2 block">NOMBRES Y APELLIDOS:</label>
-        <Input name="contact_name" defaultValue={profile?.contact_name || "Jefferson Rumichi"} />
+        <Input 
+          name="contact_name" 
+          defaultValue={profile?.contact_name || "Jefferson Rumichi"} 
+          readOnly={readOnly}
+          className={readOnly ? "bg-gray-50" : ""}
+        />
       </div>
       <div>
         <label className="font-semibold mb-2 block">CARGO:</label>
-        <Input name="position" defaultValue={profile?.position || "Jefe técnico de planta"} />
+        <Input 
+          name="position" 
+          defaultValue={profile?.position || "Jefe técnico de planta"} 
+          readOnly={readOnly}
+          className={readOnly ? "bg-gray-50" : ""}
+        />
       </div>
       <div>
         <label className="font-semibold mb-2 block">PERFIL:</label>
-        <Input name="profile" defaultValue={profile?.profile || "Técnico electricista"} />
+        <Input 
+          name="profile" 
+          defaultValue={profile?.profile || "Técnico electricista"} 
+          readOnly={readOnly}
+          className={readOnly ? "bg-gray-50" : ""}
+        />
       </div>
       <div>
         <label className="font-semibold mb-2 block">CORREO CORPORATIVO:</label>
-        <Input name="corporate_email" defaultValue={profile?.corporate_email || "jrumichi@ultrafrio.com"} />
+        <Input 
+          name="corporate_email" 
+          defaultValue={profile?.corporate_email || "jrumichi@ultrafrio.com"} 
+          readOnly={readOnly}
+          className={readOnly ? "bg-gray-50" : ""}
+        />
       </div>
       <div>
         <label className="font-semibold mb-2 block">CELULAR:</label>
-        <Input name="phone" defaultValue={profile?.phone || "998765421"} />
+        <Input 
+          name="phone" 
+          defaultValue={profile?.phone || "998765421"} 
+          readOnly={readOnly}
+          className={readOnly ? "bg-gray-50" : ""}
+        />
       </div>
-      <Button type="submit">Actualizar</Button>
+      {!readOnly && <Button type="submit">Actualizar</Button>}
     </form>
   );
 };

@@ -112,7 +112,7 @@ const ProfilePage = () => {
                 </TabsContent>
 
                 <TabsContent value="contacto">
-                  <ContactInfo profile={profile} onProfileUpdate={getProfile} />
+                  <ContactInfo profile={profile} onProfileUpdate={getProfile} readOnly={true} />
                 </TabsContent>
 
                 <TabsContent value="archivos">
