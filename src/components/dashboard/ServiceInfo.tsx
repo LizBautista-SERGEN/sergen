@@ -4,6 +4,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, isFuture, isPast, isSameDay, startOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import { EnergyData } from "@/types/energy";
+import { useEffect, useState } from "react";
 
 interface ServiceInfoProps {
   date: Date | undefined;
@@ -12,6 +13,8 @@ interface ServiceInfoProps {
 }
 
 export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => {
+  const [contractDate, setContractDate] = useState(startOfMonth(new Date()));
+
   const isDateModulated = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayData = energyData.find(data => data.date === dateStr);
@@ -31,9 +34,29 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
     }
   };
 
-  // Obtener el primer día del mes actual
-  const firstDayOfCurrentMonth = startOfMonth(new Date());
-  const formattedContractDate = format(firstDayOfCurrentMonth, 'dd/MM/yyyy');
+  // Efecto para actualizar la fecha cada día a medianoche
+  useEffect(() => {
+    const updateContractDate = () => {
+      setContractDate(startOfMonth(new Date()));
+    };
+
+    // Calcular el tiempo hasta la próxima medianoche
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+
+    // Configurar el primer temporizador para que se ejecute en la próxima medianoche
+    const timer = setTimeout(() => {
+      updateContractDate();
+      // Después de la primera actualización, configurar un intervalo diario
+      const dailyTimer = setInterval(updateContractDate, 24 * 60 * 60 * 1000);
+      return () => clearInterval(dailyTimer);
+    }, timeUntilMidnight);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
@@ -45,7 +68,9 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
           <div className="space-y-2 flex flex-col items-center">
             <div className="text-center w-[200px]">
               <p className="text-sm text-gray-500">Fecha de contratación</p>
-              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">{formattedContractDate}</p>
+              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">
+                {format(contractDate, 'dd/MM/yyyy')}
+              </p>
             </div>
             <div className="text-center w-[200px]">
               <p className="text-sm text-gray-500">Días sin modulación</p>
