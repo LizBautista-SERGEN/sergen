@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, isSameMonth, isSameDay } from "date-fns";
@@ -75,65 +74,69 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   };
 
   return (
-    <>
-      <Card className="mb-6">
-        <CardHeader className="pb-2">
-          <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          <LineChart width={650} height={300} data={getChartData()}>
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Line 
-              type="monotone" 
-              dataKey="Potencia Pronosticada" 
-              stroke="#8884d8" 
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="Potencia Ejecutada" 
-              stroke="#82ca9d" 
-              strokeWidth={2}
-              dot={false}
-            />
-          </LineChart>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle>Historial diario de potencia máxima</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          <BarChart width={650} height={300} data={getBarChartData()}>
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip 
-              formatter={(value) => [`${value} kW`, 'Potencia']}
-              labelFormatter={(label) => `Fecha: ${label}`}
-            />
-            {getBarChartData().map((entry, index) => (
-              <CustomBackground
-                key={`background-${index}`}
-                x={index * (650 / getBarChartData().length)}
-                width={650 / getBarChartData().length}
-                selected={entry.selected}
+    <div className="flex flex-col h-full space-y-6">
+      <div className="flex-1">
+        <Card className="h-full">
+          <CardHeader className="pb-2">
+            <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <LineChart width={650} height={250} data={getChartData()}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Line 
+                type="monotone" 
+                dataKey="Potencia Pronosticada" 
+                stroke="#8884d8" 
+                strokeWidth={2}
+                dot={false}
               />
-            ))}
-            <Bar dataKey="value">
+              <Line 
+                type="monotone" 
+                dataKey="Potencia Ejecutada" 
+                stroke="#82ca9d" 
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex-1">
+        <Card className="h-full">
+          <CardHeader className="pb-2">
+            <CardTitle>Historial diario de potencia máxima</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <BarChart width={650} height={250} data={getBarChartData()}>
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value) => [`${value} kW`, 'Potencia']}
+                labelFormatter={(label) => `Fecha: ${label}`}
+              />
               {getBarChartData().map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.color}
+                <CustomBackground
+                  key={`background-${index}`}
+                  x={index * (650 / getBarChartData().length)}
+                  width={650 / getBarChartData().length}
+                  selected={entry.selected}
                 />
               ))}
-            </Bar>
-          </BarChart>
-        </CardContent>
-      </Card>
-    </>
+              <Bar dataKey="value">
+                {getBarChartData().map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={entry.color}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
