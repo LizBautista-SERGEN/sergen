@@ -11,7 +11,7 @@ interface RiskManagementProps {
 
 export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
   const [maxPower, setMaxPower] = useState<number>(0);
-  const [labelColor, setLabelColor] = useState<string>("#156082"); // Default to blue (not modulated)
+  const [backgroundColor, setBackgroundColor] = useState<string>("#156082"); // Default to blue (not modulated)
 
   useEffect(() => {
     const calculateMaxPower = () => {
@@ -22,8 +22,8 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
       
       if (!dayData) return;
 
-      // Update label color based on modulation state
-      setLabelColor(dayData.is_modulated ? "#C00000" : "#156082");
+      // Update background color based on modulation state
+      setBackgroundColor(dayData.is_modulated ? "#C00000" : "#156082");
 
       // Generate data for the day and find max between 18:00 and 23:00
       const intervals = [];
@@ -54,16 +54,16 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
       <CardContent className="space-y-2">
         <div className="space-y-2 flex flex-col items-center">
           <div className="text-center w-[200px]">
-            <p className="text-sm" style={{ color: labelColor }}>Potencia Máxima</p>
+            <p className="text-[#8E9196] text-sm">Potencia Máxima</p>
             <p className="text-2xl font-bold text-white bg-[#C00000] border border-gray-200 rounded px-4 h-[42px] flex items-center justify-center">{maxPower}</p>
           </div>
           <div className="text-center w-[200px]">
-            <p className="text-sm" style={{ color: labelColor }}>Rango horario</p>
-            <p className="bg-[#156082] text-white px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
+            <p className="text-[#8E9196] text-sm">Rango horario</p>
+            <p style={{ backgroundColor }} className="text-[#8E9196] px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
           </div>
           <div className="text-center w-[200px]">
-            <p className="text-sm" style={{ color: labelColor }}>Riesgo de coincidente</p>
-            <p className="bg-[#156082] text-white px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
+            <p className="text-[#8E9196] text-sm">Riesgo de coincidente</p>
+            <p style={{ backgroundColor }} className="text-[#8E9196] px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
           </div>
         </div>
       </CardContent>
