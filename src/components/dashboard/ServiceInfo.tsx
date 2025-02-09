@@ -23,10 +23,10 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
     modulated: { color: "#ea384c" },
     notModulated: { color: "#34D399" },
     selected: {
-      backgroundColor: "#ea384c",
+      backgroundColor: "#FEC6A1",
       color: "white",
       "&:hover": {
-        backgroundColor: "#ea384c"
+        backgroundColor: "#FEC6A1"
       }
     }
   };
