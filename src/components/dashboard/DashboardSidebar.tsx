@@ -13,7 +13,7 @@ const links = [
   },
   { 
     label: "Gestión Energética", 
-    href: "/gestion",
+    href: "/servicios/control",
     icon: <Plug className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   },
   { 
