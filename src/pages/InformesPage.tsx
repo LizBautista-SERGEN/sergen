@@ -1,4 +1,3 @@
-
 import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff, Calendar } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -143,7 +142,6 @@ const InformesPage = () => {
     setSelectedDate(newDate);
   };
 
-  // Estilo común para todas las páginas A4
   const pageStyle = {
     width: '210mm',
     minHeight: '297mm',
@@ -254,78 +252,72 @@ const InformesPage = () => {
                   </div>
                   <ScrollArea className="h-[700px] border rounded-lg p-4">
                     <div id="report-content" className="space-y-8">
-                      {/* Portada */}
                       <div 
                         data-section="portada" 
-                        className={`relative ${
+                        className={`relative flex flex-col items-center justify-between ${
                           hiddenSections.includes('portada') ? 'opacity-50' : ''
                         }`}
                         style={pageStyle}
                       >
-                        <img 
-                          src="/lovable-uploads/947a546b-d4b6-48e2-affc-ad0488c7d420.png"
-                          alt="Sergen Logo" 
-                          className="mx-auto mb-40 h-32"
-                        />
-                        <div className="space-y-10">
-                          <h1 className="text-4xl font-bold tracking-wider uppercase">{template?.name || 'INFORME DE GESTIÓN ENERGÉTICA'}</h1>
-                          <h2 className="text-3xl font-semibold uppercase">{template?.client_name || 'ULTRA FRIO S.A.C'}</h2>
-                          <p className="text-2xl uppercase">{template?.code || 'CS 06-01-2025'}</p>
+                        <div className="flex flex-col items-center">
+                          <img 
+                            src="/lovable-uploads/947a546b-d4b6-48e2-affc-ad0488c7d420.png"
+                            alt="Sergen Logo" 
+                            className="h-32 mb-40"
+                          />
+                          <div className="space-y-10 text-center">
+                            <h1 className="text-4xl font-bold tracking-wider uppercase">{template?.name || 'INFORME DE GESTIÓN ENERGÉTICA'}</h1>
+                            <h2 className="text-3xl font-semibold uppercase">{template?.client_name || 'ULTRA FRIO S.A.C'}</h2>
+                            <p className="text-2xl uppercase">{template?.code || 'CS 06-01-2025'}</p>
+                          </div>
                         </div>
-                        <div className="absolute bottom-20 left-0 right-0">
+                        <div className="absolute bottom-[30mm] left-0 right-0 text-center">
                           <p className="text-2xl uppercase">{format(selectedDate, 'MMMM yyyy', { locale: es }).toUpperCase()}</p>
                         </div>
                       </div>
 
-                      {/* Contenido del informe */}
-                      <div className="prose max-w-none">
-                        {/* Tarifa */}
-                        <div 
-                          data-section="tarifa" 
-                          className={hiddenSections.includes('tarifa') ? 'opacity-50' : ''}
-                          style={pageStyle}
-                        >
-                          <h3>TARIFA ACTUALIZADA</h3>
-                          <p className="text-gray-600">
-                            [Aquí va el contenido de la sección de tarifa actualizada...]
-                          </p>
-                        </div>
+                      <div 
+                        data-section="tarifa" 
+                        className={hiddenSections.includes('tarifa') ? 'opacity-50' : ''}
+                        style={pageStyle}
+                      >
+                        <h3>TARIFA ACTUALIZADA</h3>
+                        <p className="text-gray-600">
+                          [Aquí va el contenido de la sección de tarifa actualizada...]
+                        </p>
+                      </div>
 
-                        {/* Potencia */}
-                        <div 
-                          data-section="potencia" 
-                          className={hiddenSections.includes('potencia') ? 'opacity-50' : ''}
-                          style={pageStyle}
-                        >
-                          <h3>POTENCIA COINCIDENTE</h3>
-                          <p className="text-gray-600">
-                            [Aquí va el contenido de la sección de potencia coincidente...]
-                          </p>
-                        </div>
+                      <div 
+                        data-section="potencia" 
+                        className={hiddenSections.includes('potencia') ? 'opacity-50' : ''}
+                        style={pageStyle}
+                      >
+                        <h3>POTENCIA COINCIDENTE</h3>
+                        <p className="text-gray-600">
+                          [Aquí va el contenido de la sección de potencia coincidente...]
+                        </p>
+                      </div>
 
-                        {/* Modulaciones */}
-                        <div 
-                          data-section="modulaciones" 
-                          className={hiddenSections.includes('modulaciones') ? 'opacity-50' : ''}
-                          style={pageStyle}
-                        >
-                          <h3>MODULACIONES</h3>
-                          <p className="text-gray-600">
-                            [Aquí va el contenido de la sección de modulaciones...]
-                          </p>
-                        </div>
+                      <div 
+                        data-section="modulaciones" 
+                        className={hiddenSections.includes('modulaciones') ? 'opacity-50' : ''}
+                        style={pageStyle}
+                      >
+                        <h3>MODULACIONES</h3>
+                        <p className="text-gray-600">
+                          [Aquí va el contenido de la sección de modulaciones...]
+                        </p>
+                      </div>
 
-                        {/* Conclusiones */}
-                        <div 
-                          data-section="conclusiones" 
-                          className={hiddenSections.includes('conclusiones') ? 'opacity-50' : ''}
-                          style={pageStyle}
-                        >
-                          <h3>CONCLUSIONES</h3>
-                          <p className="text-gray-600">
-                            [Aquí va el contenido de la sección de conclusiones...]
-                          </p>
-                        </div>
+                      <div 
+                        data-section="conclusiones" 
+                        className={hiddenSections.includes('conclusiones') ? 'opacity-50' : ''}
+                        style={pageStyle}
+                      >
+                        <h3>CONCLUSIONES</h3>
+                        <p className="text-gray-600">
+                          [Aquí va el contenido de la sección de conclusiones...]
+                        </p>
                       </div>
                     </div>
                   </ScrollArea>
@@ -340,4 +332,3 @@ const InformesPage = () => {
 };
 
 export default InformesPage;
-
