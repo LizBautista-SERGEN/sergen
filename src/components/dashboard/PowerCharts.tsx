@@ -55,8 +55,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       ...item,
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#F39200' : 
-             '#156082',
-      backgroundColor: item.selected ? 'rgba(0, 0, 0, 0.1)' : 'transparent'
+             '#156082'
     }));
   };
 
@@ -106,10 +105,15 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.color}
-                  style={{ 
-                    backgroundColor: entry.backgroundColor,
-                    opacity: entry.selected ? 0.8 : 1
-                  }}
+                />
+              ))}
+            </Bar>
+            {/* Add overlay bars for selected state */}
+            <Bar dataKey="value" fill="rgba(0, 0, 0, 0.1)">
+              {getBarChartData().map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={entry.selected ? "rgba(0, 0, 0, 0.1)" : "transparent"}
                 />
               ))}
             </Bar>
@@ -119,3 +123,4 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
+
