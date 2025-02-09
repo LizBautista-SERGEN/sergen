@@ -138,17 +138,17 @@ const DashboardPage = () => {
                 <CardTitle>Información de cliente</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="space-y-2">
-                  <button className="w-full bg-sergen-500 text-white p-2 rounded hover:bg-sergen-600">
+                <div className="space-y-2 flex flex-col items-center">
+                  <button className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 inline-block">
                     Control de demanda
                   </button>
-                  <button className="w-full bg-sergen-500 text-white p-2 rounded hover:bg-sergen-600">
+                  <button className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 inline-block">
                     Ahorro acumulado
                   </button>
-                  <button className="w-full bg-sergen-500 text-white p-2 rounded hover:bg-sergen-600">
+                  <button className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 inline-block">
                     Desagregado de gasto
                   </button>
-                  <button className="w-full bg-sergen-500 text-white p-2 rounded hover:bg-sergen-600">
+                  <button className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 inline-block">
                     Subir factura de energía
                   </button>
                 </div>
@@ -167,11 +167,11 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Rango horario</p>
-                    <p className="bg-blue-900 text-white p-2 rounded text-center">Sin modulación</p>
+                    <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">Sin modulación</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Riesgo de coincidente</p>
-                    <p className="bg-blue-900 text-white p-2 rounded text-center">BAJO</p>
+                    <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">BAJO</p>
                   </div>
                 </div>
               </CardContent>
@@ -219,19 +219,19 @@ const DashboardPage = () => {
                 <div className="space-y-2">
                   <div>
                     <p className="text-sm text-gray-500">Fecha de contratación</p>
-                    <p className="bg-blue-900 text-white p-2 rounded text-center">01/08/2023</p>
+                    <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">01/08/2023</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Días sin modulación</p>
-                    <p className="bg-blue-900 text-white p-2 rounded text-center">15 días</p>
+                    <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">15 días</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Técnico designado</p>
-                    <p className="bg-blue-900 text-white p-2 rounded text-center">Ing. Jose Torres</p>
+                    <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">Ing. Jose Torres</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Fin de suscripción</p>
-                    <p className="bg-blue-900 text-white p-2 rounded text-center">31/08/2024</p>
+                    <p className="bg-blue-900 text-white px-4 py-2 rounded inline-block">31/08/2024</p>
                   </div>
                 </div>
               </CardContent>
