@@ -50,7 +50,7 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
     }
   };
 
-  // Efecto para actualizar la fecha y el contador cada día a medianoche
+  // Efecto para actualizar la fecha y el contador cada día a las 5 PM y al cargar la página
   useEffect(() => {
     const updateData = () => {
       setContractDate(startOfMonth(new Date()));
@@ -60,20 +60,26 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
     // Ejecutar inmediatamente al montar el componente
     updateData();
 
-    // Calcular el tiempo hasta la próxima medianoche
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+    // Calcular el tiempo hasta las 5 PM
+    const calculateTimeUntil5PM = () => {
+      const now = new Date();
+      const next5PM = new Date(now);
+      next5PM.setHours(17, 0, 0, 0);
+      
+      if (now.getHours() >= 17) {
+        next5PM.setDate(next5PM.getDate() + 1);
+      }
+      
+      return next5PM.getTime() - now.getTime();
+    };
 
-    // Configurar el primer temporizador para que se ejecute en la próxima medianoche
+    // Configurar el primer temporizador para que se ejecute a las 5 PM
     const timer = setTimeout(() => {
       updateData();
       // Después de la primera actualización, configurar un intervalo diario
       const dailyTimer = setInterval(updateData, 24 * 60 * 60 * 1000);
       return () => clearInterval(dailyTimer);
-    }, timeUntilMidnight);
+    }, calculateTimeUntil5PM());
 
     return () => clearTimeout(timer);
   }, [energyData]);
