@@ -65,7 +65,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
         y={0}
         width={width + 4}
         height={300}
-        fill="rgba(255, 165, 0, 0.15)"
+        fill="rgba(128, 128, 128, 0.1)"
       />
     );
   };
@@ -133,4 +133,3 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
-
