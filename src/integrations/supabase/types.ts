@@ -9,7 +9,68 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      energy_data: {
+        Row: {
+          consumption: number
+          cost: number
+          created_at: string
+          date: string
+          demand: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          consumption: number
+          cost: number
+          created_at?: string
+          date: string
+          demand: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          consumption?: number
+          cost?: number
+          created_at?: string
+          date?: string
+          demand?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "energy_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          has_access: boolean
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          has_access?: boolean
+          id: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          has_access?: boolean
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +79,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_role: "superuser" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
