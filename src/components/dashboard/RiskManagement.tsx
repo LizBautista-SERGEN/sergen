@@ -32,7 +32,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
       
       if (!dayData) return;
 
-      setBackgroundColor(dayData.is_modulated ? "#156082" : "#C00000");
+      setBackgroundColor(dayData.is_modulated ? "#C00000" : "#156082");
 
       const intervals = [];
       for (let hour = 18; hour <= 23; hour++) {
@@ -52,26 +52,25 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
   }, [date, energyData]);
 
   useEffect(() => {
-    const updateNonModulatedDays = () => {
-      const now = new Date();
-      const monthStart = startOfMonth(now);
-      
-      const nonModulatedCount = energyData.filter(data => {
-        const dataDate = new Date(data.date);
-        return !data.is_modulated && 
-               isAfter(dataDate, monthStart) && 
-               isBefore(dataDate, now);
-      }).length;
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    
+    let count = 0;
+    energyData.forEach(data => {
+      const dataDate = new Date(data.date);
+      if (!data.is_modulated && 
+          isAfter(dataDate, monthStart) && 
+          isBefore(dataDate, now)) {
+        count++;
+      }
+    });
 
-      setNonModulatedDays(nonModulatedCount);
-    };
-
-    updateNonModulatedDays();
+    setNonModulatedDays(count);
   }, [energyData]);
 
   const modifierStyles = {
     future: { color: "#8E9196" },
-    modulated: { color: "#156082" },
+    modulated: { color: "#C00000" },
     notModulated: { color: "#34D399" },
     selected: {
       backgroundColor: "#FEC6A1",
@@ -133,7 +132,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
           />
           <div className="mt-4 space-y-2">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#156082]"></div>
+              <div className="w-3 h-3 rounded-full bg-[#C00000]"></div>
               <span className="text-sm">Con modulación</span>
             </div>
             <div className="flex items-center gap-2">
@@ -146,3 +145,4 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     </>
   );
 };
+
