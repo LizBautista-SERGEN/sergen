@@ -65,9 +65,9 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     return (
       <Rectangle
         x={x}
-        y={y}
+        y={0}
         width={width}
-        height={height}
+        height={300}
         fill="rgba(0, 0, 0, 0.1)"
       />
     );
