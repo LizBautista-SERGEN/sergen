@@ -49,7 +49,7 @@ const CoursePage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase
+      const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select(`
           *,
@@ -73,25 +73,37 @@ const CoursePage = () => {
         .eq('id', courseId)
         .single();
 
-      if (error) {
-        console.error('Error fetching course:', error);
-        throw error;
+      if (courseError) {
+        console.error('Error fetching course:', courseError);
+        throw courseError;
+      }
+
+      const { data: videoProgress, error: videoError } = await supabase
+        .from('user_video_progress')
+        .select('video_index')
+        .eq('course_id', courseId)
+        .eq('user_id', user.id)
+        .eq('completed', true);
+
+      if (videoError) {
+        console.error('Error fetching video progress:', videoError);
+        throw videoError;
       }
 
       // Transform the data to match our Course interface
       const transformedCourse: Course = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        video_url: data.video_url,
-        explanation_videos: Array.isArray(data.explanation_videos) 
-          ? data.explanation_videos.map((video: any) => ({
+        id: courseData.id,
+        title: courseData.title,
+        description: courseData.description,
+        video_url: courseData.video_url,
+        explanation_videos: Array.isArray(courseData.explanation_videos) 
+          ? courseData.explanation_videos.map((video: any) => ({
               title: video.title || '',
               description: video.description || '',
               url: video.url || ''
             }))
           : [],
-        course_units: data.course_units
+        course_units: courseData.course_units
           ?.sort((a: any, b: any) => a.order_index - b.order_index)
           .map((unit: any) => ({
             id: unit.id,
@@ -158,17 +170,21 @@ const CoursePage = () => {
     return <div className="min-h-screen flex items-center justify-center">Curso no encontrado</div>;
   }
 
-  const totalLessons = course.course_units?.reduce(
+  const handleVideoComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['course', courseId] });
+  };
+
+  const totalItems = (course.course_units?.reduce(
     (acc, unit) => acc + unit.lessons.length,
     0
-  ) || 0;
+  ) || 0) + (course.explanation_videos?.length || 0);
 
   const completedLessons = course.course_units?.reduce(
     (acc, unit) => acc + unit.lessons.filter(lesson => lesson.completed).length,
     0
   ) || 0;
 
-  const progress = totalLessons ? (completedLessons / totalLessons) * 100 : 0;
+  const progress = totalItems ? ((completedLessons) / totalItems) * 100 : 0;
 
   const handleLessonClick = (lesson: any) => {
     toggleLessonCompletion.mutate({
@@ -186,7 +202,11 @@ const CoursePage = () => {
             <div className="max-w-4xl mx-auto">
               <CourseHeader title={course.title} description={course.description} />
               <CourseProgress progress={progress} />
-              <ExplanationVideos videos={course.explanation_videos} />
+              <ExplanationVideos 
+                videos={course.explanation_videos} 
+                courseId={course.id}
+                onVideoComplete={handleVideoComplete}
+              />
               <div className="mt-8">
                 <LessonList 
                   units={course.course_units} 

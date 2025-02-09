@@ -373,6 +373,44 @@ export type Database = {
           },
         ]
       }
+      user_video_progress: {
+        Row: {
+          completed: boolean | null
+          course_id: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string | null
+          video_index: number
+        }
+        Insert: {
+          completed?: boolean | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          video_index: number
+        }
+        Update: {
+          completed?: boolean | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          video_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_video_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

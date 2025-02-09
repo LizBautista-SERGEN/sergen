@@ -1,7 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Check, ChevronDown, Play, Video } from "lucide-react";
+import { Check, Video } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ExplanationVideo {
   title: string;
@@ -11,23 +13,78 @@ interface ExplanationVideo {
 
 interface ExplanationVideosProps {
   videos: ExplanationVideo[];
+  courseId: string;
+  onVideoComplete: () => void;
 }
 
-export const ExplanationVideos = ({ videos }: ExplanationVideosProps) => {
-  const [activeVideo, setActiveVideo] = useState<string | null>(null);
+export const ExplanationVideos = ({ videos, courseId, onVideoComplete }: ExplanationVideosProps) => {
   const [watchedVideos, setWatchedVideos] = useState<Set<number>>(new Set());
+  const { toast } = useToast();
 
-  if (!videos || videos.length === 0) {
-    return null;
-  }
+  useEffect(() => {
+    const fetchVideoProgress = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-  const handleVideoComplete = (index: number) => {
+      const { data, error } = await supabase
+        .from('user_video_progress')
+        .select('video_index')
+        .eq('course_id', courseId)
+        .eq('user_id', user.id)
+        .eq('completed', true);
+
+      if (error) {
+        console.error('Error fetching video progress:', error);
+        return;
+      }
+
+      const completedIndexes = new Set(data.map(row => row.video_index));
+      setWatchedVideos(completedIndexes);
+    };
+
+    fetchVideoProgress();
+  }, [courseId]);
+
+  const handleVideoComplete = async (index: number) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('user_video_progress')
+      .upsert({
+        user_id: user.id,
+        course_id: courseId,
+        video_index: index,
+        completed: true
+      });
+
+    if (error) {
+      console.error('Error updating video progress:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el progreso del video.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setWatchedVideos(prev => {
       const newSet = new Set(prev);
       newSet.add(index);
       return newSet;
     });
+    
+    onVideoComplete();
+    
+    toast({
+      title: "Video completado",
+      description: "Tu progreso ha sido actualizado.",
+    });
   };
+
+  if (!videos || videos.length === 0) {
+    return null;
+  }
 
   return (
     <div className="mt-8 bg-white rounded-lg p-6 shadow-sm">
