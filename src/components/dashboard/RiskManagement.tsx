@@ -15,7 +15,7 @@ interface RiskManagementProps {
 export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProps) => {
   const [maxPower, setMaxPower] = useState<number>(0);
   const [backgroundColor, setBackgroundColor] = useState<string>("#156082");
-  const [nonModulatedDays, setNonModulatedDays] = useState(0);
+  const [modulatedDays, setModulatedDays] = useState(0);
 
   const isDateModulated = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -59,7 +59,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     let count = 0;
     energyData.forEach(data => {
       const dataDate = new Date(data.date);
-      if (!data.is_modulated && 
+      if (data.is_modulated && 
           !isFuture(dataDate) &&
           isAfter(dataDate, currentMonth) && 
           isBefore(dataDate, monthEnd)) {
@@ -67,7 +67,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
       }
     });
 
-    setNonModulatedDays(count);
+    setModulatedDays(count);
   }, [energyData]);
 
   const modifierStyles = {
@@ -104,9 +104,9 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
               <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
             </div>
             <div className="text-center w-[200px]">
-              <p className="text-sm text-gray-500">Días sin modulación</p>
-              <p style={{ backgroundColor: '#156082' }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center border">
-                {nonModulatedDays} días
+              <p className="text-sm text-gray-500">Días modulados</p>
+              <p style={{ backgroundColor: '#C00000' }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center border">
+                {modulatedDays} días
               </p>
             </div>
           </div>
