@@ -59,15 +59,21 @@ export const DashboardSidebar = () => {
         "h-full px-4 py-4 flex flex-col bg-white border-r border-gray-200 transition-all",
       )}
       animate={{
-        width: isOpen ? "300px" : "80px", // Increased from 60px to 80px
+        width: isOpen ? "300px" : "80px",
       }}
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="border-b pb-4">
+        <motion.div 
+          className="border-b pb-4"
+          animate={{
+            display: isOpen ? "block" : "none",
+            opacity: isOpen ? 1 : 0,
+          }}
+        >
           <h2 className="text-lg font-semibold px-3">Panel de Control</h2>
-        </div>
+        </motion.div>
         <div className="mt-8 flex flex-col gap-3">
           {links.map((link, idx) => (
             <SidebarLink key={idx} link={link} isOpen={isOpen} />
