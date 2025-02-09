@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
 const CoursePage = () => {
   const { courseId } = useParams();
@@ -36,40 +38,46 @@ const CoursePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <Button 
-          variant="ghost" 
-          className="mb-4 flex items-center gap-2"
-          onClick={() => navigate('/formativa')}
-        >
-          <ChevronLeft className="h-4 w-4" /> Volver
-        </Button>
+    <SidebarProvider>
+      <div className="min-h-screen bg-gray-50 flex w-full">
+        <DashboardSidebar />
+        <div className="flex-1 ml-[80px] hover:ml-[300px] transition-all duration-300">
+          <div className="container mx-auto px-4 py-8">
+            <Button 
+              variant="ghost" 
+              className="mb-4 flex items-center gap-2"
+              onClick={() => navigate('/formativa')}
+            >
+              <ChevronLeft className="h-4 w-4" /> Volver
+            </Button>
 
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-sergen-700 mb-6">{course.title}</h1>
-          
-          {course.video_url ? (
-            <div className="aspect-video w-full mb-6">
-              <iframe
-                src={course.video_url}
-                className="w-full h-full rounded-lg"
-                allowFullScreen
-              />
-            </div>
-          ) : (
-            <div className="aspect-video w-full bg-gray-200 rounded-lg mb-6 flex items-center justify-center">
-              <p className="text-gray-500">No hay video disponible</p>
-            </div>
-          )}
+            <div className="max-w-4xl mx-auto">
+              <h1 className="text-3xl font-bold text-sergen-700 mb-6">{course.title}</h1>
+              
+              {course.video_url ? (
+                <div className="aspect-video w-full mb-6">
+                  <iframe
+                    src={course.video_url}
+                    className="w-full h-full rounded-lg"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <div className="aspect-video w-full bg-gray-200 rounded-lg mb-6 flex items-center justify-center">
+                  <p className="text-gray-500">No hay video disponible</p>
+                </div>
+              )}
 
-          <div className="prose max-w-none">
-            <p className="text-gray-600">{course.description}</p>
+              <div className="prose max-w-none">
+                <p className="text-gray-600">{course.description}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
 export default CoursePage;
+
