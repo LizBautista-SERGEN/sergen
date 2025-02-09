@@ -32,7 +32,6 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const getBarChartData = () => {
     if (!date) return [];
 
-    // Filter data for the current month only
     const currentMonthData = energyData.filter(data => {
       const dataDate = new Date(data.date);
       return isSameMonth(dataDate, date);
@@ -45,19 +44,18 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       selected: date && isSameDay(new Date(data.date), date)
     }));
 
-    // Sort the data by value to find max and second max
     const sortedData = [...data].sort((a, b) => b.value - a.value);
     const maxValue = sortedData[0]?.value;
     const secondMaxValue = sortedData[1]?.value;
 
-    // Add color information to the data
     return data.map(item => ({
       ...item,
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#F39200' : 
              '#156082',
-      borderColor: item.selected ? '#FFA500' : 'transparent',
-      borderWidth: item.selected ? 3 : 0
+      borderColor: item.selected ? 'rgba(255, 165, 0, 0.6)' : 'transparent',
+      borderWidth: item.selected ? 4 : 0,
+      filter: item.selected ? 'drop-shadow(0 0 4px rgba(255, 165, 0, 0.5))' : undefined
     }));
   };
 
@@ -131,6 +129,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
                   fill={entry.color}
                   stroke={entry.borderColor}
                   strokeWidth={entry.borderWidth}
+                  style={{ filter: entry.filter }}
                 />
               ))}
             </Bar>
