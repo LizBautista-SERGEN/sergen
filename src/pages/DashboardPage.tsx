@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -47,23 +48,33 @@ const DashboardPage = () => {
     fetchUserData();
   }, [navigate]);
 
-  // Función para determinar el estilo del día
-  const getDayStyle = (day: Date) => {
-    const today = startOfToday();
-    
-    // Si es un día futuro, retorna gris
-    if (isFuture(day)) {
-      return { color: "#8E9196" };
-    }
+  // Styles for different day states in the calendar
+  const modifierStyles = {
+    custom: {
+      color: "#000000",
+      "&[aria-selected='true']": {
+        color: "white",
+      },
+      "&.future": {
+        color: "#8E9196",
+      },
+      "&.modulated": {
+        color: "#ea384c",
+      },
+      "&.not-modulated": {
+        color: "#34D399",
+      },
+    },
+  };
 
-    // Para días pasados, simulamos la modulación
-    if (isPast(day)) {
-      // Simulamos que los días pares fueron modulados (rojo) y los impares no (verde)
-      const dayOfMonth = parseInt(format(day, 'd'));
-      return { color: dayOfMonth % 2 === 0 ? "#ea384c" : "#34D399" };
+  // Function to determine the class for each day
+  const getDayClassName = (date: Date): string => {
+    if (isFuture(date)) return "future";
+    if (isPast(date)) {
+      const dayOfMonth = parseInt(format(date, 'd'));
+      return dayOfMonth % 2 === 0 ? "modulated" : "not-modulated";
     }
-
-    return { color: "" };
+    return "";
   };
 
   // Sample data for charts
@@ -210,11 +221,12 @@ const DashboardPage = () => {
                   onSelect={setDate}
                   className="rounded-md border"
                   modifiers={{
-                    custom: () => true,
+                    custom: (date) => true,
+                    future: (date) => isFuture(date),
+                    modulated: (date) => isPast(date) && parseInt(format(date, 'd')) % 2 === 0,
+                    'not-modulated': (date) => isPast(date) && parseInt(format(date, 'd')) % 2 !== 0,
                   }}
-                  modifiersStyles={{
-                    custom: getDayStyle,
-                  }}
+                  modifiersStyles={modifierStyles}
                 />
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center gap-2">
