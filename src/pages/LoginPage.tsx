@@ -23,7 +23,7 @@ const LoginPage = () => {
       if (isLogin) {
         // Handle login
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim(),
           password,
         });
 
@@ -45,10 +45,16 @@ const LoginPage = () => {
         }
       } else {
         // Handle signup
+        if (password.length < 6) {
+          toast.error("La contraseña debe tener al menos 6 caracteres");
+          setLoading(false);
+          return;
+        }
+
         const { data: existingProfile } = await supabase
           .from('profiles')
           .select('id')
-          .eq('email', email)
+          .eq('email', email.trim())
           .single();
 
         if (existingProfile) {
@@ -59,12 +65,12 @@ const LoginPage = () => {
         }
 
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             emailRedirectTo: window.location.origin,
             data: {
-              email: email,
+              email: email.trim(),
             }
           }
         });
