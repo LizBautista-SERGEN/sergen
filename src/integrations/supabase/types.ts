@@ -33,6 +33,33 @@ export type Database = {
         }
         Relationships: []
       }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
@@ -202,6 +229,41 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      user_course_progress: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          id: string
+          last_watched_at: string | null
+          progress: number | null
+          user_id: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          last_watched_at?: string | null
+          progress?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          last_watched_at?: string | null
+          progress?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_course_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
