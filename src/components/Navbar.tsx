@@ -1,33 +1,18 @@
-
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const location = useLocation();
-  const isHome = location.pathname === "/";
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
-  const scrollToSection = (sectionId: string) => {
-    if (!isHome) {
-      window.location.href = `/#${sectionId}`;
-      return;
-    }
-
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   const menuItems = [
-    { text: "Inicio", action: () => scrollToSection("hero") },
-    { text: "Nosotros", action: () => scrollToSection("about") },
-    { text: "Servicios", action: () => scrollToSection("services") },
-    { text: "Contacto", action: () => scrollToSection("contact") },
+    { text: "Inicio", href: "/" },
+    { text: "Nosotros", href: "/nosotros" },
+    { text: "Servicios", href: "/servicios" },
+    { text: "Contacto", href: "/contacto" },
     { text: "Iniciar Sesión", href: "/login" },
   ];
 
@@ -45,24 +30,14 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8">
-            {menuItems.map((item, index) => (
-              item.href ? (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className="text-gray-600 hover:text-sergen-500 transition-colors"
-                >
-                  {item.text}
-                </Link>
-              ) : (
-                <button
-                  key={index}
-                  onClick={item.action}
-                  className="text-gray-600 hover:text-sergen-500 transition-colors"
-                >
-                  {item.text}
-                </button>
-              )
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className="text-gray-600 hover:text-sergen-500 transition-colors"
+              >
+                {item.text}
+              </Link>
             ))}
           </div>
 
@@ -85,28 +60,15 @@ const Navbar = () => {
           className="md:hidden bg-white border-t"
         >
           <div className="container mx-auto px-4 py-4 space-y-4">
-            {menuItems.map((item, index) => (
-              item.href ? (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className="block text-gray-600 hover:text-sergen-500 transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item.text}
-                </Link>
-              ) : (
-                <button
-                  key={index}
-                  onClick={() => {
-                    item.action();
-                    setIsOpen(false);
-                  }}
-                  className="block w-full text-left text-gray-600 hover:text-sergen-500 transition-colors"
-                >
-                  {item.text}
-                </button>
-              )
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className="block text-gray-600 hover:text-sergen-500 transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                {item.text}
+              </Link>
             ))}
           </div>
         </motion.div>
