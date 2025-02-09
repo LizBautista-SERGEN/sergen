@@ -1,41 +1,78 @@
 
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Gauge } from "lucide-react";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { ClientInfo } from "@/components/dashboard/ClientInfo";
+import { RiskManagement } from "@/components/dashboard/RiskManagement";
+import { PowerCharts } from "@/components/dashboard/PowerCharts";
+import { ServiceInfo } from "@/components/dashboard/ServiceInfo";
+import { EnergyData } from "@/types/energy";
 
 const ServiceControl = () => {
+  const [userData, setUserData] = useState<any>(null);
+  const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const navigate = useNavigate();
+  const [date, setDate] = useState<Date | undefined>(new Date());
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('energy_data')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching energy data:', error);
+        return;
+      }
+
+      console.log("Fetched energy data:", data);
+      setEnergyData(data || []);
+    };
+
+    fetchUserData();
+  }, [navigate]);
 
   return (
-    <main className="pt-16">
-      <section className="bg-gradient-to-b from-white to-sergen-50/30 py-24">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl mx-auto text-center"
-          >
-            <div className="mb-8 flex justify-center">
-              <div className="h-16 w-16 rounded-full bg-sergen-100 flex items-center justify-center">
-                <Gauge className="h-8 w-8 text-sergen-700" />
+    <SidebarProvider>
+      <div className="min-h-screen bg-gray-50 flex w-full">
+        <DashboardSidebar />
+        <div className="flex-1">
+          <div className="container mx-auto px-2 py-8">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-3">
+                <ClientInfo />
+                <RiskManagement />
+              </div>
+
+              <div className="col-span-6">
+                <PowerCharts 
+                  energyData={energyData}
+                  date={date}
+                />
+              </div>
+
+              <div className="col-span-3">
+                <ServiceInfo 
+                  date={date}
+                  setDate={setDate}
+                  energyData={energyData}
+                />
               </div>
             </div>
-            <h1 className="text-4xl font-bold mb-6">Control de Demanda</h1>
-            <p className="text-lg text-gray-600 mb-8">
-              Optimizamos el consumo energético mediante monitoreo en tiempo real y ajustes automáticos.
-              Implementamos sistemas de control inteligente para maximizar la eficiencia.
-            </p>
-            <Button 
-              onClick={() => navigate("/contacto")}
-              className="bg-sergen-500 text-white hover:bg-sergen-600"
-            >
-              Solicitar Control de Demanda
-            </Button>
-          </motion.div>
+          </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </SidebarProvider>
   );
 };
 
