@@ -49,12 +49,12 @@ const ServiceControl = () => {
         <div className="flex-1">
           <div className="container mx-auto px-2 pt-24 pb-8">
             <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <ClientInfo />
                 <RiskManagement />
               </div>
 
-              <div className="col-span-7">
+              <div className="col-span-6">
                 <PowerCharts 
                   energyData={energyData}
                   date={date}
@@ -77,4 +77,3 @@ const ServiceControl = () => {
 };
 
 export default ServiceControl;
-
