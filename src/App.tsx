@@ -16,6 +16,8 @@ import ServiceDiagnostico from "./pages/ServiceDiagnostico";
 import ServiceControl from "./pages/ServiceControl";
 import ServiceContractual from "./pages/ServiceContractual";
 import ServiceEfficiency from "./pages/ServiceEfficiency";
+import DashboardPage from "./pages/DashboardPage";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,8 @@ const App = () => (
           <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
           <Route path="/contacto" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
