@@ -1,5 +1,5 @@
 
-import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save } from "lucide-react";
+import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Card } from "@/components/ui/card";
@@ -21,22 +21,27 @@ import { Label } from "@/components/ui/label";
 
 const reportSections = [
   {
+    id: "portada",
     title: "PORTADA",
     icon: <Home className="h-5 w-5" />,
   },
   {
+    id: "tarifa",
     title: "TARIFA ACTUALIZADA",
     icon: <FileText className="h-5 w-5" />,
   },
   {
+    id: "potencia",
     title: "POTENCIA COINCIDENTE",
     icon: <ChartBar className="h-5 w-5" />,
   },
   {
+    id: "modulaciones",
     title: "MODULACIONES",
     icon: <LineChart className="h-5 w-5" />,
   },
   {
+    id: "conclusiones",
     title: "CONCLUSIONES",
     icon: <Database className="h-5 w-5" />,
   }
@@ -46,6 +51,7 @@ interface Template {
   id: string;
   name: string;
   content: any;
+  sections_enabled: string[];
 }
 
 const InformesPage = () => {
@@ -53,10 +59,26 @@ const InformesPage = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSuperUser, setIsSuperUser] = useState(false);
+  const [hiddenSections, setHiddenSections] = useState<string[]>([]);
 
   useEffect(() => {
+    checkUserRole();
     loadTemplates();
   }, []);
+
+  const checkUserRole = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+      
+      setIsSuperUser(profile?.role === 'superuser');
+    }
+  };
 
   const loadTemplates = async () => {
     const { data: templates, error } = await supabase
@@ -72,6 +94,7 @@ const InformesPage = () => {
       setTemplates(templates);
       if (templates.length > 0 && !selectedTemplate) {
         setSelectedTemplate(templates[0]);
+        setHiddenSections(templates[0].sections_enabled || []);
       }
     }
   };
@@ -83,6 +106,19 @@ const InformesPage = () => {
       return;
     }
 
+    // Ocultar temporalmente las secciones que no deberían aparecer en el PDF
+    const hiddenElements = content.querySelectorAll('[data-section]');
+    const originalDisplay: { [key: string]: string } = {};
+    
+    hiddenElements.forEach((element: Element) => {
+      const section = element.getAttribute('data-section');
+      if (section && hiddenSections.includes(section)) {
+        const htmlElement = element as HTMLElement;
+        originalDisplay[section] = htmlElement.style.display;
+        htmlElement.style.display = 'none';
+      }
+    });
+
     const opt = {
       margin: 1,
       filename: 'informe-gestion-energetica.pdf',
@@ -92,6 +128,13 @@ const InformesPage = () => {
     };
 
     html2pdf().set(opt).from(content).save().then(() => {
+      // Restaurar la visibilidad de las secciones
+      hiddenElements.forEach((element: Element) => {
+        const section = element.getAttribute('data-section');
+        if (section && originalDisplay[section]) {
+          (element as HTMLElement).style.display = originalDisplay[section];
+        }
+      });
       toast.success("PDF descargado exitosamente");
     }).catch(() => {
       toast.error("Error al descargar el PDF");
@@ -99,6 +142,11 @@ const InformesPage = () => {
   };
 
   const saveAsTemplate = async () => {
+    if (!isSuperUser) {
+      toast.error("No tienes permisos para crear plantillas");
+      return;
+    }
+
     if (!newTemplateName.trim()) {
       toast.error("Por favor ingrese un nombre para la plantilla");
       return;
@@ -118,7 +166,8 @@ const InformesPage = () => {
       .from('report_templates')
       .insert({
         name: newTemplateName,
-        content: templateContent
+        content: templateContent,
+        sections_enabled: hiddenSections
       });
 
     if (error) {
@@ -134,10 +183,19 @@ const InformesPage = () => {
 
   const loadTemplate = (template: Template) => {
     setSelectedTemplate(template);
+    setHiddenSections(template.sections_enabled || []);
     const content = document.getElementById('report-content');
     if (content && template.content.html) {
       content.innerHTML = template.content.html;
     }
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setHiddenSections(prev => 
+      prev.includes(sectionId) 
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId]
+    );
   };
 
   return (
@@ -152,31 +210,33 @@ const InformesPage = () => {
                 <Card className="p-4 mb-4">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="font-semibold">Plantillas</h2>
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Nueva
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Guardar como plantilla</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="name">Nombre de la plantilla</Label>
-                            <Input
-                              id="name"
-                              value={newTemplateName}
-                              onChange={(e) => setNewTemplateName(e.target.value)}
-                              placeholder="Ej: Informe Mensual"
-                            />
+                    {isSuperUser && (
+                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nueva
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Guardar como plantilla</DialogTitle>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="name">Nombre de la plantilla</Label>
+                              <Input
+                                id="name"
+                                value={newTemplateName}
+                                onChange={(e) => setNewTemplateName(e.target.value)}
+                                placeholder="Ej: Informe Mensual"
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <Button onClick={saveAsTemplate}>Guardar plantilla</Button>
-                      </DialogContent>
-                    </Dialog>
+                          <Button onClick={saveAsTemplate}>Guardar plantilla</Button>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
                   <ScrollArea className="h-[200px]">
                     <div className="space-y-2">
@@ -197,15 +257,27 @@ const InformesPage = () => {
                 <Card className="p-4">
                   <h2 className="font-semibold mb-4">Secciones del Informe</h2>
                   <div className="space-y-2">
-                    {reportSections.map((section, idx) => (
-                      <Button
-                        key={idx}
-                        variant="ghost"
-                        className="w-full justify-start gap-2"
-                      >
-                        {section.icon}
-                        {section.title}
-                      </Button>
+                    {reportSections.map((section) => (
+                      <div key={section.id} className="flex items-center justify-between">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start gap-2"
+                        >
+                          {section.icon}
+                          {section.title}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleSection(section.id)}
+                        >
+                          {hiddenSections.includes(section.id) ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </Card>
@@ -226,7 +298,7 @@ const InformesPage = () => {
                   <ScrollArea className="h-[700px] border rounded-lg p-4">
                     <div id="report-content" className="space-y-8">
                       {/* Portada */}
-                      <div className="text-center mb-16">
+                      <div data-section="portada" className={`text-center mb-16 ${hiddenSections.includes('portada') ? 'opacity-50' : ''}`}>
                         <img 
                           src="/public/og-image.png" 
                           alt="Logo" 
@@ -238,25 +310,33 @@ const InformesPage = () => {
                       </div>
 
                       <div className="prose max-w-none">
-                        <h3>TARIFA ACTUALIZADA</h3>
-                        <p className="text-gray-600">
-                          [Aquí va el contenido de la sección de tarifa actualizada...]
-                        </p>
+                        <div data-section="tarifa" className={hiddenSections.includes('tarifa') ? 'opacity-50' : ''}>
+                          <h3>TARIFA ACTUALIZADA</h3>
+                          <p className="text-gray-600">
+                            [Aquí va el contenido de la sección de tarifa actualizada...]
+                          </p>
+                        </div>
 
-                        <h3>POTENCIA COINCIDENTE</h3>
-                        <p className="text-gray-600">
-                          [Aquí va el contenido de la sección de potencia coincidente...]
-                        </p>
+                        <div data-section="potencia" className={hiddenSections.includes('potencia') ? 'opacity-50' : ''}>
+                          <h3>POTENCIA COINCIDENTE</h3>
+                          <p className="text-gray-600">
+                            [Aquí va el contenido de la sección de potencia coincidente...]
+                          </p>
+                        </div>
 
-                        <h3>MODULACIONES</h3>
-                        <p className="text-gray-600">
-                          [Aquí va el contenido de la sección de modulaciones...]
-                        </p>
+                        <div data-section="modulaciones" className={hiddenSections.includes('modulaciones') ? 'opacity-50' : ''}>
+                          <h3>MODULACIONES</h3>
+                          <p className="text-gray-600">
+                            [Aquí va el contenido de la sección de modulaciones...]
+                          </p>
+                        </div>
 
-                        <h3>CONCLUSIONES</h3>
-                        <p className="text-gray-600">
-                          [Aquí va el contenido de la sección de conclusiones...]
-                        </p>
+                        <div data-section="conclusiones" className={hiddenSections.includes('conclusiones') ? 'opacity-50' : ''}>
+                          <h3>CONCLUSIONES</h3>
+                          <p className="text-gray-600">
+                            [Aquí va el contenido de la sección de conclusiones...]
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </ScrollArea>
