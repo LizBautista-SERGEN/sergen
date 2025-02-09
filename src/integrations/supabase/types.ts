@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_path: string
+          filename: string
+          id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_path: string
+          filename: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_path?: string
+          filename?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       energy_data: {
         Row: {
           consumption: number
