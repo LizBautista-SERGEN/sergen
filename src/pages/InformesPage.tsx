@@ -1,3 +1,4 @@
+
 import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff, Calendar } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -129,7 +130,12 @@ const InformesPage = () => {
                     onSelect={(date) => date && setSelectedDate(date)}
                     className="rounded-md border"
                     locale={es}
+                    ISOWeek
+                    captionLayout="dropdown-buttons"
+                    fromYear={2020}
+                    toYear={2030}
                     showOutsideDays={false}
+                    disabled
                   />
                   <div className="mt-4 text-center text-sm text-gray-600">
                     Informe seleccionado: {format(selectedDate, 'MMMM yyyy', { locale: es })}
