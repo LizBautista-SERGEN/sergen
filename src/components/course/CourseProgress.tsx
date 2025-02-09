@@ -14,7 +14,7 @@ export const CourseProgress = ({ progress }: CourseProgressProps) => {
           {Math.round(progress)}% Completado
         </span>
       </div>
-      <Progress value={progress} className="h-2 bg-sergen-100" />
+      <Progress value={progress} className="h-2" indicatorClassName="bg-sergen-500" />
     </div>
   );
 };

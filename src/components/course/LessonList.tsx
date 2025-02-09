@@ -33,18 +33,16 @@ export const LessonList = ({ units, onLessonClick }: LessonListProps) => {
             {unit.lessons.map((lesson) => (
               <div
                 key={lesson.id}
-                className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer group"
                 onClick={() => onLessonClick(lesson)}
               >
-                {lesson.completed ? (
-                  <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                ) : lesson.type === 'video' ? (
-                  <Play className="h-5 w-5 text-sergen-500" />
-                ) : (
-                  <FileText className="h-5 w-5 text-sergen-500" />
-                )}
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                  lesson.completed ? 'bg-sergen-100' : 'bg-gray-100'
+                }`}>
+                  <Check className={`h-4 w-4 ${
+                    lesson.completed ? 'text-sergen-500' : 'text-gray-400'
+                  }`} />
+                </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-medium text-gray-900">
                     {lesson.title}
@@ -55,6 +53,11 @@ export const LessonList = ({ units, onLessonClick }: LessonListProps) => {
                     </p>
                   )}
                 </div>
+                {lesson.type === 'video' ? (
+                  <Play className="h-5 w-5 text-sergen-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                ) : (
+                  <FileText className="h-5 w-5 text-sergen-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
               </div>
             ))}
           </div>
