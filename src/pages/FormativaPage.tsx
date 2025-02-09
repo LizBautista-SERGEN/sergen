@@ -102,16 +102,17 @@ const FormativaPage = () => {
                       <Progress 
                         value={course.progress} 
                         className="h-2 bg-sergen-100"
-                        indicatorClassName="bg-sergen-500"
                       />
-                      <div className="flex justify-between text-sm text-sergen-600">
-                        <span>{course.progress}% COMPLETADO</span>
+                      <div className="flex justify-between items-center">
+                        <img 
+                          src="/lovable-uploads/2b00b0c7-e492-46ef-b7f0-10041a17e58a.png"
+                          alt="Sergen Logo"
+                          className="h-8 object-contain"
+                        />
+                        <span className="text-sm font-medium text-sergen-600">
+                          {course.progress}% COMPLETADO
+                        </span>
                       </div>
-                      <img 
-                        src="/lovable-uploads/ea9befc3-900a-4e50-b495-f97ddfcc7cb4.png"
-                        alt="Sergen Logo"
-                        className="h-8 object-contain mx-auto"
-                      />
                     </div>
                   </div>
                 </Card>
