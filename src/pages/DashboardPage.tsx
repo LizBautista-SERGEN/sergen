@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -226,7 +227,7 @@ const DashboardPage = () => {
                     future: (date) => isFuture(date),
                     modulated: (date) => isPast(date) && isDateModulated(date),
                     notModulated: (date) => isPast(date) && !isDateModulated(date),
-                    selected: (date) => date === date
+                    selected: (date) => date?.toDateString() === date?.toDateString()
                   }}
                   modifiersStyles={modifierStyles}
                 />
@@ -254,3 +255,4 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+
