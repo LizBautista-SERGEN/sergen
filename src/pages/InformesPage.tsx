@@ -1,4 +1,3 @@
-
 import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff, Calendar } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -47,7 +46,6 @@ const InformesPage = () => {
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
   const [isSuperUser, setIsSuperUser] = useState(false);
 
-  // Fetch report template
   const { data: template } = useQuery({
     queryKey: ['reportTemplate'],
     queryFn: async () => {
@@ -256,7 +254,6 @@ const InformesPage = () => {
                           <p className="text-2xl uppercase">{template?.code || 'CS 06-01-2025'}</p>
                           <div className="mt-80">
                             <p className="text-2xl uppercase">{format(selectedDate, 'MMMM yyyy', { locale: es }).toUpperCase()}</p>
-                            <p className="text-2xl uppercase mt-4">{template?.location || 'LIMA'}</p>
                           </div>
                         </div>
                       </div>
