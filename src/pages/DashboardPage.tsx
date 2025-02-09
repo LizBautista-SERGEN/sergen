@@ -150,7 +150,7 @@ const DashboardPage = () => {
                     Desagregado de gasto
                   </button>
                   <button className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 w-[200px]">
-                    Subir factura de energía
+                    Subir factura
                   </button>
                 </div>
               </CardContent>
