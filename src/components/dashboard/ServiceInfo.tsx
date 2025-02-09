@@ -40,19 +40,19 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
         <CardContent className="space-y-2">
           <div className="space-y-2 flex flex-col items-center">
             <div className="text-center w-[200px]">
-              <p className="text-sm text-gray-500">Fecha de contratación</p>
+              <p className="text-sm text-[#156082]">Fecha de contratación</p>
               <p className="bg-blue-900 text-white px-4 py-2 rounded w-full">01/08/2023</p>
             </div>
             <div className="text-center w-[200px]">
-              <p className="text-sm text-gray-500">Días sin modulación</p>
+              <p className="text-sm text-[#156082]">Días sin modulación</p>
               <p className="bg-blue-900 text-white px-4 py-2 rounded w-full">15 días</p>
             </div>
             <div className="text-center w-[200px]">
-              <p className="text-sm text-gray-500">Técnico designado</p>
+              <p className="text-sm text-[#156082]">Técnico designado</p>
               <p className="bg-blue-900 text-white px-4 py-2 rounded w-full">Ing. Jose Torres</p>
             </div>
             <div className="text-center w-[200px]">
-              <p className="text-sm text-gray-500">Fin de suscripción</p>
+              <p className="text-sm text-[#156082]">Fin de suscripción</p>
               <p className="bg-blue-900 text-white px-4 py-2 rounded w-full">31/08/2024</p>
             </div>
           </div>
