@@ -52,10 +52,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       ...item,
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#f39200' : 
-             '#156082',
-      borderColor: item.selected ? '#5F5F5F' : 'transparent',
-      borderWidth: item.selected ? 4 : 0,
-      filter: item.selected ? 'drop-shadow(0 0 4px rgba(95, 95, 95, 0.5))' : undefined
+             '#156082'
     }));
   };
 
@@ -127,9 +124,6 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.color}
-                  stroke={entry.borderColor}
-                  strokeWidth={entry.borderWidth}
-                  style={{ filter: entry.filter }}
                 />
               ))}
             </Bar>
