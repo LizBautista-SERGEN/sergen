@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isFuture, isPast, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, lastDayOfMonth } from "date-fns";
@@ -14,7 +13,6 @@ interface ServiceInfoProps {
 
 export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => {
   const [contractDate, setContractDate] = useState(startOfMonth(new Date()));
-  const [nonModulatedDays, setNonModulatedDays] = useState(0);
   const [subscriptionEndDate, setSubscriptionEndDate] = useState(lastDayOfMonth(new Date()));
 
   const isDateModulated = (date: Date): boolean => {
@@ -23,41 +21,12 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
     return dayData?.is_modulated || false;
   };
 
-  const countNonModulatedDays = () => {
-    const start = startOfMonth(new Date());
-    const end = endOfMonth(new Date());
-    const daysInMonth = eachDayOfInterval({ start, end });
-    
-    const count = daysInMonth.reduce((acc, day) => {
-      if (isPast(day) && !isDateModulated(day)) {
-        return acc + 1;
-      }
-      return acc;
-    }, 0);
-
-    setNonModulatedDays(count);
-  };
-
-  const modifierStyles = {
-    future: { color: "#8E9196" },
-    modulated: { color: "#C00000" },
-    notModulated: { color: "#34D399" },
-    selected: {
-      backgroundColor: "#FEC6A1",
-      color: "white",
-      "&:hover": {
-        backgroundColor: "#FEC6A1"
-      }
-    }
-  };
-
-  // Efecto para actualizar la fecha y el contador cada día a las 5 PM y al cargar la página
+  // Efecto para actualizar la fecha cada día a las 5 PM y al cargar la página
   useEffect(() => {
     const updateData = () => {
       const now = new Date();
       setContractDate(startOfMonth(now));
       setSubscriptionEndDate(lastDayOfMonth(now));
-      countNonModulatedDays();
     };
 
     // Ejecutar inmediatamente al montar el componente
@@ -99,12 +68,6 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
               <p className="text-sm text-gray-500">Fecha de contratación</p>
               <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">
                 {format(contractDate, 'dd/MM/yyyy')}
-              </p>
-            </div>
-            <div className="text-center w-[200px]">
-              <p className="text-sm text-gray-500">Días sin modulación</p>
-              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">
-                {nonModulatedDays} días
               </p>
             </div>
             <div className="text-center w-[200px]">

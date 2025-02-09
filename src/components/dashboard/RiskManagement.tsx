@@ -12,6 +12,7 @@ interface RiskManagementProps {
 export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
   const [maxPower, setMaxPower] = useState<number>(0);
   const [backgroundColor, setBackgroundColor] = useState<string>("#156082"); // Default to blue (not modulated)
+  const [nonModulatedDays, setNonModulatedDays] = useState(0);
 
   useEffect(() => {
     const calculateMaxPower = () => {
@@ -35,6 +36,10 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
       
       const maxValue = Math.max(...intervals);
       setMaxPower(Number(maxValue.toFixed(2)));
+
+      // Count non-modulated days
+      const nonModulatedCount = energyData.filter(data => !data.is_modulated).length;
+      setNonModulatedDays(nonModulatedCount);
     };
 
     // Calculate initial values
@@ -59,14 +64,21 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
           </div>
           <div className="text-center w-[200px]">
             <p className="text-[#8E9196] text-sm">Rango horario</p>
-            <p style={{ backgroundColor }} className="text-[#8E9196] px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
+            <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
           </div>
           <div className="text-center w-[200px]">
             <p className="text-[#8E9196] text-sm">Riesgo de coincidente</p>
-            <p style={{ backgroundColor }} className="text-[#8E9196] px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
+            <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
+          </div>
+          <div className="text-center w-[200px]">
+            <p className="text-sm text-gray-500">Días sin modulación</p>
+            <p style={{ backgroundColor: '#156082' }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center border">
+              {nonModulatedDays} días
+            </p>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 };
+
