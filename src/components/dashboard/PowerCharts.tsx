@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, isSameMonth, isSameDay } from "date-fns";
@@ -75,13 +76,13 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
 
   return (
     <div className="flex flex-col h-full space-y-6">
-      <div className="flex-1">
+      <div className="h-[calc(50%-1.5rem)]">
         <Card className="h-full">
           <CardHeader className="pb-2">
             <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <LineChart width={650} height={250} data={getChartData()}>
+            <LineChart width={650} height={200} data={getChartData()}>
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
@@ -104,13 +105,13 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
         </Card>
       </div>
 
-      <div className="flex-1">
+      <div className="h-[calc(50%-1.5rem)]">
         <Card className="h-full">
           <CardHeader className="pb-2">
             <CardTitle>Historial diario de potencia máxima</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <BarChart width={650} height={250} data={getBarChartData()}>
+            <BarChart width={650} height={200} data={getBarChartData()}>
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip 
