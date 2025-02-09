@@ -24,7 +24,6 @@ const FormativaPage = () => {
     queryFn: async () => {
       const { data: user } = await supabase.auth.getUser();
       
-      // Fetch courses with progress
       const { data, error } = await supabase
         .from('courses')
         .select(`
@@ -50,8 +49,7 @@ const FormativaPage = () => {
   });
 
   const handleCourseClick = (courseId: string) => {
-    // TODO: Navigate to course content page
-    console.log('Navigating to course:', courseId);
+    navigate(`/curso/${courseId}`);
   };
 
   return (
@@ -74,7 +72,6 @@ const FormativaPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
-                // Loading skeleton
                 [...Array(3)].map((_, idx) => (
                   <Card key={idx} className="overflow-hidden">
                     <Skeleton className="h-48 w-full" />
@@ -85,7 +82,7 @@ const FormativaPage = () => {
                     </div>
                   </Card>
                 ))
-              ) : courses?.map((course, idx) => (
+              ) : courses?.map((course) => (
                 <Card 
                   key={course.id} 
                   className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
@@ -101,7 +98,7 @@ const FormativaPage = () => {
                   <div className="p-4">
                     <h3 className="font-semibold text-lg mb-2 text-sergen-700">{course.title}</h3>
                     <p className="text-sm text-gray-600 mb-4">{course.description}</p>
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                       <Progress 
                         value={course.progress} 
                         className="h-2 bg-sergen-100"
@@ -110,6 +107,11 @@ const FormativaPage = () => {
                       <div className="flex justify-between text-sm text-sergen-600">
                         <span>{course.progress}% COMPLETADO</span>
                       </div>
+                      <img 
+                        src="/lovable-uploads/ea9befc3-900a-4e50-b495-f97ddfcc7cb4.png"
+                        alt="Sergen Logo"
+                        className="h-8 object-contain mx-auto"
+                      />
                     </div>
                   </div>
                 </Card>
