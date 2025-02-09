@@ -41,19 +41,19 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
           <div className="space-y-2 flex flex-col items-center">
             <div className="text-center w-[200px]">
               <p style={{ color: '#156082' }} className="text-sm font-medium">Fecha de contratación</p>
-              <p className="bg-blue-900 text-white px-4 py-2 rounded w-full">01/08/2023</p>
+              <p style={{ color: '#156082', backgroundColor: 'white' }} className="px-4 py-2 rounded w-full border">01/08/2023</p>
             </div>
             <div className="text-center w-[200px]">
               <p style={{ color: '#156082' }} className="text-sm font-medium">Días sin modulación</p>
-              <p className="bg-blue-900 text-white px-4 py-2 rounded w-full">15 días</p>
+              <p style={{ color: '#156082', backgroundColor: 'white' }} className="px-4 py-2 rounded w-full border">15 días</p>
             </div>
             <div className="text-center w-[200px]">
               <p style={{ color: '#156082' }} className="text-sm font-medium">Técnico designado</p>
-              <p className="bg-blue-900 text-white px-4 py-2 rounded w-full">Ing. Jose Torres</p>
+              <p style={{ color: '#156082', backgroundColor: 'white' }} className="px-4 py-2 rounded w-full border">Ing. Jose Torres</p>
             </div>
             <div className="text-center w-[200px]">
               <p style={{ color: '#156082' }} className="text-sm font-medium">Fin de suscripción</p>
-              <p className="bg-blue-900 text-white px-4 py-2 rounded w-full">31/08/2024</p>
+              <p style={{ color: '#156082', backgroundColor: 'white' }} className="px-4 py-2 rounded w-full border">31/08/2024</p>
             </div>
           </div>
         </CardContent>
