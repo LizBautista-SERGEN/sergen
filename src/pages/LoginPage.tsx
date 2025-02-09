@@ -21,6 +21,20 @@ const LoginPage = () => {
 
     try {
       if (isLogin) {
+        // First check if the user exists
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email)
+          .single();
+
+        if (!existingUser) {
+          toast.error("No existe una cuenta con este correo. Por favor regístrese primero.");
+          setIsLogin(false);
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -70,8 +84,9 @@ const LoginPage = () => {
         errorMessage = 'Demasiados intentos. Por favor, espere unos minutos.';
       } else if (error.message.includes('User already registered')) {
         errorMessage = 'Este correo ya está registrado. Por favor, inicie sesión.';
+        setIsLogin(true);
       } else if (error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Credenciales inválidas. Por favor, verifique sus datos.';
+        errorMessage = 'Contraseña incorrecta. Por favor, verifique sus datos.';
       } else if (error.message.includes('Password should be at least 6 characters')) {
         errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
       } else if (error.message.includes('Email not confirmed')) {
