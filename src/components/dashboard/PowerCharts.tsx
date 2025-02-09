@@ -54,7 +54,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     return data.map(item => ({
       ...item,
       color: item.value === maxValue ? '#C00000' : 
-             item.value === secondMaxValue ? '#FFC000' : 
+             item.value === secondMaxValue ? '#F39200' : 
              '#156082'
     }));
   };
@@ -114,3 +114,4 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
+
