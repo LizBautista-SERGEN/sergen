@@ -11,7 +11,7 @@ interface RiskManagementProps {
 
 export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
   const [maxPower, setMaxPower] = useState<number>(0);
-  const [labelColor, setLabelColor] = useState<string>("#888888");
+  const [labelColor, setLabelColor] = useState<string>("#156082"); // Default to blue (not modulated)
 
   useEffect(() => {
     const calculateMaxPower = () => {
@@ -22,7 +22,10 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
       
       if (!dayData) return;
 
-      // Generar datos para el día y encontrar el máximo entre 18:00 y 23:00
+      // Update label color based on modulation state
+      setLabelColor(dayData.is_modulated ? "#C00000" : "#156082");
+
+      // Generate data for the day and find max between 18:00 and 23:00
       const intervals = [];
       for (let hour = 18; hour <= 23; hour++) {
         for (let minute = 0; minute < 60; minute += 15) {
@@ -34,35 +37,11 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
       setMaxPower(Number(maxValue.toFixed(2)));
     };
 
-    // Actualizar los valores
+    // Calculate initial values
     calculateMaxPower();
 
-    // Actualizar el color basado en la hora
-    const updateLabelColor = () => {
-      const now = new Date();
-      const hour = now.getHours();
-      
-      if (hour >= 17) { // 5 PM
-        // Obtener el color del calendario
-        const calendarColor = "#888888"; // Color por defecto
-        setLabelColor(calendarColor);
-      }
-    };
-
-    updateLabelColor();
-
-    // Configurar actualizaciones automáticas
-    const checkTime = () => {
-      const now = new Date();
-      const hour = now.getHours();
-      if (hour === 17) { // 5 PM
-        calculateMaxPower();
-        updateLabelColor();
-      }
-    };
-
-    // Configurar el intervalo para verificar cada hora
-    const interval = setInterval(checkTime, 3600000); // 1 hora en milisegundos
+    // Set up automatic updates when data changes
+    const interval = setInterval(calculateMaxPower, 60000); // Check every minute
 
     return () => clearInterval(interval);
   }, [date, energyData]);
