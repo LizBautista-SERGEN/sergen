@@ -19,6 +19,7 @@ interface User {
   email: string;
   role: string;
   created_at: string;
+  has_access: boolean;
 }
 
 const AdminDashboard = () => {
