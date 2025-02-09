@@ -24,8 +24,8 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       
       chartData.push({
         name: format(currentDate, 'dd/MM'),
-        value: dayData?.demand || 0,
-        consumption: dayData?.consumption || 0
+        "Potencia Pronosticada": dayData?.demand || 0,
+        "Potencia Ejecutada": dayData?.consumption || 0
       });
 
       currentDate = addDays(currentDate, 1);
@@ -69,7 +69,18 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Line type="monotone" dataKey="value" stroke="#8884d8" />
+            <Line 
+              type="monotone" 
+              dataKey="Potencia Pronosticada" 
+              stroke="#8884d8" 
+              strokeWidth={2}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="Potencia Ejecutada" 
+              stroke="#82ca9d" 
+              strokeWidth={2}
+            />
           </LineChart>
         </CardContent>
       </Card>
