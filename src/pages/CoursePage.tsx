@@ -20,31 +20,31 @@ const CoursePage = () => {
     queryKey: ['course', courseId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
       
       const { data, error } = await supabase
         .from('courses')
         .select(`
           *,
-          course_units (
+          course_units!course_units_course_id_fkey (
             id,
             title,
             order_index,
-            lessons (
+            lessons!lessons_unit_id_fkey (
               id,
               title,
               type,
               duration,
               video_url,
               order_index,
-              user_lesson_progress (
+              user_lesson_progress!user_lesson_progress_lesson_id_fkey (
                 completed
               )
             )
           )
         `)
         .eq('id', courseId)
-        .order('order_index')
-        .throwOnError()
+        .order('order_index', { foreignTable: 'course_units.lessons' })
         .single();
 
       if (error) {
