@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
-import { format, isFuture, isPast, isSameDay } from "date-fns";
+import { format, isFuture, isPast, isSameDay, subDays, addDays } from "date-fns";
 import { es } from 'date-fns/locale';
 
 interface EnergyData {
@@ -78,25 +78,56 @@ const DashboardPage = () => {
     }
   };
 
-  const lineChartData = [
-    { name: 'Aug 19', value: 6500 },
-    { name: 'Aug 20', value: 7000 },
-    { name: 'Aug 21', value: 6800 },
-    { name: 'Aug 22', value: 7200 },
-    { name: 'Aug 23', value: 6900 },
-    { name: 'Aug 24', value: 7100 },
-    { name: 'Aug 25', value: 6700 },
-  ];
+  const getChartData = () => {
+    if (!date) return [];
 
-  const barChartData = [
-    { date: '01/08', value: 7200 },
-    { date: '02/08', value: 7100 },
-    { date: '03/08', value: 7300 },
-    { date: '04/08', value: 7000 },
-    { date: '05/08', value: 7400 },
-    { date: '06/08', value: 7200 },
-    { date: '07/08', value: 7500 },
-  ];
+    // Get 3 days before and 3 days after the selected date
+    const startDate = subDays(date, 3);
+    const endDate = addDays(date, 3);
+    
+    const chartData = [];
+    let currentDate = startDate;
+
+    while (currentDate <= endDate) {
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      const dayData = energyData.find(data => data.date === dateStr);
+      
+      chartData.push({
+        name: format(currentDate, 'dd/MM'),
+        value: dayData?.demand || 0,
+        consumption: dayData?.consumption || 0
+      });
+
+      currentDate = addDays(currentDate, 1);
+    }
+
+    return chartData;
+  };
+
+  const getBarChartData = () => {
+    if (!date) return [];
+
+    // Get 7 days before the selected date for historical data
+    const startDate = subDays(date, 6);
+    const endDate = date;
+    
+    const chartData = [];
+    let currentDate = startDate;
+
+    while (currentDate <= endDate) {
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      const dayData = energyData.find(data => data.date === dateStr);
+      
+      chartData.push({
+        date: format(currentDate, 'dd/MM'),
+        value: dayData?.demand || 0
+      });
+
+      currentDate = addDays(currentDate, 1);
+    }
+
+    return chartData;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
@@ -154,7 +185,7 @@ const DashboardPage = () => {
                 <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
               </CardHeader>
               <CardContent>
-                <LineChart width={600} height={300} data={lineChartData}>
+                <LineChart width={600} height={300} data={getChartData()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -169,7 +200,7 @@ const DashboardPage = () => {
                 <CardTitle>Historial diario de potencia máxima</CardTitle>
               </CardHeader>
               <CardContent>
-                <BarChart width={600} height={300} data={barChartData}>
+                <BarChart width={600} height={300} data={getBarChartData()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
