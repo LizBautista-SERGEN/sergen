@@ -276,6 +276,33 @@ export type Database = {
         }
         Relationships: []
       }
+      report_numbers: {
+        Row: {
+          created_at: string
+          id: string
+          month: number
+          report_number: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: number
+          report_number: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: number
+          report_number?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       report_templates: {
         Row: {
           client_name: string | null

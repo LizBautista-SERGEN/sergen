@@ -45,6 +45,8 @@ const InformesPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
   const [isSuperUser, setIsSuperUser] = useState(false);
+  const [reportNumber, setReportNumber] = useState<number | null>(null);
+  const [profile, setProfile] = useState<any>(null);
 
   const { data: template } = useQuery({
     queryKey: ['reportTemplate'],
@@ -64,7 +66,12 @@ const InformesPage = () => {
 
   useEffect(() => {
     checkUserRole();
+    fetchProfile();
   }, []);
+
+  useEffect(() => {
+    fetchReportNumber();
+  }, [selectedDate]);
 
   const checkUserRole = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -77,6 +84,80 @@ const InformesPage = () => {
       
       setIsSuperUser(profile?.role === 'superuser');
     }
+  };
+
+  const fetchProfile = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        toast.error("Error al cargar la información del perfil");
+        return;
+      }
+
+      setProfile(data);
+    }
+  };
+
+  const fetchReportNumber = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth() + 1;
+
+    // First, try to get existing report number
+    const { data: existingReport, error: fetchError } = await supabase
+      .from('report_numbers')
+      .select('report_number')
+      .eq('user_id', session.user.id)
+      .eq('year', year)
+      .eq('month', month)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      toast.error("Error al obtener el número de informe");
+      return;
+    }
+
+    if (existingReport) {
+      setReportNumber(existingReport.report_number);
+      return;
+    }
+
+    // If no report exists for this month, get the last report number
+    const { data: lastReport, error: lastReportError } = await supabase
+      .from('report_numbers')
+      .select('report_number')
+      .eq('user_id', session.user.id)
+      .order('year', { ascending: false })
+      .order('month', { ascending: false })
+      .limit(1)
+      .single();
+
+    const newReportNumber = (lastReport?.report_number || 0) + 1;
+
+    // Insert new report number
+    const { error: insertError } = await supabase
+      .from('report_numbers')
+      .insert({
+        user_id: session.user.id,
+        year,
+        month,
+        report_number: newReportNumber
+      });
+
+    if (insertError) {
+      toast.error("Error al generar el número de informe");
+      return;
+    }
+
+    setReportNumber(newReportNumber);
   };
 
   const handleDownloadPDF = () => {
@@ -259,16 +340,22 @@ const InformesPage = () => {
                         }`}
                         style={pageStyle}
                       >
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center w-full">
                           <img 
                             src="/lovable-uploads/947a546b-d4b6-48e2-affc-ad0488c7d420.png"
                             alt="Sergen Logo" 
                             className="h-32 mb-40"
                           />
                           <div className="space-y-10 text-center">
-                            <h1 className="text-4xl font-bold tracking-wider uppercase">{template?.name || 'INFORME DE GESTIÓN ENERGÉTICA'}</h1>
-                            <h2 className="text-3xl font-semibold uppercase">{template?.client_name || 'ULTRA FRIO S.A.C'}</h2>
-                            <p className="text-2xl uppercase">{template?.code || 'CS 06-01-2025'}</p>
+                            <h1 className="text-4xl font-bold tracking-wider uppercase">
+                              {template?.name || 'INFORME DE GESTIÓN ENERGÉTICA'}
+                            </h1>
+                            <h2 className="text-3xl font-semibold uppercase">
+                              {profile?.business_name || 'Cargando...'}
+                            </h2>
+                            <p className="text-2xl uppercase">
+                              INF-{reportNumber?.toString().padStart(3, '0') || '000'}-{format(selectedDate, 'MM-yyyy')}
+                            </p>
                           </div>
                         </div>
                         <div className="absolute bottom-[30mm] left-0 right-0 text-center">
