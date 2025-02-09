@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -54,17 +53,17 @@ const DashboardPage = () => {
     
     // Si es un día futuro, retorna gris
     if (isFuture(day)) {
-      return "text-[#8E9196]";
+      return { color: "#8E9196" };
     }
 
-    // Para días pasados, simulamos la modulación (aquí puedes usar tus datos reales)
+    // Para días pasados, simulamos la modulación
     if (isPast(day)) {
       // Simulamos que los días pares fueron modulados (rojo) y los impares no (verde)
       const dayOfMonth = parseInt(format(day, 'd'));
-      return dayOfMonth % 2 === 0 ? "text-[#ea384c]" : "text-[#34D399]";
+      return { color: dayOfMonth % 2 === 0 ? "#ea384c" : "#34D399" };
     }
 
-    return "";
+    return { color: "" };
   };
 
   // Sample data for charts
@@ -211,12 +210,10 @@ const DashboardPage = () => {
                   onSelect={setDate}
                   className="rounded-md border"
                   modifiers={{
-                    custom: (date) => true,
+                    custom: () => true,
                   }}
                   modifiersStyles={{
-                    custom: (date) => ({
-                      color: getDayStyle(date),
-                    }),
+                    custom: getDayStyle,
                   }}
                 />
                 <div className="mt-4 space-y-2">
