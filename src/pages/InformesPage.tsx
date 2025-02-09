@@ -100,11 +100,11 @@ const InformesPage = () => {
     });
 
     const opt = {
-      margin: 1,
+      margin: 0,
       filename: `informe-gestion-energetica-${format(selectedDate, 'MMMM-yyyy', { locale: es })}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     html2pdf().set(opt).from(content).save().then(() => {
@@ -141,6 +141,17 @@ const InformesPage = () => {
     const newDate = new Date(selectedDate);
     newDate.setFullYear(parseInt(year));
     setSelectedDate(newDate);
+  };
+
+  // Estilo común para todas las páginas A4
+  const pageStyle = {
+    width: '210mm',
+    minHeight: '297mm',
+    margin: '0 auto',
+    padding: '20mm',
+    backgroundColor: 'white',
+    boxSizing: 'border-box' as const,
+    pageBreakAfter: 'always' as const,
   };
 
   return (
@@ -246,14 +257,10 @@ const InformesPage = () => {
                       {/* Portada */}
                       <div 
                         data-section="portada" 
-                        className={`text-center min-h-[1056px] relative bg-white break-after-page ${
+                        className={`relative ${
                           hiddenSections.includes('portada') ? 'opacity-50' : ''
                         }`}
-                        style={{ 
-                          width: '8.5in',
-                          margin: '0 auto',
-                          padding: '0.5in'
-                        }}
+                        style={pageStyle}
                       >
                         <img 
                           src="/lovable-uploads/947a546b-d4b6-48e2-affc-ad0488c7d420.png"
@@ -275,14 +282,8 @@ const InformesPage = () => {
                         {/* Tarifa */}
                         <div 
                           data-section="tarifa" 
-                          className={`min-h-[1056px] bg-white break-after-page ${
-                            hiddenSections.includes('tarifa') ? 'opacity-50' : ''
-                          }`}
-                          style={{ 
-                            width: '8.5in',
-                            margin: '0 auto',
-                            padding: '0.5in'
-                          }}
+                          className={hiddenSections.includes('tarifa') ? 'opacity-50' : ''}
+                          style={pageStyle}
                         >
                           <h3>TARIFA ACTUALIZADA</h3>
                           <p className="text-gray-600">
@@ -293,14 +294,8 @@ const InformesPage = () => {
                         {/* Potencia */}
                         <div 
                           data-section="potencia" 
-                          className={`min-h-[1056px] bg-white break-after-page ${
-                            hiddenSections.includes('potencia') ? 'opacity-50' : ''
-                          }`}
-                          style={{ 
-                            width: '8.5in',
-                            margin: '0 auto',
-                            padding: '0.5in'
-                          }}
+                          className={hiddenSections.includes('potencia') ? 'opacity-50' : ''}
+                          style={pageStyle}
                         >
                           <h3>POTENCIA COINCIDENTE</h3>
                           <p className="text-gray-600">
@@ -311,14 +306,8 @@ const InformesPage = () => {
                         {/* Modulaciones */}
                         <div 
                           data-section="modulaciones" 
-                          className={`min-h-[1056px] bg-white break-after-page ${
-                            hiddenSections.includes('modulaciones') ? 'opacity-50' : ''
-                          }`}
-                          style={{ 
-                            width: '8.5in',
-                            margin: '0 auto',
-                            padding: '0.5in'
-                          }}
+                          className={hiddenSections.includes('modulaciones') ? 'opacity-50' : ''}
+                          style={pageStyle}
                         >
                           <h3>MODULACIONES</h3>
                           <p className="text-gray-600">
@@ -329,14 +318,8 @@ const InformesPage = () => {
                         {/* Conclusiones */}
                         <div 
                           data-section="conclusiones" 
-                          className={`min-h-[1056px] bg-white ${
-                            hiddenSections.includes('conclusiones') ? 'opacity-50' : ''
-                          }`}
-                          style={{ 
-                            width: '8.5in',
-                            margin: '0 auto',
-                            padding: '0.5in'
-                          }}
+                          className={hiddenSections.includes('conclusiones') ? 'opacity-50' : ''}
+                          style={pageStyle}
                         >
                           <h3>CONCLUSIONES</h3>
                           <p className="text-gray-600">
@@ -357,3 +340,4 @@ const InformesPage = () => {
 };
 
 export default InformesPage;
+
