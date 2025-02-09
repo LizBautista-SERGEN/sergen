@@ -15,7 +15,7 @@ const DashboardPage = () => {
         return;
       }
       
-      // Redirect to energy management
+      // Redirect to energy control platform
       navigate('/servicios/control');
     };
 

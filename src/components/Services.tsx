@@ -2,11 +2,8 @@
 import { Gauge, FileSpreadsheet, Lightbulb, Search } from "lucide-react";
 import ServiceCard from "./ServiceCard";
 import AnimatedSection from "./AnimatedSection";
-import { useNavigate } from "react-router-dom";
 
 const Services = () => {
-  const navigate = useNavigate();
-
   const services = [
     {
       title: "Diagnóstico Energético",
@@ -20,7 +17,7 @@ const Services = () => {
       description:
         "Se proporciona a los usuarios pueden ahorrar en sus facturas de energía al desplazar la demanda a las horas de poca actividad",
       icon: <Gauge className="h-6 w-6" />,
-      path: "/servicios/control"
+      path: "/servicios/demanda"
     },
     {
       title: "Gestión Contractual",
@@ -60,7 +57,7 @@ const Services = () => {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2">
           {services.map((service, index) => (
             <AnimatedSection key={index} className="h-full">
-              <ServiceCard {...service} onClick={service.path ? () => navigate(service.path) : undefined} />
+              <ServiceCard {...service} />
             </AnimatedSection>
           ))}
         </div>
