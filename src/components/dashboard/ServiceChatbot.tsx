@@ -18,8 +18,8 @@ export const ServiceChatbot = () => {
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = {
-      role: 'user',
+    const userMessage: Message = {
+      role: 'user' as const,
       content: input
     };
 
@@ -27,8 +27,8 @@ export const ServiceChatbot = () => {
     setInput('');
 
     // Simulated response - In a real implementation, this would call an AI service
-    const assistantMessage = {
-      role: 'assistant',
+    const assistantMessage: Message = {
+      role: 'assistant' as const,
       content: "Por el momento soy un chatbot de demostración. Pronto podré ayudarte con tus dudas sobre el programa y los datos mostrados."
     };
 
