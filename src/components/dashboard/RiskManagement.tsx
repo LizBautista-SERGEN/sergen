@@ -80,7 +80,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
           <div className="space-y-2 flex flex-col items-center">
             <div className="text-center w-[200px]">
               <p className="text-[#8E9196] text-sm">Potencia Máxima</p>
-              <p className="text-2xl font-bold text-white" style={{ backgroundColor }}>{maxPower}</p>
+              <p className="px-4 h-[42px] rounded w-full flex items-center justify-center text-white" style={{ backgroundColor }}>{maxPower}</p>
             </div>
             <div className="text-center w-[200px]">
               <p className="text-[#8E9196] text-sm">Rango horario</p>
@@ -142,3 +142,4 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     </>
   );
 };
+
