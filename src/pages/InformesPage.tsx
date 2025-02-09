@@ -1,5 +1,5 @@
 
-import { FileText, ChartBar, LineChart, Database, Home, Download } from "lucide-react";
+import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import html2pdf from 'html2pdf.js';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const reportSections = [
   {
@@ -31,7 +42,40 @@ const reportSections = [
   }
 ];
 
+interface Template {
+  id: string;
+  name: string;
+  content: any;
+}
+
 const InformesPage = () => {
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  const loadTemplates = async () => {
+    const { data: templates, error } = await supabase
+      .from('report_templates')
+      .select('*');
+
+    if (error) {
+      toast.error("Error al cargar las plantillas");
+      return;
+    }
+
+    if (templates) {
+      setTemplates(templates);
+      if (templates.length > 0 && !selectedTemplate) {
+        setSelectedTemplate(templates[0]);
+      }
+    }
+  };
+
   const handleDownloadPDF = () => {
     const content = document.getElementById('report-content');
     if (!content) {
@@ -54,6 +98,48 @@ const InformesPage = () => {
     });
   };
 
+  const saveAsTemplate = async () => {
+    if (!newTemplateName.trim()) {
+      toast.error("Por favor ingrese un nombre para la plantilla");
+      return;
+    }
+
+    const content = document.getElementById('report-content');
+    if (!content) {
+      toast.error("Error al guardar la plantilla");
+      return;
+    }
+
+    const templateContent = {
+      html: content.innerHTML
+    };
+
+    const { error } = await supabase
+      .from('report_templates')
+      .insert({
+        name: newTemplateName,
+        content: templateContent
+      });
+
+    if (error) {
+      toast.error("Error al guardar la plantilla");
+      return;
+    }
+
+    toast.success("Plantilla guardada exitosamente");
+    setNewTemplateName("");
+    setIsDialogOpen(false);
+    loadTemplates();
+  };
+
+  const loadTemplate = (template: Template) => {
+    setSelectedTemplate(template);
+    const content = document.getElementById('report-content');
+    if (content && template.content.html) {
+      content.innerHTML = template.content.html;
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-gray-50 flex w-full">
@@ -63,6 +149,51 @@ const InformesPage = () => {
             <div className="grid grid-cols-12 gap-6">
               {/* Left Sidebar */}
               <div className="col-span-3">
+                <Card className="p-4 mb-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="font-semibold">Plantillas</h2>
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nueva
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Guardar como plantilla</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="name">Nombre de la plantilla</Label>
+                            <Input
+                              id="name"
+                              value={newTemplateName}
+                              onChange={(e) => setNewTemplateName(e.target.value)}
+                              placeholder="Ej: Informe Mensual"
+                            />
+                          </div>
+                        </div>
+                        <Button onClick={saveAsTemplate}>Guardar plantilla</Button>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <ScrollArea className="h-[200px]">
+                    <div className="space-y-2">
+                      {templates.map((template) => (
+                        <Button
+                          key={template.id}
+                          variant={selectedTemplate?.id === template.id ? "default" : "ghost"}
+                          className="w-full justify-start"
+                          onClick={() => loadTemplate(template)}
+                        >
+                          {template.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </Card>
+
                 <Card className="p-4">
                   <h2 className="font-semibold mb-4">Secciones del Informe</h2>
                   <div className="space-y-2">
@@ -85,10 +216,12 @@ const InformesPage = () => {
                 <Card className="p-4 h-[800px]">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="font-semibold">Vista Previa del Informe</h2>
-                    <Button onClick={handleDownloadPDF}>
-                      <Download className="mr-2 h-4 w-4" />
-                      Descargar PDF
-                    </Button>
+                    <div className="space-x-2">
+                      <Button onClick={handleDownloadPDF}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Descargar PDF
+                      </Button>
+                    </div>
                   </div>
                   <ScrollArea className="h-[700px] border rounded-lg p-4">
                     <div id="report-content" className="space-y-8">
