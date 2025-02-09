@@ -1,18 +1,27 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
 import { EnergyData } from "@/types/energy";
-import { format, startOfMonth, isBefore, isAfter } from "date-fns";
+import { format, startOfMonth, isBefore, isAfter, isFuture, isPast, isSameDay } from "date-fns";
+import { es } from 'date-fns/locale';
 
 interface RiskManagementProps {
   energyData: EnergyData[];
   date: Date | undefined;
+  setDate: (date: Date | undefined) => void;
 }
 
-export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
+export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProps) => {
   const [maxPower, setMaxPower] = useState<number>(0);
   const [backgroundColor, setBackgroundColor] = useState<string>("#156082");
   const [nonModulatedDays, setNonModulatedDays] = useState(0);
+
+  const isDateModulated = (date: Date): boolean => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayData = energyData.find(data => data.date === dateStr);
+    return dayData?.is_modulated || false;
+  };
 
   useEffect(() => {
     const calculateMaxPower = () => {
@@ -42,7 +51,6 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
     return () => clearInterval(interval);
   }, [date, energyData]);
 
-  // Nuevo efecto para calcular días sin modulación
   useEffect(() => {
     const updateNonModulatedDays = () => {
       const now = new Date();
@@ -81,34 +89,80 @@ export const RiskManagement = ({ energyData, date }: RiskManagementProps) => {
     return () => clearTimeout(timer);
   }, [energyData]);
 
+  const modifierStyles = {
+    future: { color: "#8E9196" },
+    modulated: { color: "#C00000" },
+    notModulated: { color: "#34D399" },
+    selected: {
+      backgroundColor: "#FEC6A1",
+      color: "white",
+      "&:hover": {
+        backgroundColor: "#FEC6A1"
+      }
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-center">Gestión de riesgo</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="space-y-2 flex flex-col items-center">
-          <div className="text-center w-[200px]">
-            <p className="text-[#8E9196] text-sm">Potencia Máxima</p>
-            <p className="text-2xl font-bold text-white bg-[#C00000] border border-gray-200 rounded px-4 h-[42px] flex items-center justify-center">{maxPower}</p>
+    <>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-center">Gestión de riesgo</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="space-y-2 flex flex-col items-center">
+            <div className="text-center w-[200px]">
+              <p className="text-[#8E9196] text-sm">Potencia Máxima</p>
+              <p className="text-2xl font-bold text-white bg-[#C00000] border border-gray-200 rounded px-4 h-[42px] flex items-center justify-center">{maxPower}</p>
+            </div>
+            <div className="text-center w-[200px]">
+              <p className="text-[#8E9196] text-sm">Rango horario</p>
+              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
+            </div>
+            <div className="text-center w-[200px]">
+              <p className="text-[#8E9196] text-sm">Riesgo de coincidente</p>
+              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
+            </div>
+            <div className="text-center w-[200px]">
+              <p className="text-sm text-gray-500">Días sin modulación</p>
+              <p style={{ backgroundColor: '#156082' }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center border">
+                {nonModulatedDays} días
+              </p>
+            </div>
           </div>
-          <div className="text-center w-[200px]">
-            <p className="text-[#8E9196] text-sm">Rango horario</p>
-            <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-center">Calendario</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            className="rounded-md border"
+            locale={es}
+            modifiers={{
+              future: (date) => isFuture(date),
+              modulated: (date) => isPast(date) && isDateModulated(date),
+              notModulated: (date) => isPast(date) && !isDateModulated(date),
+              selected: (currentDate) => date && currentDate ? isSameDay(currentDate, date) : false
+            }}
+            modifiersStyles={modifierStyles}
+          />
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#C00000]"></div>
+              <span className="text-sm">Con modulación</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#34D399]"></div>
+              <span className="text-sm">Sin modulación</span>
+            </div>
           </div>
-          <div className="text-center w-[200px]">
-            <p className="text-[#8E9196] text-sm">Riesgo de coincidente</p>
-            <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
-          </div>
-          <div className="text-center w-[200px]">
-            <p className="text-sm text-gray-500">Días sin modulación</p>
-            <p style={{ backgroundColor: '#156082' }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center border">
-              {nonModulatedDays} días
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </>
   );
 };
-
