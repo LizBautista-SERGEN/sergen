@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -130,16 +129,16 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-12 gap-6">
+    <div className="min-h-screen bg-gray-50 pt-12">
+      <div className="container mx-auto px-2 py-4">
+        <div className="grid grid-cols-12 gap-4">
           <div className="col-span-3">
-            <Card className="mb-6">
-              <CardHeader>
+            <Card className="mb-4">
+              <CardHeader className="pb-2">
                 <CardTitle>Información de cliente</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="space-y-2">
+                <div className="space-y-2">
                   <button className="w-full bg-sergen-500 text-white p-2 rounded hover:bg-sergen-600">
                     Control de demanda
                   </button>
@@ -157,11 +156,11 @@ const DashboardPage = () => {
             </Card>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle>Gestión de riesgo</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="space-y-2">
+                <div className="space-y-2">
                   <div>
                     <p className="text-sm text-gray-500">Potencia Máxima</p>
                     <p className="text-2xl font-bold text-blue-900">7390.37</p>
@@ -180,12 +179,12 @@ const DashboardPage = () => {
           </div>
 
           <div className="col-span-6">
-            <Card className="mb-6">
-              <CardHeader>
+            <Card className="mb-4">
+              <CardHeader className="pb-2">
                 <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
               </CardHeader>
-              <CardContent>
-                <LineChart width={600} height={300} data={getChartData()}>
+              <CardContent className="p-2">
+                <LineChart width={650} height={300} data={getChartData()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -196,11 +195,11 @@ const DashboardPage = () => {
             </Card>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle>Historial diario de potencia máxima</CardTitle>
               </CardHeader>
-              <CardContent>
-                <BarChart width={600} height={300} data={getBarChartData()}>
+              <CardContent className="p-2">
+                <BarChart width={650} height={300} data={getBarChartData()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
@@ -212,12 +211,12 @@ const DashboardPage = () => {
           </div>
 
           <div className="col-span-3">
-            <Card className="mb-6">
-              <CardHeader>
+            <Card className="mb-4">
+              <CardHeader className="pb-2">
                 <CardTitle>Información de servicio</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="space-y-2">
+                <div className="space-y-2">
                   <div>
                     <p className="text-sm text-gray-500">Fecha de contratación</p>
                     <p className="bg-blue-900 text-white p-2 rounded text-center">01/08/2023</p>
@@ -239,7 +238,7 @@ const DashboardPage = () => {
             </Card>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle>Calendario</CardTitle>
               </CardHeader>
               <CardContent>
@@ -281,4 +280,3 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
-
