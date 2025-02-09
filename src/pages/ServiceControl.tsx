@@ -49,19 +49,19 @@ const ServiceControl = () => {
         <div className="flex-1">
           <div className="container mx-auto px-2 pt-24 pb-8">
             <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <ClientInfo />
                 <RiskManagement />
               </div>
 
-              <div className="col-span-6">
+              <div className="col-span-8">
                 <PowerCharts 
                   energyData={energyData}
                   date={date}
                 />
               </div>
 
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <ServiceInfo 
                   date={date}
                   setDate={setDate}
