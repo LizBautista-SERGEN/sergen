@@ -246,15 +246,16 @@ const InformesPage = () => {
                     <div id="report-content" className="space-y-8">
                       <div data-section="portada" className={`text-center mb-16 ${hiddenSections.includes('portada') ? 'opacity-50' : ''}`}>
                         <img 
-                          src="/og-image.png" 
-                          alt="Logo" 
-                          className="mx-auto mb-8 h-24"
+                          src="/lovable-uploads/ff86b595-a843-428a-8121-36dcf0ac8fa1.png"
+                          alt="Sergen Logo" 
+                          className="mx-auto mb-32 h-24"
                         />
-                        <h1 className="text-3xl font-bold mb-4">{template?.name || 'Informe de Gestión Energética'}</h1>
-                        <h2 className="text-xl mb-2">{template?.client_name || '[Nombre de la Empresa]'}</h2>
-                        <p className="text-gray-600 mb-2">Código: {template?.code || '[Código]'}</p>
-                        <p className="text-gray-600 mb-4">{template?.location || '[Ubicación]'}</p>
-                        <p className="text-gray-600">{format(selectedDate, 'MMMM yyyy', { locale: es })}</p>
+                        <div className="space-y-8">
+                          <h1 className="text-4xl font-bold tracking-wide">{template?.name || 'ANÁLISIS DE FACTURACIÓN'}</h1>
+                          <h2 className="text-3xl font-semibold">{template?.client_name || 'ULTRA FRIO S.A.C'}</h2>
+                          <p className="text-xl">{template?.code || 'CS 06-01-2025'}</p>
+                          <p className="text-xl mt-44">{template?.location || 'LIMA-2024'}</p>
+                        </div>
                       </div>
 
                       <div className="prose max-w-none">
