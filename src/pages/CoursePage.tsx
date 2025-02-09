@@ -75,7 +75,7 @@ const CoursePage = () => {
 
       if (error) {
         console.error('Error fetching course:', error);
-        return null;
+        throw error;
       }
 
       // Transform the data to match our Course interface
