@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
-import { format, isFuture, isPast, startOfToday } from "date-fns";
+import { format, isFuture, isPast } from "date-fns";
 
 interface EnergyData {
   id: string;
@@ -219,7 +219,7 @@ const DashboardPage = () => {
                     future: (date) => isFuture(date),
                     modulated: (date) => isPast(date) && isDateModulated(date),
                     notModulated: (date) => isPast(date) && !isDateModulated(date),
-                    selected: (date) => date && date?.toDateString() === date?.toDateString()
+                    selected: (date) => date && date.toDateString() === (date as Date)?.toDateString()
                   }}
                   modifiersStyles={modifierStyles}
                 />
