@@ -53,6 +53,7 @@ export type Database = {
       profiles: {
         Row: {
           activity: string | null
+          avatar_url: string | null
           business_name: string | null
           contact_name: string | null
           contract_expiration: string | null
@@ -73,6 +74,7 @@ export type Database = {
         }
         Insert: {
           activity?: string | null
+          avatar_url?: string | null
           business_name?: string | null
           contact_name?: string | null
           contract_expiration?: string | null
@@ -93,6 +95,7 @@ export type Database = {
         }
         Update: {
           activity?: string | null
+          avatar_url?: string | null
           business_name?: string | null
           contact_name?: string | null
           contract_expiration?: string | null

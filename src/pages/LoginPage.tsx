@@ -20,14 +20,31 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
+      const trimmedEmail = email.trim();
+      
+      if (password.length < 6) {
+        toast.error("La contraseña debe tener al menos 6 caracteres");
+        setLoading(false);
+        return;
+      }
+
       if (isLogin) {
         // Handle login
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: trimmedEmail,
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+            toast.error("Credenciales inválidas. Por favor verifique su correo y contraseña");
+          } else if (error.message.includes('Email not confirmed')) {
+            toast.error("Por favor confirme su correo electrónico antes de iniciar sesión");
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
 
         if (data.user) {
           const { data: profile } = await supabase
@@ -44,17 +61,11 @@ const LoginPage = () => {
           toast.success("Inicio de sesión exitoso");
         }
       } else {
-        // Handle signup
-        if (password.length < 6) {
-          toast.error("La contraseña debe tener al menos 6 caracteres");
-          setLoading(false);
-          return;
-        }
-
+        // Check if user already exists before signup
         const { data: existingProfile } = await supabase
           .from('profiles')
           .select('id')
-          .eq('email', email.trim())
+          .eq('email', trimmedEmail)
           .single();
 
         if (existingProfile) {
@@ -64,18 +75,27 @@ const LoginPage = () => {
           return;
         }
 
+        // Handle signup
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: trimmedEmail,
           password,
           options: {
             emailRedirectTo: window.location.origin,
             data: {
-              email: email.trim(),
+              email: trimmedEmail,
             }
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            toast.error("Este correo ya está registrado. Por favor, inicie sesión.");
+            setIsLogin(true);
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
 
         if (data.user) {
           toast.success("Cuenta creada exitosamente. Por favor verifica tu correo electrónico.");
@@ -84,22 +104,7 @@ const LoginPage = () => {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      let errorMessage = 'Error en la autenticación';
-      
-      if (error.message.includes('Email rate limit exceeded')) {
-        errorMessage = 'Demasiados intentos. Por favor, espere unos minutos.';
-      } else if (error.message.includes('User already registered')) {
-        errorMessage = 'Este correo ya está registrado. Por favor, inicie sesión.';
-        setIsLogin(true);
-      } else if (error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Credenciales inválidas. Por favor, verifique su correo y contraseña.';
-      } else if (error.message.includes('Password should be at least 6 characters')) {
-        errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = 'Por favor, confirme su correo electrónico antes de iniciar sesión.';
-      }
-      
-      toast.error(errorMessage);
+      toast.error("Error en la autenticación. Por favor intente nuevamente.");
     } finally {
       setLoading(false);
     }
