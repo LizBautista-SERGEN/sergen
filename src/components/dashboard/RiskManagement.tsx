@@ -70,19 +70,6 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     setModulatedDays(count);
   }, [energyData]);
 
-  const modifierStyles = {
-    future: { color: "#8E9196" },
-    modulated: { color: "#C00000" },
-    notModulated: { color: "#34D399" },
-    selected: {
-      backgroundColor: "#FEC6A1",
-      color: "white",
-      "&:hover": {
-        backgroundColor: "#FEC6A1"
-      }
-    }
-  };
-
   return (
     <>
       <Card>
@@ -130,7 +117,18 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
               notModulated: (date) => isPast(date) && !isDateModulated(date),
               selected: (currentDate) => date && currentDate ? isSameDay(currentDate, date) : false
             }}
-            modifiersStyles={modifierStyles}
+            modifiersStyles={{
+              future: { color: "#8E9196" },
+              modulated: { color: "#C00000" },
+              notModulated: { color: "#34D399" },
+              selected: {
+                backgroundColor: "#FEC6A1",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "#FEC6A1"
+                }
+              }
+            }}
           />
           <div className="mt-4 space-y-2">
             <div className="flex items-center gap-2">
@@ -147,3 +145,4 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     </>
   );
 };
+
