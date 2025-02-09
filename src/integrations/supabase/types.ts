@@ -17,6 +17,7 @@ export type Database = {
           date: string
           demand: number
           id: string
+          is_modulated: boolean
           user_id: string
         }
         Insert: {
@@ -26,6 +27,7 @@ export type Database = {
           date: string
           demand: number
           id?: string
+          is_modulated?: boolean
           user_id: string
         }
         Update: {
@@ -35,6 +37,7 @@ export type Database = {
           date?: string
           demand?: number
           id?: string
+          is_modulated?: boolean
           user_id?: string
         }
         Relationships: [

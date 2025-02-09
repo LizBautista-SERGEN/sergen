@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +14,7 @@ interface EnergyData {
   cost: number;
   created_at: string;
   user_id: string;
+  is_modulated: boolean;
 }
 
 const DashboardPage = () => {
@@ -48,6 +48,22 @@ const DashboardPage = () => {
     fetchUserData();
   }, [navigate]);
 
+  // Function to determine if a specific date is modulated
+  const isDateModulated = (date: Date): boolean => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayData = energyData.find(data => data.date === dateStr);
+    return dayData?.is_modulated || false;
+  };
+
+  // Function to determine the class for each day
+  const getDayClassName = (date: Date): string => {
+    if (isFuture(date)) return "future";
+    if (isPast(date)) {
+      return isDateModulated(date) ? "modulated" : "not-modulated";
+    }
+    return "";
+  };
+
   // Styles for different day states in the calendar
   const modifierStyles = {
     custom: {
@@ -65,16 +81,6 @@ const DashboardPage = () => {
         color: "#34D399",
       },
     },
-  };
-
-  // Function to determine the class for each day
-  const getDayClassName = (date: Date): string => {
-    if (isFuture(date)) return "future";
-    if (isPast(date)) {
-      const dayOfMonth = parseInt(format(date, 'd'));
-      return dayOfMonth % 2 === 0 ? "modulated" : "not-modulated";
-    }
-    return "";
   };
 
   // Sample data for charts
@@ -223,8 +229,8 @@ const DashboardPage = () => {
                   modifiers={{
                     custom: (date) => true,
                     future: (date) => isFuture(date),
-                    modulated: (date) => isPast(date) && parseInt(format(date, 'd')) % 2 === 0,
-                    'not-modulated': (date) => isPast(date) && parseInt(format(date, 'd')) % 2 !== 0,
+                    modulated: (date) => isPast(date) && isDateModulated(date),
+                    'not-modulated': (date) => isPast(date) && !isDateModulated(date),
                   }}
                   modifiersStyles={modifierStyles}
                 />
