@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isFuture, isPast, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, lastDayOfMonth } from "date-fns";
@@ -55,6 +56,19 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
 
     return () => clearTimeout(timer);
   }, [energyData]);
+
+  const modifierStyles = {
+    future: { color: "#8E9196" },
+    modulated: { color: "#C00000" },
+    notModulated: { color: "#34D399" },
+    selected: {
+      backgroundColor: "#FEC6A1",
+      color: "white",
+      "&:hover": {
+        backgroundColor: "#FEC6A1"
+      }
+    }
+  };
 
   return (
     <>
