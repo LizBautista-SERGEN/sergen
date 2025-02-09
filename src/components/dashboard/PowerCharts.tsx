@@ -55,7 +55,9 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       ...item,
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#F39200' : 
-             '#156082'
+             '#156082',
+      borderColor: item.selected ? '#FFA500' : 'transparent',
+      borderWidth: item.selected ? 3 : 0
     }));
   };
 
@@ -64,12 +66,11 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     
     return (
       <Rectangle
-        x={x - 2}  // Ajustado para centrar mejor el fondo
+        x={x - 2}
         y={0}
-        width={width + 4}  // Aumentado para cubrir mejor la barra
+        width={width + 4}
         height={300}
-        fill="rgba(255, 165, 0, 0.2)"  // Cambiado a un naranja semi-transparente
-        radius={[4, 4, 0, 0]}  // Agregado bordes redondeados
+        fill="rgba(255, 165, 0, 0.15)"
       />
     );
   };
@@ -128,6 +129,8 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.color}
+                  stroke={entry.borderColor}
+                  strokeWidth={entry.borderWidth}
                 />
               ))}
             </Bar>
@@ -137,3 +140,4 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
+
