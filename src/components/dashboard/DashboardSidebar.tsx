@@ -74,11 +74,16 @@ export const DashboardSidebar = () => {
         >
           <h2 className="text-lg font-semibold px-3 text-white">Panel de Control</h2>
         </motion.div>
-        <div className="mt-8 flex flex-col gap-4">
+        <motion.div 
+          className="mt-8 flex flex-col gap-4"
+          animate={{
+            marginTop: isOpen ? "2rem" : "4rem"
+          }}
+        >
           {links.map((link, idx) => (
             <SidebarLink key={idx} link={link} isOpen={isOpen} />
           ))}
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
