@@ -16,7 +16,7 @@ const DashboardPage = () => {
       }
       
       // Redirect to energy management
-      navigate('/servicios/demanda');
+      navigate('/servicios/control');
     };
 
     checkAuth();

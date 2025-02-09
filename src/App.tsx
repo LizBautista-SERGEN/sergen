@@ -14,7 +14,7 @@ import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
 import ServiceDiagnostico from "./pages/ServiceDiagnostico";
-import ServiceDemanda from "./pages/ServiceDemanda";
+import ServiceControl from "./pages/ServiceControl";
 import ServiceContractual from "./pages/ServiceContractual";
 import ServiceEfficiency from "./pages/ServiceEfficiency";
 import DashboardPage from "./pages/DashboardPage";
@@ -35,7 +35,7 @@ const App = () => (
             <Route path="/nosotros" element={<AboutUs />} />
             <Route path="/servicios" element={<ServicesPage />} />
             <Route path="/servicios/diagnostico" element={<ServiceDiagnostico />} />
-            <Route path="/servicios/demanda" element={<ServiceDemanda />} />
+            <Route path="/servicios/control" element={<ServiceControl />} />
             <Route path="/servicios/contractual" element={<ServiceContractual />} />
             <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
             <Route path="/contacto" element={<ContactPage />} />
