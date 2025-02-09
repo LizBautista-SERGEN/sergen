@@ -1,6 +1,7 @@
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { Send, Bot } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ExpandableChat,
   ExpandableChatHeader,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/chat-bubble";
 import { ChatInput } from "@/components/ui/chat-input";
 import { ChatMessageList } from "@/components/ui/chat-message-list";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: number;
@@ -29,8 +31,9 @@ export const ServiceChatbot = () => {
   }]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e?: FormEvent) => {
+  const handleSubmit = async (e?: FormEvent) => {
     e?.preventDefault();
     if (!input.trim()) return;
 
@@ -44,17 +47,35 @@ export const ServiceChatbot = () => {
     setInput('');
     setIsLoading(true);
 
-    // Simulated response - In a real implementation, this would call an AI service
-    setTimeout(() => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase.functions.invoke('chat', {
+        body: {
+          message: input,
+          userId: user?.id,
+        },
+      });
+
+      if (error) throw error;
+
       const assistantMessage: Message = {
         id: messages.length + 2,
         role: 'assistant',
-        content: "Por el momento soy un chatbot de demostración. Pronto podré ayudarte con tus dudas sobre el programa y los datos mostrados."
+        content: data.response || "Lo siento, hubo un error al procesar tu mensaje."
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error in chat:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
