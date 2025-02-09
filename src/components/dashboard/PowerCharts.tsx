@@ -51,7 +51,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     return data.map(item => ({
       ...item,
       color: item.value === maxValue ? '#C00000' : 
-             item.value === secondMaxValue ? '#F39200' : 
+             item.value === secondMaxValue ? '#8A898C' : // Cambiamos el color amarillo fuerte por un gris medio
              '#156082',
       borderColor: item.selected ? 'rgba(0, 0, 0, 0.6)' : 'transparent',
       borderWidth: item.selected ? 4 : 0,
