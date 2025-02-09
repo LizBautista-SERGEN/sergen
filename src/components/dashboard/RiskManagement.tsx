@@ -15,14 +15,15 @@ export const RiskManagement = () => {
           </div>
           <div className="text-center w-[200px]">
             <p className="text-sm text-gray-500">Rango horario</p>
-            <p className="bg-blue-900 text-white px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
+            <p className="bg-[#156082] text-white px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
           </div>
           <div className="text-center w-[200px]">
             <p className="text-sm text-gray-500">Riesgo de coincidente</p>
-            <p className="bg-blue-900 text-white px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
+            <p className="bg-[#156082] text-white px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 };
+
