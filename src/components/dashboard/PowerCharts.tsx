@@ -64,7 +64,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
           <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <LineChart width={650} height={300} data={getChartData()}>
+          <LineChart width={850} height={300} data={getChartData()}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
@@ -79,7 +79,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
           <CardTitle>Historial diario de potencia máxima</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <BarChart width={650} height={300} data={getBarChartData()}>
+          <BarChart width={850} height={300} data={getBarChartData()}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
@@ -91,3 +91,4 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
+

@@ -47,21 +47,21 @@ const ServiceControl = () => {
       <div className="min-h-screen bg-gray-50 flex w-full">
         <DashboardSidebar />
         <div className="flex-1">
-          <div className="container mx-auto px-2 pt-24 pb-8"> {/* Changed pt-16 to pt-24 for more margin */}
+          <div className="container mx-auto px-2 pt-24 pb-8">
             <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <ClientInfo />
                 <RiskManagement />
               </div>
 
-              <div className="col-span-6">
+              <div className="col-span-8">
                 <PowerCharts 
                   energyData={energyData}
                   date={date}
                 />
               </div>
 
-              <div className="col-span-3">
+              <div className="col-span-2">
                 <ServiceInfo 
                   date={date}
                   setDate={setDate}
@@ -77,3 +77,4 @@ const ServiceControl = () => {
 };
 
 export default ServiceControl;
+
