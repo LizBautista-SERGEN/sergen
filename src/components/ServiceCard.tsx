@@ -6,11 +6,15 @@ interface ServiceCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
+  onClick?: () => void;
 }
 
-const ServiceCard = ({ title, description, icon }: ServiceCardProps) => {
+const ServiceCard = ({ title, description, icon, onClick }: ServiceCardProps) => {
   return (
-    <Card className="group relative overflow-hidden p-6 transition-all duration-300 hover:shadow-lg">
+    <Card 
+      className={`group relative overflow-hidden p-6 transition-all duration-300 hover:shadow-lg ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <div className="absolute inset-0 bg-gradient-to-br from-sergen-50/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <div className="relative z-10">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-sergen-100 text-sergen-700">
