@@ -13,7 +13,7 @@ export const ClientInfo = () => {
       <CardContent className="space-y-2">
         <div className="space-y-2 flex flex-col items-center">
           <button 
-            onClick={() => navigate("/servicios/control")}
+            onClick={() => navigate("/servicios")}
             className="bg-sergen-500 text-white px-4 h-[42px] rounded hover:bg-sergen-600 w-[200px] flex items-center justify-center"
           >
             Control de demanda
