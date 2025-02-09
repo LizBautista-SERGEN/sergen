@@ -10,12 +10,40 @@ import { CourseProgress } from "@/components/course/CourseProgress";
 import { LessonList } from "@/components/course/LessonList";
 import { ExplanationVideos } from "@/components/course/ExplanationVideos";
 
+interface ExplanationVideo {
+  title: string;
+  description: string;
+  url: string;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  video_url: string | null;
+  explanation_videos: ExplanationVideo[];
+  course_units: {
+    id: string;
+    title: string;
+    order_index: number;
+    lessons: {
+      id: string;
+      title: string;
+      type: string;
+      duration: string | null;
+      video_url: string | null;
+      order_index: number;
+      completed: boolean;
+    }[];
+  }[];
+}
+
 const CoursePage = () => {
   const { courseId } = useParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: course, isLoading } = useQuery({
+  const { data: course, isLoading } = useQuery<Course | null>({
     queryKey: ['course', courseId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -52,6 +80,7 @@ const CoursePage = () => {
 
       const sortedCourse = {
         ...data,
+        explanation_videos: data.explanation_videos || [],
         course_units: data.course_units
           ?.sort((a, b) => a.order_index - b.order_index)
           .map(unit => ({
@@ -140,7 +169,7 @@ const CoursePage = () => {
             <div className="max-w-4xl mx-auto">
               <CourseHeader title={course.title} description={course.description} />
               <CourseProgress progress={progress} />
-              <ExplanationVideos videos={course.explanation_videos || []} />
+              <ExplanationVideos videos={course.explanation_videos} />
               <div className="mt-8">
                 <LessonList 
                   units={course.course_units} 
