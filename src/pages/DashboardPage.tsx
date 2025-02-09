@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -50,14 +49,12 @@ const DashboardPage = () => {
     fetchUserData();
   }, [navigate]);
 
-  // Function to determine if a specific date is modulated
   const isDateModulated = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayData = energyData.find(data => data.date === dateStr);
     return dayData?.is_modulated || false;
   };
 
-  // Function to determine the class for each day
   const getDayClassName = (date: Date): string => {
     if (isFuture(date)) return "future-day";
     if (isPast(date)) {
@@ -66,7 +63,6 @@ const DashboardPage = () => {
     return "";
   };
 
-  // Styles for different day states in the calendar
   const modifierStyles = {
     future: { color: "#8E9196" },
     modulated: { color: "#ea384c" },
@@ -80,7 +76,6 @@ const DashboardPage = () => {
     }
   };
 
-  // Sample data for charts
   const lineChartData = [
     { name: 'Aug 19', value: 6500 },
     { name: 'Aug 20', value: 7000 },
@@ -105,7 +100,6 @@ const DashboardPage = () => {
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-12 gap-6">
-          {/* Left Sidebar */}
           <div className="col-span-3">
             <Card className="mb-6">
               <CardHeader>
@@ -152,7 +146,6 @@ const DashboardPage = () => {
             </Card>
           </div>
 
-          {/* Main Content */}
           <div className="col-span-6">
             <Card className="mb-6">
               <CardHeader>
@@ -185,7 +178,6 @@ const DashboardPage = () => {
             </Card>
           </div>
 
-          {/* Right Sidebar */}
           <div className="col-span-3">
             <Card className="mb-6">
               <CardHeader>
@@ -227,10 +219,7 @@ const DashboardPage = () => {
                     future: (date) => isFuture(date),
                     modulated: (date) => isPast(date) && isDateModulated(date),
                     notModulated: (date) => isPast(date) && !isDateModulated(date),
-                    selected: (date, selectedDate) => {
-                      if (!date || !selectedDate) return false;
-                      return date.toDateString() === selectedDate.toDateString();
-                    }
+                    selected: (date) => date && date?.toDateString() === date?.toDateString()
                   }}
                   modifiersStyles={modifierStyles}
                 />
@@ -258,4 +247,3 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
-
