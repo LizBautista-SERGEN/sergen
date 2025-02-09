@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
@@ -51,11 +50,11 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     return data.map(item => ({
       ...item,
       color: item.value === maxValue ? '#C00000' : 
-             item.value === secondMaxValue ? '#8A898C' : // Cambiamos el color amarillo fuerte por un gris medio
+             item.value === secondMaxValue ? '#8A898C' : 
              '#156082',
-      borderColor: item.selected ? 'rgba(0, 0, 0, 0.6)' : 'transparent',
+      borderColor: item.selected ? '#F39200' : 'transparent',
       borderWidth: item.selected ? 4 : 0,
-      filter: item.selected ? 'drop-shadow(0 0 4px rgba(0, 0, 0, 0.5))' : undefined
+      filter: item.selected ? 'drop-shadow(0 0 4px rgba(243, 146, 0, 0.5))' : undefined
     }));
   };
 
@@ -139,4 +138,3 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
-
