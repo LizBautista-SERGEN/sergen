@@ -1,9 +1,16 @@
-import { Gauge, FileSpreadsheet, Lightbulb } from "lucide-react";
+
+import { Gauge, FileSpreadsheet, Lightbulb, Search } from "lucide-react";
 import ServiceCard from "./ServiceCard";
 import AnimatedSection from "./AnimatedSection";
 
 const Services = () => {
   const services = [
+    {
+      title: "Diagnóstico Energético",
+      description:
+        "Se detecta los principales focos de consumo con el fin de identificar las áreas con mayor potencial de ahorro. Además, sugiere medidas de mejora para reducir dicho consumo, evaluando tanto el ahorro esperado como la inversión requerida.",
+      icon: <Search className="h-6 w-6" />,
+    },
     {
       title: "Control de Demanda",
       description:
@@ -43,7 +50,7 @@ const Services = () => {
           </p>
         </AnimatedSection>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2">
           {services.map((service, index) => (
             <AnimatedSection key={index} className="h-full">
               <ServiceCard {...service} />
