@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { ClientInfo } from "@/components/dashboard/ClientInfo";
 import { RiskManagement } from "@/components/dashboard/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/PowerCharts";
 import { ServiceInfo } from "@/components/dashboard/ServiceInfo";
@@ -50,8 +49,7 @@ const ServiceControl = () => {
           <div className="container mx-auto px-2 pt-24 pb-8">
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-3">
-                <ClientInfo />
-                <RiskManagement />
+                <RiskManagement energyData={energyData} date={date} />
               </div>
 
               <div className="col-span-6">

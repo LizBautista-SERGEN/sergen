@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
+import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
+import { format, isSameMonth, isSameDay } from "date-fns";
 import { EnergyData } from "@/types/energy";
 
 interface PowerChartsProps {
@@ -84,7 +84,6 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
         </CardHeader>
         <CardContent className="p-4">
           <LineChart width={650} height={300} data={getChartData()}>
-            <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
@@ -93,12 +92,14 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
               dataKey="Potencia Pronosticada" 
               stroke="#8884d8" 
               strokeWidth={2}
+              dot={false}
             />
             <Line 
               type="monotone" 
               dataKey="Potencia Ejecutada" 
               stroke="#82ca9d" 
               strokeWidth={2}
+              dot={false}
             />
           </LineChart>
         </CardContent>
@@ -110,7 +111,6 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
         </CardHeader>
         <CardContent className="p-4">
           <BarChart width={650} height={300} data={getBarChartData()}>
-            <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
             <Tooltip 
