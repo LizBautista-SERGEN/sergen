@@ -37,9 +37,9 @@ const Hero = () => {
             Soluciones en Eficiencia Energética
           </span>
           <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-6xl">
-            Optimizamos tu consumo energético
+            OPTIMIZAMOS TU CONSUMO ENERGÉTICO
           </h1>
-          <p className="animate-pulse mb-8 text-2xl font-semibold text-sergen-100 bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
+          <p className="mb-8 text-2xl font-semibold bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
             Transformamos la gestión energética de tu empresa con soluciones
             innovadoras y sostenibles
           </p>

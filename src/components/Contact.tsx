@@ -10,9 +10,11 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Open default email client with pre-filled email
+    window.location.href = "mailto:ventas@sergen.pe";
     toast({
-      title: "Mensaje enviado",
-      description: "Nos pondremos en contacto contigo pronto.",
+      title: "Redirigiendo al correo",
+      description: "Se abrirá tu cliente de correo para contactarnos.",
     });
   };
 
@@ -27,7 +29,7 @@ const Contact = () => {
             ¿Listo para optimizar tu consumo energético?
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-gray-600">
-            Contáctanos para descubrir cómo podemos ayudarte a reducir costos y
+            Contáctanos en ventas@sergen.pe para descubrir cómo podemos ayudarte a reducir costos y
             mejorar tu eficiencia energética.
           </p>
         </AnimatedSection>

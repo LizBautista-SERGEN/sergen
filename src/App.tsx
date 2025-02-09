@@ -12,6 +12,8 @@ import ServicesPage from "./pages/ServicesPage";
 import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
+import ServiceDiagnostico from "./pages/ServiceDiagnostico";
+import ServiceControl from "./pages/ServiceControl";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/" element={<Home />} />
           <Route path="/nosotros" element={<AboutUs />} />
           <Route path="/servicios" element={<ServicesPage />} />
+          <Route path="/servicios/diagnostico" element={<ServiceDiagnostico />} />
+          <Route path="/servicios/control" element={<ServiceControl />} />
           <Route path="/contacto" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<NotFound />} />
