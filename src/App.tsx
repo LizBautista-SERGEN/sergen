@@ -20,6 +20,7 @@ import ServiceEfficiency from "./pages/ServiceEfficiency";
 import ServiceDemanda from "./pages/ServiceDemanda";
 import DashboardPage from "./pages/DashboardPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/perfil" element={<ProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer />
