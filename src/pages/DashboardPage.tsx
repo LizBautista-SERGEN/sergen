@@ -130,8 +130,8 @@ const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-12">
-      <div className="container mx-auto px-2 py-4">
-        <div className="grid grid-cols-12 gap-4">
+      <div className="container mx-auto px-2 py-8">
+        <div className="grid grid-cols-12 gap-6">
           <div className="col-span-3">
             <Card className="mb-4">
               <CardHeader className="pb-2">
@@ -179,11 +179,11 @@ const DashboardPage = () => {
           </div>
 
           <div className="col-span-6">
-            <Card className="mb-4">
+            <Card className="mb-6">
               <CardHeader className="pb-2">
                 <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
               </CardHeader>
-              <CardContent className="p-2">
+              <CardContent className="p-4">
                 <LineChart width={650} height={300} data={getChartData()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
@@ -198,7 +198,7 @@ const DashboardPage = () => {
               <CardHeader className="pb-2">
                 <CardTitle>Historial diario de potencia máxima</CardTitle>
               </CardHeader>
-              <CardContent className="p-2">
+              <CardContent className="p-4">
                 <BarChart width={650} height={300} data={getBarChartData()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
