@@ -42,7 +42,7 @@ const DashboardPage = () => {
         return;
       }
 
-      console.log("Fetched energy data:", data); // For debugging
+      console.log("Fetched energy data:", data);
       setEnergyData(data || []);
     };
 
@@ -69,7 +69,14 @@ const DashboardPage = () => {
   const modifierStyles = {
     future: { color: "#8E9196" },
     modulated: { color: "#ea384c" },
-    notModulated: { color: "#34D399" }
+    notModulated: { color: "#34D399" },
+    selected: {
+      backgroundColor: "#FEC6A1",
+      color: "white",
+      "&:hover": {
+        backgroundColor: "#FEC6A1"
+      }
+    }
   };
 
   // Sample data for charts
@@ -219,6 +226,7 @@ const DashboardPage = () => {
                     future: (date) => isFuture(date),
                     modulated: (date) => isPast(date) && isDateModulated(date),
                     notModulated: (date) => isPast(date) && !isDateModulated(date),
+                    selected: (date) => date === date
                   }}
                   modifiersStyles={modifierStyles}
                 />
