@@ -104,16 +104,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
               {getBarChartData().map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={entry.color}
-                />
-              ))}
-            </Bar>
-            {/* Add overlay bars for selected state */}
-            <Bar dataKey="value" fill="rgba(0, 0, 0, 0.1)">
-              {getBarChartData().map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.selected ? "rgba(0, 0, 0, 0.1)" : "transparent"}
+                  fill={entry.selected ? 'rgba(0, 0, 0, 0.1)' : entry.color}
                 />
               ))}
             </Bar>
@@ -123,4 +114,3 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     </>
   );
 };
-
