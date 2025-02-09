@@ -18,7 +18,7 @@ const links = [
   },
   { 
     label: "Cápsulas", 
-    href: "/capsulas",
+    href: "/formativa",
     icon: <Book className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   },
   { 
@@ -56,7 +56,7 @@ export const DashboardSidebar = () => {
   return (
     <motion.div
       className={cn(
-        "h-full px-4 py-6 flex flex-col bg-white border-r border-gray-200 transition-all",
+        "h-full px-4 py-6 flex flex-col bg-white border-r border-gray-200 transition-all fixed top-16 left-0",
       )}
       animate={{
         width: isOpen ? "300px" : "80px",
@@ -65,15 +65,6 @@ export const DashboardSidebar = () => {
       onMouseLeave={() => setIsOpen(false)}
     >
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-        <motion.div 
-          className="border-b pb-4"
-          animate={{
-            display: isOpen ? "block" : "none",
-            opacity: isOpen ? 1 : 0,
-          }}
-        >
-          <h2 className="text-lg font-semibold px-3 text-white">Menu</h2>
-        </motion.div>
         <motion.div 
           className="mt-8 flex flex-col gap-4"
           animate={{
@@ -88,4 +79,3 @@ export const DashboardSidebar = () => {
     </motion.div>
   );
 };
-
