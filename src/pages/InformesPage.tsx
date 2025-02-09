@@ -1,4 +1,4 @@
-import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff } from "lucide-react";
+import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff, Calendar } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Card } from "@/components/ui/card";
@@ -8,15 +8,9 @@ import { toast } from "sonner";
 import html2pdf from 'html2pdf.js';
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const reportSections = [
   {
@@ -46,27 +40,13 @@ const reportSections = [
   }
 ];
 
-interface Template {
-  id: string;
-  name: string;
-  content: any;
-  sections_enabled: string[];
-  created_at?: string;
-  updated_at?: string;
-  user_id?: string;
-}
-
 const InformesPage = () => {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [newTemplateName, setNewTemplateName] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSuperUser, setIsSuperUser] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
+  const [isSuperUser, setIsSuperUser] = useState(false);
 
   useEffect(() => {
     checkUserRole();
-    loadTemplates();
   }, []);
 
   const checkUserRole = async () => {
@@ -79,32 +59,6 @@ const InformesPage = () => {
         .single();
       
       setIsSuperUser(profile?.role === 'superuser');
-    }
-  };
-
-  const loadTemplates = async () => {
-    const { data: templatesData, error } = await supabase
-      .from('report_templates')
-      .select('*');
-
-    if (error) {
-      toast.error("Error al cargar las plantillas");
-      return;
-    }
-
-    if (templatesData) {
-      const formattedTemplates: Template[] = templatesData.map(template => ({
-        ...template,
-        sections_enabled: Array.isArray(template.sections_enabled) 
-          ? template.sections_enabled.map(section => String(section))
-          : []
-      }));
-
-      setTemplates(formattedTemplates);
-      if (formattedTemplates.length > 0 && !selectedTemplate) {
-        setSelectedTemplate(formattedTemplates[0]);
-        setHiddenSections(formattedTemplates[0].sections_enabled);
-      }
     }
   };
 
@@ -129,7 +83,7 @@ const InformesPage = () => {
 
     const opt = {
       margin: 1,
-      filename: 'informe-gestion-energetica.pdf',
+      filename: `informe-gestion-energetica-${format(selectedDate, 'MMMM-yyyy', { locale: es })}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
@@ -146,55 +100,6 @@ const InformesPage = () => {
     }).catch(() => {
       toast.error("Error al descargar el PDF");
     });
-  };
-
-  const saveAsTemplate = async () => {
-    if (!isSuperUser) {
-      toast.error("No tienes permisos para crear plantillas");
-      return;
-    }
-
-    if (!newTemplateName.trim()) {
-      toast.error("Por favor ingrese un nombre para la plantilla");
-      return;
-    }
-
-    const content = document.getElementById('report-content');
-    if (!content) {
-      toast.error("Error al guardar la plantilla");
-      return;
-    }
-
-    const templateContent = {
-      html: content.innerHTML
-    };
-
-    const { error } = await supabase
-      .from('report_templates')
-      .insert({
-        name: newTemplateName,
-        content: templateContent,
-        sections_enabled: hiddenSections
-      });
-
-    if (error) {
-      toast.error("Error al guardar la plantilla");
-      return;
-    }
-
-    toast.success("Plantilla guardada exitosamente");
-    setNewTemplateName("");
-    setIsDialogOpen(false);
-    loadTemplates();
-  };
-
-  const loadTemplate = (template: Template) => {
-    setSelectedTemplate(template);
-    setHiddenSections(template.sections_enabled);
-    const content = document.getElementById('report-content');
-    if (content && template.content?.html) {
-      content.innerHTML = template.content.html;
-    }
   };
 
   const toggleSection = (sectionId: string) => {
@@ -215,49 +120,20 @@ const InformesPage = () => {
               <div className="col-span-3">
                 <Card className="p-4 mb-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="font-semibold">Plantillas</h2>
-                    {isSuperUser && (
-                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Nueva
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Guardar como plantilla</DialogTitle>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                              <Label htmlFor="name">Nombre de la plantilla</Label>
-                              <Input
-                                id="name"
-                                value={newTemplateName}
-                                onChange={(e) => setNewTemplateName(e.target.value)}
-                                placeholder="Ej: Informe Mensual"
-                              />
-                            </div>
-                          </div>
-                          <Button onClick={saveAsTemplate}>Guardar plantilla</Button>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                    <h2 className="font-semibold">Seleccionar Fecha</h2>
+                    <Calendar className="h-5 w-5 text-gray-500" />
                   </div>
-                  <ScrollArea className="h-[200px]">
-                    <div className="space-y-2">
-                      {templates.map((template) => (
-                        <Button
-                          key={template.id}
-                          variant={selectedTemplate?.id === template.id ? "default" : "ghost"}
-                          className="w-full justify-start"
-                          onClick={() => loadTemplate(template)}
-                        >
-                          {template.name}
-                        </Button>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    className="rounded-md border"
+                    locale={es}
+                    showOutsideDays={false}
+                  />
+                  <div className="mt-4 text-center text-sm text-gray-600">
+                    Informe seleccionado: {format(selectedDate, 'MMMM yyyy', { locale: es })}
+                  </div>
                 </Card>
 
                 <Card className="p-4">
@@ -310,7 +186,7 @@ const InformesPage = () => {
                         />
                         <h1 className="text-3xl font-bold mb-4">Informe de Gestión Energética</h1>
                         <h2 className="text-xl mb-2">[Nombre de la Empresa]</h2>
-                        <p className="text-gray-600">[Fecha del Informe]</p>
+                        <p className="text-gray-600">{format(selectedDate, 'MMMM yyyy', { locale: es })}</p>
                       </div>
 
                       <div className="prose max-w-none">
