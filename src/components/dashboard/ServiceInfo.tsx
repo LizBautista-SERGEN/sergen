@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isFuture, isPast, isSameDay } from "date-fns";
+import { format, isFuture, isPast, isSameDay, startOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import { EnergyData } from "@/types/energy";
 
@@ -31,6 +31,10 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
     }
   };
 
+  // Obtener el primer día del mes actual
+  const firstDayOfCurrentMonth = startOfMonth(new Date());
+  const formattedContractDate = format(firstDayOfCurrentMonth, 'dd/MM/yyyy');
+
   return (
     <>
       <Card className="mb-4">
@@ -41,7 +45,7 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
           <div className="space-y-2 flex flex-col items-center">
             <div className="text-center w-[200px]">
               <p className="text-sm text-gray-500">Fecha de contratación</p>
-              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">01/08/2023</p>
+              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">{formattedContractDate}</p>
             </div>
             <div className="text-center w-[200px]">
               <p className="text-sm text-gray-500">Días sin modulación</p>
@@ -93,4 +97,3 @@ export const ServiceInfo = ({ date, setDate, energyData }: ServiceInfoProps) => 
     </>
   );
 };
-
