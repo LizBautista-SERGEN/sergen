@@ -1,4 +1,3 @@
-
 import { FileText, ChartBar, LineChart, Database, Home, Download, Plus, Save, X, Eye, EyeOff } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -94,18 +93,17 @@ const InformesPage = () => {
     }
 
     if (templatesData) {
-      // Transformar los datos para asegurar que sections_enabled sea un array
       const formattedTemplates: Template[] = templatesData.map(template => ({
         ...template,
         sections_enabled: Array.isArray(template.sections_enabled) 
-          ? template.sections_enabled 
+          ? template.sections_enabled.map(section => String(section))
           : []
       }));
 
       setTemplates(formattedTemplates);
       if (formattedTemplates.length > 0 && !selectedTemplate) {
         setSelectedTemplate(formattedTemplates[0]);
-        setHiddenSections(formattedTemplates[0].sections_enabled || []);
+        setHiddenSections(formattedTemplates[0].sections_enabled);
       }
     }
   };
@@ -192,7 +190,7 @@ const InformesPage = () => {
 
   const loadTemplate = (template: Template) => {
     setSelectedTemplate(template);
-    setHiddenSections(template.sections_enabled || []);
+    setHiddenSections(template.sections_enabled);
     const content = document.getElementById('report-content');
     if (content && template.content?.html) {
       content.innerHTML = template.content.html;
@@ -214,7 +212,6 @@ const InformesPage = () => {
         <div className="flex-1 ml-[80px] hover:ml-[300px] transition-all duration-300">
           <div className="container mx-auto px-4 pt-24 pb-8">
             <div className="grid grid-cols-12 gap-6">
-              {/* Left Sidebar */}
               <div className="col-span-3">
                 <Card className="p-4 mb-4">
                   <div className="flex justify-between items-center mb-4">
@@ -292,7 +289,6 @@ const InformesPage = () => {
                 </Card>
               </div>
 
-              {/* Preview Area */}
               <div className="col-span-9">
                 <Card className="p-4 h-[800px]">
                   <div className="flex justify-between items-center mb-4">
@@ -306,7 +302,6 @@ const InformesPage = () => {
                   </div>
                   <ScrollArea className="h-[700px] border rounded-lg p-4">
                     <div id="report-content" className="space-y-8">
-                      {/* Portada */}
                       <div data-section="portada" className={`text-center mb-16 ${hiddenSections.includes('portada') ? 'opacity-50' : ''}`}>
                         <img 
                           src="/public/og-image.png" 
