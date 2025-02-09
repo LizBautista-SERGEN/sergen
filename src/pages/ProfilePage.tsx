@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -356,24 +357,29 @@ const ProfilePage = () => {
                   <div className="space-y-8">
                     <div>
                       <h3 className="font-semibold mb-4">CONTRATOS Y ADENDAS:</h3>
-                      <div className="flex gap-4 flex-wrap">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {documents
                           .filter(doc => doc.document_type === 'contract')
                           .map((doc) => (
-                            <div key={doc.id} className="text-center">
-                              <a 
-                                href={`${supabase.storage.from('contracts').getPublicUrl(doc.file_path).data.publicUrl}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="block hover:opacity-80"
-                              >
-                                <FileText className="w-12 h-12 mx-auto mb-2 text-blue-600" />
-                                <div className="text-sm">{doc.filename}</div>
-                              </a>
-                            </div>
+                            <a 
+                              key={doc.id}
+                              href={`${supabase.storage.from('contracts').getPublicUrl(doc.file_path).data.publicUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group block"
+                            >
+                              <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="aspect-square flex items-center justify-center mb-4 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                                  <FileText className="w-12 h-12 text-blue-600" />
+                                </div>
+                                <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-blue-600">
+                                  {doc.filename}
+                                </div>
+                              </div>
+                            </a>
                           ))}
                       </div>
-                      <div className="mt-4">
+                      <div className="mt-6">
                         <input
                           type="file"
                           id="contract-upload"
@@ -397,24 +403,29 @@ const ProfilePage = () => {
 
                     <div>
                       <h3 className="font-semibold mb-4">FACTURA DE SUMINISTRO ELÉCTRICO:</h3>
-                      <div className="grid grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {documents
                           .filter(doc => doc.document_type === 'invoice')
                           .map((doc) => (
-                            <div key={doc.id} className="text-center">
-                              <a 
-                                href={`${supabase.storage.from('invoices').getPublicUrl(doc.file_path).data.publicUrl}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="block hover:opacity-80"
-                              >
-                                <FileText className="w-12 h-12 mx-auto mb-2 text-green-600" />
-                                <div className="text-sm">{doc.filename}</div>
-                              </a>
-                            </div>
+                            <a 
+                              key={doc.id}
+                              href={`${supabase.storage.from('invoices').getPublicUrl(doc.file_path).data.publicUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group block"
+                            >
+                              <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="aspect-square flex items-center justify-center mb-4 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+                                  <FileText className="w-12 h-12 text-green-600" />
+                                </div>
+                                <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
+                                  {doc.filename}
+                                </div>
+                              </div>
+                            </a>
                           ))}
                       </div>
-                      <div className="mt-4">
+                      <div className="mt-6">
                         <input
                           type="file"
                           id="invoice-upload"
