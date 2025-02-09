@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -5,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
 import { format, isFuture, isPast, isSameDay } from "date-fns";
+import { es } from 'date-fns/locale';
 
 interface EnergyData {
   id: string;
@@ -215,6 +217,7 @@ const DashboardPage = () => {
                   selected={date}
                   onSelect={setDate}
                   className="rounded-md border"
+                  locale={es}
                   modifiers={{
                     future: (date) => isFuture(date),
                     modulated: (date) => isPast(date) && isDateModulated(date),
@@ -247,3 +250,4 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+
