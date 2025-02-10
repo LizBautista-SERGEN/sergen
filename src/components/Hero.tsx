@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Leaf, CloudOff } from "lucide-react";
 import { SplineScene } from "./ui/splite";
 import { Card } from "./ui/card";
 import { Spotlight } from "./ui/spotlight";
@@ -10,6 +10,21 @@ const Hero = () => {
     const servicesSection = document.getElementById("services");
     servicesSection?.scrollIntoView({ behavior: "smooth" });
   };
+
+  const metrics = [
+    {
+      icon: <Leaf className="h-8 w-8 text-green-500" />,
+      title: "Reducción de Consumo",
+      value: "-45%",
+      description: "promedio en consumo energético"
+    },
+    {
+      icon: <CloudOff className="h-8 w-8 text-blue-500" />,
+      title: "Reducción CO2",
+      value: "-30%",
+      description: "en emisiones de carbono"
+    }
+  ];
 
   return (
     <section className="relative min-h-screen overflow-hidden pt-16">
@@ -39,6 +54,37 @@ const Hero = () => {
                 <p className="mb-8 text-2xl font-semibold bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
                   Transformamos la gestión energética de tu empresa
                 </p>
+
+                {/* Sustainability Metrics */}
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold text-white mb-6">
+                    Compromiso Sostenible
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {metrics.map((metric, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 * (index + 1) }}
+                        className="bg-white/10 rounded-lg p-6 backdrop-blur-sm"
+                      >
+                        <div className="flex items-center gap-4 mb-3">
+                          {metric.icon}
+                          <h4 className="text-white font-medium">
+                            {metric.title}
+                          </h4>
+                        </div>
+                        <p className="text-4xl font-bold text-sergen-500 mb-2">
+                          {metric.value}
+                        </p>
+                        <p className="text-white/80 text-sm">
+                          {metric.description}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
               </motion.div>
             </div>
 
