@@ -96,12 +96,12 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
   };
 
   return (
-    <Card className="w-72 h-fit bg-gradient-to-b from-sergen-100 to-sergen-50">
-      <div className="flex flex-col items-center">
-        <div className="w-full aspect-square relative">
-          <Avatar className="w-full h-full rounded-t-lg">
-            <AvatarImage src={profile?.avatar_url} className="object-cover" />
-            <AvatarFallback className="text-4xl">{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
+    <div className="flex flex-col items-center">
+      <Card className="w-72 h-72 overflow-hidden bg-gradient-to-b from-sergen-100 to-sergen-50">
+        <div className="relative w-full h-full">
+          <Avatar className="w-full h-full rounded-lg">
+            <AvatarImage src={profile?.avatar_url} className="object-cover w-full h-full" />
+            <AvatarFallback className="text-4xl w-full h-full">{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
           <input
             type="file"
@@ -132,10 +132,8 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
             )}
           </div>
         </div>
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-center">{profile?.business_name || "Ultrafrio S.A.C."}</h2>
-        </div>
-      </div>
-    </Card>
+      </Card>
+      <h2 className="text-xl font-semibold mt-4 text-center">{profile?.business_name || "Ultrafrio S.A.C."}</h2>
+    </div>
   );
 };

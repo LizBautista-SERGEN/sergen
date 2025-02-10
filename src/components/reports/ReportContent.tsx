@@ -50,7 +50,7 @@ export const ReportContent = ({
                 {template?.name || 'INFORME DE GESTIÓN ENERGÉTICA'}
               </h1>
               <h2 className="text-3xl font-semibold uppercase">
-                {profile?.business_name || 'Cargando...'}
+                {profile?.business_name || 'ULTRAFRIO S.A.C.'}
               </h2>
               <p className="text-2xl uppercase">
                 INF-{reportNumber?.toString().padStart(3, '0') || '000'}-{format(selectedDate, 'MM-yyyy')}

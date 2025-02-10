@@ -4,15 +4,21 @@ interface ProfileInfoProps {
 }
 
 export const ProfileInfo = ({ profile }: ProfileInfoProps) => {
+  const isSuperUser = profile?.role === 'superuser';
+
   return (
     <div className="grid gap-4">
       <div>
         <label className="font-semibold mb-2 block">RAZÓN SOCIAL:</label>
-        <div className="text-gray-700 bg-gray-50 p-2 rounded">{profile?.business_name || "Ultrafrio S.A.C."}</div>
+        <div className={`text-gray-700 ${isSuperUser ? 'bg-white border border-gray-200' : 'bg-gray-50'} p-2 rounded`}>
+          {profile?.business_name || "Ultrafrio S.A.C."}
+        </div>
       </div>
       <div>
         <label className="font-semibold mb-2 block">RUC:</label>
-        <div className="text-gray-700 bg-gray-50 p-2 rounded">{profile?.ruc || "20608382616"}</div>
+        <div className={`text-gray-700 ${isSuperUser ? 'bg-white border border-gray-200' : 'bg-gray-50'} p-2 rounded`}>
+          {profile?.ruc || "20618382616"}
+        </div>
       </div>
       <div>
         <label className="font-semibold mb-2 block">ACTIVIDAD:</label>
