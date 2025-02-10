@@ -12,9 +12,9 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen overflow-hidden pt-16">
+    <section className="relative min-h-screen overflow-hidden pt-16 bg-black">
       <div className="container relative z-10 mx-auto flex min-h-screen flex-col items-center justify-center px-4">
-        <Card className="w-full bg-black/[0.96] relative overflow-hidden">
+        <Card className="w-full bg-black/[0.96] relative overflow-hidden border-zinc-800">
           <Spotlight
             className="-top-40 left-0 md:left-60 md:-top-20"
             fill="#FFFFFF"
@@ -30,13 +30,13 @@ const Hero = () => {
                 transition={{ duration: 0.8 }}
                 className="max-w-3xl"
               >
-                <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
+                <span className="mb-4 inline-block rounded-full bg-sergen-500/20 px-4 py-1.5 text-sm font-medium text-sergen-300">
                   Soluciones en Eficiencia Energética
                 </span>
-                <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-6xl">
+                <h1 className="mb-6 text-5xl font-bold tracking-tight text-white/90 sm:text-6xl">
                   Tecnología que revoluciona el consumo energético
                 </h1>
-                <p className="mb-8 text-2xl font-semibold bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
+                <p className="mb-8 text-2xl font-semibold text-sergen-300">
                   Transformamos la gestión energética de tu empresa
                 </p>
               </motion.div>
@@ -57,9 +57,9 @@ const Hero = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="absolute bottom-8 animate-float cursor-pointer rounded-full bg-white p-2 shadow-lg transition-transform hover:scale-110"
+          className="absolute bottom-8 animate-float cursor-pointer rounded-full bg-sergen-500/20 p-2 shadow-lg transition-transform hover:scale-110"
         >
-          <ChevronDown className="h-6 w-6 text-sergen-500" />
+          <ChevronDown className="h-6 w-6 text-sergen-300" />
         </motion.button>
       </div>
     </section>

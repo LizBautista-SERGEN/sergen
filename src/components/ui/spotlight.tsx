@@ -58,9 +58,7 @@ export function Spotlight({
     return () => {
       parentElement.removeEventListener('mousemove', handleMouseMove);
       parentElement.removeEventListener('mouseenter', () => setIsHovered(true));
-      parentElement.removeEventListener('mouseleave', () =>
-        setIsHovered(false)
-      );
+      parentElement.removeEventListener('mouseleave', () => setIsHovered(false));
     };
   }, [parentElement, handleMouseMove]);
 
@@ -77,8 +75,8 @@ export function Spotlight({
         height: size,
         left: spotlightLeft,
         top: spotlightTop,
-        background: `radial-gradient(circle at center, ${fill} 0%, rgba(255,255,255,0.15) 50%, transparent 80%)`,
-        opacity: isHovered ? 0.35 : 0
+        background: `radial-gradient(circle at center, ${fill} 0%, ${fill} 25%, rgba(255,255,255,0.15) 50%, transparent 80%)`,
+        opacity: isHovered ? 0.45 : 0
       }}
     />
   );
