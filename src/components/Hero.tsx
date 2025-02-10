@@ -13,15 +13,15 @@ const Hero = () => {
 
   return (
     <section className="relative overflow-hidden pt-16 bg-black">
-      <div className="container relative z-10 mx-auto flex flex-col items-center justify-center px-4 h-[700px]">
+      <div className="container relative z-10 mx-auto flex flex-col items-center justify-center px-4 h-[400px] w-full">
         <Card className="w-full bg-black/[0.96] relative overflow-hidden border-black">
           <Spotlight
             className="-top-40 left-0 md:left-60 md:-top-20"
             fill="#FFFFFF"
-            size={500}
+            size={250}
           />
           
-          <div className="flex flex-col md:flex-row h-full">
+          <div className="flex flex-col md:flex-row h-full w-full">
             {/* Left content */}
             <div className="flex-1 p-8 relative z-10 flex flex-col justify-center">
               <motion.div

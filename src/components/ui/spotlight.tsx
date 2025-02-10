@@ -66,7 +66,7 @@ export function Spotlight({
     <motion.div
       ref={containerRef}
       className={cn(
-        'pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] blur-lg transition-opacity duration-200',
+        'pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] transition-opacity duration-200',
         isHovered ? 'opacity-100' : 'opacity-0',
         className
       )}
@@ -75,7 +75,7 @@ export function Spotlight({
         height: size,
         left: spotlightLeft,
         top: spotlightTop,
-        background: `radial-gradient(circle at center, ${fill} 0%, ${fill} 35%, rgba(255,255,255,0.15) 60%, transparent 80%)`,
+        background: `radial-gradient(circle at center, ${fill} 0%, ${fill} 35%, rgba(255,255,255,0) 70%)`,
         opacity: isHovered ? 1 : 0
       }}
     />
