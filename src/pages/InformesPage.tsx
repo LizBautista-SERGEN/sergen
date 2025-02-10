@@ -4,23 +4,22 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import html2pdf from 'html2pdf.js';
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { ReportDateSelector } from "@/components/reports/ReportDateSelector";
 import { ReportSections } from "@/components/reports/ReportSections";
 import { ReportContent } from "@/components/reports/ReportContent";
+import { useReportNumber } from "@/hooks/useReportNumber";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { generatePDF } from "@/utils/pdfUtils";
+import { toast } from "sonner";
 
 const InformesPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
-  const [isSuperUser, setIsSuperUser] = useState(false);
-  const [reportNumber, setReportNumber] = useState<number | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const reportNumber = useReportNumber(selectedDate);
+  const { profile } = useUserProfile();
 
   const { data: template } = useQuery({
     queryKey: ['reportTemplate'],
@@ -38,137 +37,8 @@ const InformesPage = () => {
     }
   });
 
-  useEffect(() => {
-    checkUserRole();
-    fetchProfile();
-  }, []);
-
-  useEffect(() => {
-    fetchReportNumber();
-  }, [selectedDate]);
-
-  const checkUserRole = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-      
-      setIsSuperUser(profile?.role === 'superuser');
-    }
-  };
-
-  const fetchProfile = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) {
-        toast.error("Error al cargar la información del perfil");
-        return;
-      }
-
-      setProfile(data);
-    }
-  };
-
-  const fetchReportNumber = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth() + 1;
-
-    const { data: existingReport, error: fetchError } = await supabase
-      .from('report_numbers')
-      .select('report_number')
-      .eq('user_id', session.user.id)
-      .eq('year', year)
-      .eq('month', month)
-      .maybeSingle();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      toast.error("Error al obtener el número de informe");
-      return;
-    }
-
-    if (existingReport) {
-      setReportNumber(existingReport.report_number);
-      return;
-    }
-
-    const { data: lastReport } = await supabase
-      .from('report_numbers')
-      .select('report_number')
-      .eq('user_id', session.user.id)
-      .order('year', { ascending: false })
-      .order('month', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const newReportNumber = (lastReport?.report_number || 0) + 1;
-
-    const { error: insertError } = await supabase
-      .from('report_numbers')
-      .insert({
-        user_id: session.user.id,
-        year,
-        month,
-        report_number: newReportNumber
-      });
-
-    if (insertError) {
-      toast.error("Error al generar el número de informe");
-      return;
-    }
-
-    setReportNumber(newReportNumber);
-  };
-
   const handleDownloadPDF = () => {
-    const content = document.getElementById('report-content');
-    if (!content) {
-      toast.error("Error al generar el PDF");
-      return;
-    }
-
-    const hiddenElements = content.querySelectorAll('[data-section]');
-    const originalDisplay: { [key: string]: string } = {};
-    
-    hiddenElements.forEach((element: Element) => {
-      const section = element.getAttribute('data-section');
-      if (section && hiddenSections.includes(section)) {
-        const htmlElement = element as HTMLElement;
-        originalDisplay[section] = htmlElement.style.display;
-        htmlElement.style.display = 'none';
-      }
-    });
-
-    const opt = {
-      margin: 0,
-      filename: `informe-gestion-energetica-${format(selectedDate, 'MMMM-yyyy', { locale: es })}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(content).save().then(() => {
-      hiddenElements.forEach((element: Element) => {
-        const section = element.getAttribute('data-section');
-        if (section && originalDisplay[section]) {
-          (element as HTMLElement).style.display = originalDisplay[section];
-        }
-      });
-      toast.success("PDF descargado exitosamente");
-    }).catch(() => {
-      toast.error("Error al descargar el PDF");
-    });
+    generatePDF(selectedDate, hiddenSections);
   };
 
   const toggleSection = (sectionId: string) => {
@@ -239,4 +109,3 @@ const InformesPage = () => {
 };
 
 export default InformesPage;
-
