@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { ChevronDown, Book } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { SplineScene } from "./ui/splite";
 import { Card } from "./ui/card";
 import { Spotlight } from "./ui/spotlight";
@@ -39,40 +39,6 @@ const Hero = () => {
                 <p className="mb-8 text-2xl font-semibold bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
                   Transformamos la gestión energética de tu empresa
                 </p>
-
-                {/* Animated Course Effect */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{
-                    duration: 0.5,
-                    delay: 1,
-                    type: "spring",
-                    stiffness: 100
-                  }}
-                  className="flex items-center gap-3 bg-sergen-800/20 p-4 rounded-lg border border-sergen-700/30 backdrop-blur-sm"
-                >
-                  <div className="p-2 bg-sergen-500 rounded-full">
-                    <Book className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold">Cursos Formativos</h3>
-                    <p className="text-sergen-100 text-sm">Explora nuestro catálogo de capacitación</p>
-                  </div>
-                  <motion.div
-                    animate={{
-                      x: [0, 10, 0],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="ml-auto"
-                  >
-                    <ChevronDown className="h-5 w-5 text-sergen-500 rotate-[-90deg]" />
-                  </motion.div>
-                </motion.div>
               </motion.div>
             </div>
 
