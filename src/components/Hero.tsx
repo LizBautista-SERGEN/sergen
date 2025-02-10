@@ -57,7 +57,7 @@ const Hero = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="absolute bottom-8 animate-float cursor-pointer rounded-full bg-sergen-500/20 p-2 shadow-lg transition-transform hover:scale-110"
+          className="absolute bottom-8 animate-float cursor-pointer bg-sergen-500/20 p-2 shadow-lg transition-transform hover:scale-110"
         >
           <ChevronDown className="h-6 w-6 text-sergen-300" />
         </motion.button>
