@@ -33,7 +33,7 @@ const Hero = () => {
                 <span className="mb-4 inline-block rounded-full bg-sergen-500/20 px-4 py-1.5 text-sm font-medium text-sergen-300">
                   Soluciones en Eficiencia Energética
                 </span>
-                <h1 className="mb-6 text-5xl font-bold tracking-tight text-white/90 sm:text-6xl">
+                <h1 className="mb-6 text-5xl font-bold tracking-tight text-[#F1F1F1] sm:text-6xl">
                   Tecnología que revoluciona el consumo energético
                 </h1>
                 <p className="mb-8 text-2xl font-semibold text-sergen-300">

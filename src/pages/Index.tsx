@@ -9,7 +9,9 @@ const Index = () => {
   return (
     <main className="overflow-hidden">
       <Hero />
-      <Feature />
+      <div className="bg-white shadow-lg rounded-lg mx-auto my-8 max-w-7xl">
+        <Feature />
+      </div>
       <Services />
       <About />
       <Contact />
