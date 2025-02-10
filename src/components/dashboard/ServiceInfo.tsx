@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, lastDayOfMonth, startOfMonth } from "date-fns";
 import { EnergyData } from "@/types/energy";
 import { useEffect, useState } from "react";
+import { Chatbot } from "./Chatbot";
 
 interface ServiceInfoProps {
   energyData: EnergyData[];
@@ -43,34 +44,37 @@ export const ServiceInfo = ({ energyData }: ServiceInfoProps) => {
   }, [energyData]);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-center">Información de servicio</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="space-y-2 flex flex-col items-center">
-          <div className="text-center w-[200px]">
-            <p className="text-sm text-gray-500">Fecha de contratación</p>
-            <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">
-              {format(contractDate, 'dd/MM/yyyy')}
-            </p>
+    <>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-center">Información de servicio</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="space-y-2 flex flex-col items-center">
+            <div className="text-center w-[200px]">
+              <p className="text-sm text-gray-500">Fecha de contratación</p>
+              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">
+                {format(contractDate, 'dd/MM/yyyy')}
+              </p>
+            </div>
+            <div className="text-center w-[200px]">
+              <p className="text-sm text-gray-500">Técnico designado</p>
+              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">Ing. Jose Torres</p>
+            </div>
+            <div className="text-center w-[200px]">
+              <p className="text-sm text-gray-500">Tipo de suscripción</p>
+              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">Básico</p>
+            </div>
+            <div className="text-center w-[200px]">
+              <p className="text-sm text-gray-500">Fin de suscripción</p>
+              <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">
+                {format(subscriptionEndDate, 'dd/MM/yyyy')}
+              </p>
+            </div>
           </div>
-          <div className="text-center w-[200px]">
-            <p className="text-sm text-gray-500">Técnico designado</p>
-            <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">Ing. Jose Torres</p>
-          </div>
-          <div className="text-center w-[200px]">
-            <p className="text-sm text-gray-500">Tipo de suscripción</p>
-            <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">Básico</p>
-          </div>
-          <div className="text-center w-[200px]">
-            <p className="text-sm text-gray-500">Fin de suscripción</p>
-            <p style={{ backgroundColor: '#156082', color: 'white' }} className="px-4 py-2 rounded w-full border">
-              {format(subscriptionEndDate, 'dd/MM/yyyy')}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      <Chatbot />
+    </>
   );
 };

@@ -105,7 +105,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>Historial diario de potencia máxima</CardTitle>
+          <CardTitle>Histórico diario de potencia máxima</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <BarChart width={650} height={300} data={getBarChartData()}>

@@ -93,16 +93,16 @@ const ProfilePage = () => {
             <div className="flex-1">
               <Tabs defaultValue="informacion" className="w-full">
                 <TabsList className="w-full justify-start border-b mb-8">
-                  <TabsTrigger value="informacion" className="data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
+                  <TabsTrigger value="informacion" className="text-lg data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
                     Información
                   </TabsTrigger>
-                  <TabsTrigger value="contacto" className="data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
+                  <TabsTrigger value="contacto" className="text-lg data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
                     Contacto
                   </TabsTrigger>
-                  <TabsTrigger value="archivos" className="data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
+                  <TabsTrigger value="archivos" className="text-lg data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
                     Archivos
                   </TabsTrigger>
-                  <TabsTrigger value="configuracion" className="data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
+                  <TabsTrigger value="configuracion" className="text-lg data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
                     Configuración
                   </TabsTrigger>
                 </TabsList>

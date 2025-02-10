@@ -96,12 +96,12 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
   };
 
   return (
-    <Card className="w-72 h-fit bg-gradient-to-b from-sergen-100 to-sergen-50 p-6">
+    <Card className="w-72 h-fit bg-gradient-to-b from-sergen-100 to-sergen-50">
       <div className="flex flex-col items-center">
-        <div className="w-32 h-32 relative">
-          <Avatar className="w-32 h-32">
-            <AvatarImage src={profile?.avatar_url} />
-            <AvatarFallback>{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
+        <div className="w-full aspect-square relative">
+          <Avatar className="w-full h-full rounded-t-lg">
+            <AvatarImage src={profile?.avatar_url} className="object-cover" />
+            <AvatarFallback className="text-4xl">{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
           <input
             type="file"
@@ -110,7 +110,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
             accept="image/*"
             onChange={handleFileUpload}
           />
-          <div className="absolute -bottom-2 right-0 flex gap-2">
+          <div className="absolute bottom-4 right-4 flex gap-2">
             <label 
               htmlFor="avatar-upload" 
               className="bg-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-gray-50"
@@ -132,7 +132,9 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
             )}
           </div>
         </div>
-        <h2 className="text-xl font-semibold mt-4">{profile?.business_name || "Ultrafrio S.A.C."}</h2>
+        <div className="p-6">
+          <h2 className="text-xl font-semibold text-center">{profile?.business_name || "Ultrafrio S.A.C."}</h2>
+        </div>
       </div>
     </Card>
   );
