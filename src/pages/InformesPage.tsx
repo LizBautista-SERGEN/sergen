@@ -28,7 +28,7 @@ const InformesPage = () => {
       const { data, error } = await supabase
         .from('report_templates')
         .select('*')
-        .single();
+        .maybeSingle();
       
       if (error) {
         toast.error("Error al cargar la plantilla del informe");
@@ -91,7 +91,7 @@ const InformesPage = () => {
       .eq('user_id', session.user.id)
       .eq('year', year)
       .eq('month', month)
-      .single();
+      .maybeSingle();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
       toast.error("Error al obtener el número de informe");
@@ -103,14 +103,14 @@ const InformesPage = () => {
       return;
     }
 
-    const { data: lastReport, error: lastReportError } = await supabase
+    const { data: lastReport } = await supabase
       .from('report_numbers')
       .select('report_number')
       .eq('user_id', session.user.id)
       .order('year', { ascending: false })
       .order('month', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     const newReportNumber = (lastReport?.report_number || 0) + 1;
 
@@ -239,3 +239,4 @@ const InformesPage = () => {
 };
 
 export default InformesPage;
+
