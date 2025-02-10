@@ -12,8 +12,8 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen overflow-hidden pt-16 bg-black">
-      <div className="container relative z-10 mx-auto flex min-h-screen flex-col items-center justify-center px-4">
+    <section className="relative overflow-hidden pt-16 bg-black">
+      <div className="container relative z-10 mx-auto flex flex-col items-center justify-center px-4">
         <Card className="w-full bg-black/[0.96] relative overflow-hidden border-zinc-800">
           <Spotlight
             className="-top-40 left-0 md:left-60 md:-top-20"
