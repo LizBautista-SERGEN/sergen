@@ -64,13 +64,11 @@ export function Spotlight({
     };
   }, [parentElement, handleMouseMove]);
 
-  const opacity = fill.toLowerCase() === '#ffffff' ? '0.15' : '0.2';
-
   return (
     <motion.div
       ref={containerRef}
       className={cn(
-        'pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] blur-xl transition-opacity duration-200',
+        'pointer-events-none absolute rounded-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] blur-lg transition-opacity duration-200',
         isHovered ? 'opacity-100' : 'opacity-0',
         className
       )}
@@ -79,8 +77,8 @@ export function Spotlight({
         height: size,
         left: spotlightLeft,
         top: spotlightTop,
-        background: `radial-gradient(circle at center, ${fill} 0%, transparent 80%)`,
-        opacity: isHovered ? opacity : 0
+        background: `radial-gradient(circle at center, ${fill} 0%, rgba(255,255,255,0.15) 50%, transparent 80%)`,
+        opacity: isHovered ? 0.35 : 0
       }}
     />
   );

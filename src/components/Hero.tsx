@@ -18,7 +18,7 @@ const Hero = () => {
           <Spotlight
             className="-top-40 left-0 md:left-60 md:-top-20"
             fill="#FFFFFF"
-            size={400}
+            size={500}
           />
           
           <div className="flex flex-col md:flex-row h-full">
