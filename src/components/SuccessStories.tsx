@@ -5,27 +5,27 @@ import AnimatedSection from "./AnimatedSection";
 const SuccessStories = () => {
   const stories = [
     {
-      title: "Complejo Industrial Reducción del 40%",
+      title: "GCM PERU",
       description:
-        "Implementamos soluciones de eficiencia energética que resultaron en una reducción del 40% en el consumo mensual.",
+        "Servicio realizado en Junio del 2024. Implementamos soluciones de eficiencia energética que resultaron en una reducción del 50% en la facturación eléctrica mensual.",
       icon: <Factory className="h-12 w-12" />,
-      savings: "40%",
+      savings: "50%",
       image: "/lovable-uploads/energy-efficiency.jpg"
     },
     {
-      title: "Centro Comercial Optimización Total",
+      title: "ULTRAFRIO",
       description:
-        "Optimizamos los sistemas de climatización e iluminación, logrando un ahorro anual significativo en costos energéticos.",
+        "Servicio realizado en Junio 2024. Optimizamos los sistemas energéticos logrando hasta un 36% de reducción en la factura eléctrica.",
       icon: <Building2 className="h-12 w-12" />,
-      savings: "35%",
+      savings: "36%",
       image: "/lovable-uploads/energy-efficiency.jpg"
     },
     {
-      title: "Edificio Corporativo Smart Energy",
+      title: "MONT BLANC EXPORT",
       description:
-        "Instalación de sistemas inteligentes de gestión energética que permitieron una reducción sustancial en el consumo.",
+        "Instalación de sistemas inteligentes de gestión energética que permitieron una reducción del 20% en la factura eléctrica.",
       icon: <Building className="h-12 w-12" />,
-      savings: "45%",
+      savings: "20%",
       image: "/lovable-uploads/energy-efficiency.jpg"
     },
   ];

@@ -37,8 +37,7 @@ const Hero = () => {
                   Tecnología que revoluciona el consumo energético
                 </h1>
                 <p className="mb-8 text-2xl font-semibold bg-gradient-to-r from-sergen-700 to-sergen-500 bg-clip-text text-transparent">
-                  Transformamos la gestión energética de tu empresa con soluciones
-                  innovadoras y sostenibles
+                  Transformamos la gestión energética de tu empresa
                 </p>
               </motion.div>
             </div>
