@@ -2,10 +2,9 @@
 export interface EnergyData {
   id: string;
   date: string;
-  consumption: number;
-  demand: number;
-  cost: number;
-  created_at: string;
+  time: string;
+  forecasted_power: number;
+  executed_power: number;
   user_id: string;
-  is_modulated: boolean;
+  created_at?: string;
 }

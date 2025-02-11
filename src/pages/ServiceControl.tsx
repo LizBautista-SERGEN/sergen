@@ -7,7 +7,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { RiskManagement } from "@/components/dashboard/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/PowerCharts";
 import { ServiceInfo } from "@/components/dashboard/ServiceInfo";
-import { EnergyData } from "@/types/energy-data";
+import { EnergyData } from "@/types/energy";
 
 const ServiceControl = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -40,7 +40,9 @@ const ServiceControl = () => {
         date: item.date,
         time: item.time,
         forecasted_power: item.forecasted_power,
-        executed_power: item.executed_power
+        executed_power: item.executed_power,
+        user_id: item.user_id,
+        created_at: item.created_at
       })) || [];
 
       console.log("Fetched energy data:", formattedData);
