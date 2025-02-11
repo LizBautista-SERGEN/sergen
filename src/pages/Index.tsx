@@ -5,12 +5,12 @@ import About from "@/components/About";
 import Contact from "@/components/Contact";
 import Sustainability from "@/components/Sustainability";
 import AnimatedSection from "@/components/AnimatedSection";
-import { ChartBarIncreasing, HandShake } from "lucide-react";
+import { ChartBarIncreasing, Handshake } from "lucide-react";
 
 const Index = () => {
   const differentiators = [
     {
-      icon: <HandShake className="h-8 w-8 text-sergen-500" />,
+      icon: <Handshake className="h-8 w-8 text-sergen-500" />,
       title: "Trayectoria",
       description: "3 años construyendo relaciones duraderas con nuestros clientes, respaldados por sus recomendaciones y confianza continua."
     },
