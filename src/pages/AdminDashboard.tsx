@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -34,9 +33,19 @@ interface Course {
   title: string;
 }
 
+interface EnergyData {
+  id: string;
+  date: string;
+  consumption: number;
+  demand: number;
+  cost: number;
+  is_modulated: boolean;
+}
+
 const AdminDashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -65,6 +74,7 @@ const AdminDashboard = () => {
 
       fetchUsers();
       fetchCourses();
+      fetchEnergyData();
     };
 
     checkAdmin();
@@ -94,6 +104,20 @@ const AdminDashboard = () => {
     }
 
     setCourses(data || []);
+  };
+
+  const fetchEnergyData = async () => {
+    const { data, error } = await supabase
+      .from('energy_data')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      toast.error('Error al cargar datos de energía');
+      return;
+    }
+
+    setEnergyData(data || []);
   };
 
   const handleToggleAccess = async (userId: string, currentAccess: boolean) => {
@@ -182,17 +206,18 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       toast.success('Datos subidos exitosamente');
+      fetchEnergyData();
     } catch (error) {
       toast.error('Error al subir datos');
       console.error('Error:', error);
     }
   };
 
-  const handleToggleModulation = async (date: string, isModulated: boolean) => {
+  const handleToggleModulation = async (id: string, isModulated: boolean) => {
     const { error } = await supabase
       .from('energy_data')
       .update({ is_modulated: !isModulated })
-      .eq('date', date);
+      .eq('id', id);
 
     if (error) {
       toast.error('Error al actualizar estado de modulación');
@@ -200,6 +225,7 @@ const AdminDashboard = () => {
     }
 
     toast.success('Estado de modulación actualizado');
+    fetchEnergyData();
   };
 
   return (
@@ -346,6 +372,40 @@ const AdminDashboard = () => {
                     </span>
                   </Label>
                 </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Consumo</TableHead>
+                      <TableHead>Demanda</TableHead>
+                      <TableHead>Costo</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {energyData.map((data) => (
+                      <TableRow key={data.id}>
+                        <TableCell>{new Date(data.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{data.consumption}</TableCell>
+                        <TableCell>{data.demand}</TableCell>
+                        <TableCell>{data.cost}</TableCell>
+                        <TableCell>
+                          {data.is_modulated ? 'Modulado' : 'No Modulado'}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleToggleModulation(data.id, data.is_modulated)}
+                          >
+                            {data.is_modulated ? 'Desactivar Modulación' : 'Activar Modulación'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
