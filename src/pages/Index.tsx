@@ -28,10 +28,26 @@ const Index = () => {
   return (
     <main className="overflow-hidden">
       <Hero />
+      
+      {/* Sección de presentación después del hero */}
+      <section className="bg-white py-24">
+        <div className="container mx-auto px-4">
+          <AnimatedSection className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Soluciones Energéticas de Última Generación
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Utilizamos tecnología avanzada y experiencia comprobada para optimizar el consumo energético de tu empresa, 
+              garantizando ahorros significativos y un futuro más sostenible.
+            </p>
+          </AnimatedSection>
+        </div>
+      </section>
+
       <Services />
       <About />
       
-      {/* Nueva sección de diferenciadores */}
+      {/* Sección de diferenciadores */}
       <section className="bg-gray-50 py-16">
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-12">
