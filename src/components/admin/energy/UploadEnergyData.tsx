@@ -48,8 +48,7 @@ export const UploadEnergyData = ({ onUploadSuccess }: UploadEnergyDataProps) => 
         body: formData,
         headers: {
           Authorization: `Bearer ${session.access_token}`,
-        },
-        responseType: 'json'
+        }
       });
 
       if (error) throw error;
