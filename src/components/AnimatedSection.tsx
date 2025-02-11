@@ -20,6 +20,8 @@ const AnimatedSection = ({ children, className = "" }: AnimatedSectionProps) => 
       },
       {
         threshold: 0.1,
+        root: null,
+        rootMargin: "0px"
       }
     );
 
@@ -37,9 +39,9 @@ const AnimatedSection = ({ children, className = "" }: AnimatedSectionProps) => 
   return (
     <div
       ref={ref}
-      className={`${className} ${
+      className={`${className} transform transition-all duration-1000 ease-out ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-      } transition-all duration-1000 ease-out`}
+      }`}
     >
       {children}
     </div>

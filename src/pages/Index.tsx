@@ -26,10 +26,9 @@ const Index = () => {
   ];
 
   return (
-    <main className="overflow-hidden">
+    <main className="relative">
       <Hero />
       
-      {/* Sección de presentación después del hero */}
       <section className="bg-white py-24">
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-16">
@@ -47,7 +46,6 @@ const Index = () => {
       <Services />
       <About />
       
-      {/* Sección de diferenciadores */}
       <section className="bg-gray-50 py-16">
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-12">
