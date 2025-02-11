@@ -181,8 +181,11 @@ export type Database = {
           created_at: string
           date: string
           demand: number
+          executed_power: number
+          forecasted_power: number
           id: string
           is_modulated: boolean
+          time: string
           user_id: string
         }
         Insert: {
@@ -191,8 +194,11 @@ export type Database = {
           created_at?: string
           date: string
           demand: number
+          executed_power: number
+          forecasted_power: number
           id?: string
           is_modulated?: boolean
+          time: string
           user_id: string
         }
         Update: {
@@ -201,8 +207,11 @@ export type Database = {
           created_at?: string
           date?: string
           demand?: number
+          executed_power?: number
+          forecasted_power?: number
           id?: string
           is_modulated?: boolean
+          time?: string
           user_id?: string
         }
         Relationships: [
