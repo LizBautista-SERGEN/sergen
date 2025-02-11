@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,24 +26,41 @@ interface EnergyData {
 export const EnergyManagement = () => {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>('');
 
   useEffect(() => {
     fetchEnergyData();
   }, []);
 
   const fetchEnergyData = async () => {
-    const { data, error } = await supabase
-      .from('energy_data')
-      .select('*')
-      .order('date', { ascending: false })
-      .order('time', { ascending: true });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('No hay sesión activa');
+        return;
+      }
 
-    if (error) {
-      toast.error('Error al cargar datos de energía');
-      return;
+      const { data, error } = await supabase
+        .from('energy_data')
+        .select('*')
+        .order('date', { ascending: false })
+        .order('time', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Error al cargar datos de energía');
+        return;
+      }
+
+      setEnergyData(data || []);
+      if (data && data.length > 0) {
+        setSelectedDate(data[0].date);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al cargar datos');
     }
-
-    setEnergyData(data || []);
   };
 
   const handleUploadEnergyData = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,12 +88,16 @@ export const EnergyManagement = () => {
       if (error) throw error;
 
       toast.success('Datos subidos exitosamente');
-      fetchEnergyData();
+      await fetchEnergyData(); // Refrescar datos después de subir
     } catch (error: any) {
       console.error('Error:', error);
       toast.error(error.message || 'Error al subir datos');
     } finally {
       setLoading(false);
+      // Limpiar el input file
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
@@ -92,8 +112,11 @@ export const EnergyManagement = () => {
   };
 
   const uniqueDates = [...new Set(energyData.map(data => data.date))];
-  const latestDate = uniqueDates[0] || format(new Date(), 'yyyy-MM-dd');
-  const chartData = getChartData(latestDate);
+  const chartData = getChartData(selectedDate || uniqueDates[0] || '');
+
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+  };
 
   return (
     <div className="space-y-6">
@@ -130,7 +153,7 @@ export const EnergyManagement = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Select defaultValue={latestDate}>
+            <Select value={selectedDate} onValueChange={handleDateChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar fecha" />
               </SelectTrigger>
