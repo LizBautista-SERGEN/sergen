@@ -47,13 +47,10 @@ const About = () => {
               Sobre Nosotros
             </span>
             <h2 className="mb-6 text-4xl font-bold text-gray-900">
-              Expertos en Eficiencia Energética
+              Por qué elegirnos
             </h2>
             <p className="mb-6 text-lg text-gray-600">
-              En SERGEN, nos dedicamos a transformar la manera en que las empresas
-              gestionan su energía. Con años de experiencia y un equipo altamente
-              calificado, desarrollamos soluciones personalizadas que garantizan
-              resultados medibles y sostenibles.
+              SERGEN nace como respuesta a la creciente necesidad de empresas industriales de alcanzar una producción óptima con la más alta eﬁciencia energética. Ofrecemos una amplia línea de servicios especializados en la implementación de proyectos eléctricos y sistemas de control. Nos encargamos de gestionar integralmente los proyectos en todas sus etapas, asegurando el cumplimiento de los objetivos en cada fase.
             </p>
             <div className="grid grid-cols-2 gap-8">
               <div>

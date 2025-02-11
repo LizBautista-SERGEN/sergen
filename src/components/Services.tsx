@@ -18,7 +18,7 @@ const Services = () => {
     {
       title: "Control de Demanda",
       description:
-        "Se proporciona a los usuarios un plan operativo en donde se incluyen reducciones mínimas de consumo eléctrico para obtener reducciones de factura eléctrica de hasta el 50%.",
+        "Se proporciona a los usuarios un plan operativo de gestión energética para lograr reducciones en factura eléctrica de hasta el 50%.",
       icon: <Gauge className="h-6 w-6" />,
       path: "/servicios/demanda"
     },

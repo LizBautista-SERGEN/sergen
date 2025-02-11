@@ -24,7 +24,7 @@ const Sustainability = () => {
       <div className="container mx-auto px-4">
         <AnimatedSection className="mb-16 text-center">
           <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
-            Nuestro Impacto
+            Impacto Positivo
           </span>
           <h2 className="mb-4 text-4xl font-bold text-gray-900">
             Compromiso Sostenible

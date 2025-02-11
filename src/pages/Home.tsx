@@ -10,10 +10,10 @@ const Home = () => {
   return (
     <main className="overflow-hidden">
       <Hero />
+      <About />
       <Services />
       <SuccessStories />
       <Sustainability />
-      <About />
       <Contact />
     </main>
   );
