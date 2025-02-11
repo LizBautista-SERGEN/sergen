@@ -62,8 +62,25 @@ serve(async (req) => {
     
     for (let i = 0; i < data.length; i++) {
       const row: any = data[i]
+      
+      // Validate required fields
+      if (!row.date || !row.time) {
+        console.error('Skipping row due to missing required fields:', row)
+        continue
+      }
+
+      // Format date to ensure it's in the correct format (YYYY-MM-DD)
+      let formattedDate = row.date
+      if (row.date instanceof Date) {
+        formattedDate = row.date.toISOString().split('T')[0]
+      } else if (typeof row.date === 'number') {
+        // Handle Excel serial date numbers
+        const date = new Date(Math.round((row.date - 25569) * 86400 * 1000))
+        formattedDate = date.toISOString().split('T')[0]
+      }
+
       processedData.push({
-        date: row.date,
+        date: formattedDate,
         time: row.time,
         forecasted_power: parseFloat(row.forecasted_power) || 0,
         executed_power: parseFloat(row.executed_power) || 0,
