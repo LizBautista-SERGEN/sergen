@@ -5,6 +5,7 @@ import About from "@/components/About";
 import Contact from "@/components/Contact";
 import SuccessStories from "@/components/SuccessStories";
 import Sustainability from "@/components/Sustainability";
+import WhyChooseUs from "@/components/WhyChooseUs";
 
 const Home = () => {
   return (
@@ -12,6 +13,7 @@ const Home = () => {
       <Hero />
       <About />
       <Services />
+      <WhyChooseUs />
       <SuccessStories />
       <Sustainability />
       <Contact />

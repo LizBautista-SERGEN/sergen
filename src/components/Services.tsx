@@ -13,28 +13,32 @@ const Services = () => {
       description:
         "Se detecta los principales focos de consumo con el fin de identificar las áreas con mayor potencial de ahorro. Además, sugiere medidas de mejora para reducir dicho consumo, evaluando tanto el ahorro esperado como la inversión requerida.",
       icon: <Search className="h-6 w-6" />,
-      path: "/servicios/diagnostico"
+      path: "/servicios/diagnostico",
+      image: "/lovable-uploads/46924861-677a-4a17-b6fe-666de8979766.png"
     },
     {
       title: "Control de Demanda",
       description:
         "Se proporciona a los usuarios un plan operativo de gestión energética para lograr reducciones en factura eléctrica de hasta el 50%.",
       icon: <Gauge className="h-6 w-6" />,
-      path: "/servicios/demanda"
+      path: "/servicios/demanda",
+      image: "/placeholder.svg"
     },
     {
       title: "Gestión Contractual",
       description:
         "Nuestro servicio de gestión contractual se encarga de analizar, revisar y negociar los términos, cláusulas y condiciones de los contratos de suministros, asegurando que se ajusten a tus necesidades y protejan tus intereses.",
       icon: <FileSpreadsheet className="h-6 w-6" />,
-      path: "/servicios/contractual"
+      path: "/servicios/contractual",
+      image: "/lovable-uploads/823922c8-88ef-4fb4-903c-59bcdadcb1ab.png"
     },
     {
       title: "Proyectos de Eficiencia",
       description:
         "En nuestros proyectos de eficiencia energética, diseñamos e implementamos soluciones personalizadas para optimizar el consumo de energía en tu empresa o instalaciones. Realizamos un análisis integral de tus procesos y sistemas para identificar oportunidades de ahorro, reducir costos operativos y minimizar el impacto ambiental.",
       icon: <Lightbulb className="h-6 w-6" />,
-      path: "/servicios/efficiency"
+      path: "/servicios/efficiency",
+      image: "/lovable-uploads/3c26af1d-33a0-4496-bb07-534d6f16f370.png"
     },
   ];
 

@@ -10,7 +10,7 @@ import {
 
 const About = () => {
   const images = [
-    "/placeholder.svg",
+    "/lovable-uploads/60f7a1f0-0d44-4fc7-8c8e-2ec98c50c7d6.png",
     "/placeholder.svg",
     "/placeholder.svg",
     "/placeholder.svg",
@@ -21,6 +21,28 @@ const About = () => {
     <section className="bg-white py-24">
       <div className="container mx-auto px-4">
         <div className="grid items-center gap-12 lg:grid-cols-2">
+          <AnimatedSection>
+            <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
+              Sobre Nosotros
+            </span>
+            <h2 className="mb-6 text-4xl font-bold text-gray-900">
+              Expertos en eficiencia energética
+            </h2>
+            <p className="mb-6 text-lg text-gray-600">
+              En SERGEN nos especializamos en ayudar a las empresas industriales a optimizar su producción con la máxima eficiencia energética. Como expertos en soluciones para el sector energético, ofrecemos servicios integrales que garantizan el cumplimiento de objetivos. Nuestro compromiso es impulsar la productividad y sostenibilidad de tu negocio.
+            </p>
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h4 className="mb-2 text-2xl font-bold text-sergen-600">+40</h4>
+                <p className="text-gray-600">Proyectos Completados</p>
+              </div>
+              <div>
+                <h4 className="mb-2 text-2xl font-bold text-sergen-600">37%</h4>
+                <p className="text-gray-600">Ahorro Promedio</p>
+              </div>
+            </div>
+          </AnimatedSection>
+
           <AnimatedSection>
             <Carousel className="w-full">
               <CarouselContent>
@@ -40,28 +62,6 @@ const About = () => {
               <CarouselPrevious />
               <CarouselNext />
             </Carousel>
-          </AnimatedSection>
-
-          <AnimatedSection>
-            <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
-              Sobre Nosotros
-            </span>
-            <h2 className="mb-6 text-4xl font-bold text-gray-900">
-              Por qué elegirnos
-            </h2>
-            <p className="mb-6 text-lg text-gray-600">
-              SERGEN nace como respuesta a la creciente necesidad de empresas industriales de alcanzar una producción óptima con la más alta eﬁciencia energética. Ofrecemos una amplia línea de servicios especializados en la implementación de proyectos eléctricos y sistemas de control. Nos encargamos de gestionar integralmente los proyectos en todas sus etapas, asegurando el cumplimiento de los objetivos en cada fase.
-            </p>
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <h4 className="mb-2 text-2xl font-bold text-sergen-600">100+</h4>
-                <p className="text-gray-600">Proyectos Completados</p>
-              </div>
-              <div>
-                <h4 className="mb-2 text-2xl font-bold text-sergen-600">30%</h4>
-                <p className="text-gray-600">Ahorro Promedio</p>
-              </div>
-            </div>
           </AnimatedSection>
         </div>
       </div>

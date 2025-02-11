@@ -1,21 +1,30 @@
 
 import { Card } from "@/components/ui/card";
-import { motion } from "framer-motion";
 
 interface ServiceCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
+  image?: string;
   onClick?: () => void;
 }
 
-const ServiceCard = ({ title, description, icon, onClick }: ServiceCardProps) => {
+const ServiceCard = ({ title, description, icon, image, onClick }: ServiceCardProps) => {
   return (
     <Card 
       className={`group relative overflow-hidden p-6 h-full flex flex-col transition-all duration-300 hover:shadow-lg ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-sergen-50/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      {image && (
+        <div className="absolute inset-0 w-full h-full">
+          <img 
+            src={image} 
+            alt={title} 
+            className="w-full h-full object-cover opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-white via-white/90 to-white/80" />
+        </div>
+      )}
       <div className="relative z-10 flex flex-col h-full">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-sergen-100 text-sergen-700">
           {icon}
