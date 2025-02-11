@@ -36,6 +36,7 @@ const LoginPage = () => {
         });
 
         if (error) {
+          console.error('Login error:', error);
           if (error.message.includes('Invalid login credentials')) {
             toast.error("Credenciales inválidas. Por favor verifique su correo y contraseña");
           } else if (error.message.includes('Email not confirmed')) {
@@ -43,6 +44,7 @@ const LoginPage = () => {
           } else {
             toast.error(error.message);
           }
+          setLoading(false);
           return;
         }
 
@@ -88,12 +90,14 @@ const LoginPage = () => {
         });
 
         if (error) {
+          console.error('Signup error:', error);
           if (error.message.includes('User already registered')) {
             toast.error("Este correo ya está registrado. Por favor, inicie sesión.");
             setIsLogin(true);
           } else {
             toast.error(error.message);
           }
+          setLoading(false);
           return;
         }
 
