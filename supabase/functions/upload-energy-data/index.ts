@@ -18,17 +18,14 @@ function parseExcelDate(serial: number | string | Date): string {
     return serial.toISOString().split('T')[0];
   }
   if (typeof serial === 'string') {
-    // Si es una fecha en formato ISO
     if (serial.includes('T')) {
       return serial.split('T')[0];
     }
-    // Si es una fecha en formato DD/MM/YYYY
     const parts = serial.split('/');
     if (parts.length === 3) {
       return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
     }
   }
-  // Si es un número serial de Excel
   const date = new Date(Math.round((serial as number - 25569) * 86400 * 1000));
   return date.toISOString().split('T')[0];
 }
@@ -40,37 +37,7 @@ function getTimeFromDate(date: string | Date): string {
   if (date instanceof Date) {
     return date.toTimeString().substring(0, 5);
   }
-  return "00:00"; // tiempo por defecto
-}
-
-function processRow(row: any, userId: string): any | null {
-  console.log('Processing row:', row);
-
-  // Verificar la existencia de los campos requeridos
-  if (!row.FECHA || (!row.EJECUTADO && row.EJECUTADO !== 0) || (!row["PRONÓSTICO"] && row["PRONÓSTICO"] !== 0)) {
-    console.error('Skipping row due to missing required fields:', row);
-    return null;
-  }
-
-  try {
-    const dateValue = row.FECHA;
-    const date = parseExcelDate(dateValue);
-    const time = getTimeFromDate(dateValue);
-
-    const processedRow = {
-      date,
-      time,
-      forecasted_power: parseFloat(row["PRONÓSTICO"].toString()) || 0,
-      executed_power: parseFloat(row.EJECUTADO.toString()) || 0,
-      user_id: userId,
-    };
-
-    console.log('Processed row:', processedRow);
-    return processedRow;
-  } catch (error) {
-    console.error('Error processing row:', error);
-    return null;
-  }
+  return "00:00";
 }
 
 serve(async (req) => {
@@ -97,7 +64,45 @@ serve(async (req) => {
       throw new Error('No file uploaded');
     }
 
-    // Borrar todos los datos existentes antes de la nueva carga
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
+      type: 'array',
+      cellDates: true,
+      cellNF: false,
+      cellText: false
+    });
+    
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    
+    const processedData = jsonData.reduce((acc: any[], row: any) => {
+      if (!row.FECHA || (!row.EJECUTADO && row.EJECUTADO !== 0) || (!row["PRONÓSTICO"] && row["PRONÓSTICO"] !== 0)) {
+        return acc;
+      }
+
+      try {
+        const date = parseExcelDate(row.FECHA);
+        const time = getTimeFromDate(row.FECHA);
+
+        acc.push({
+          date,
+          time,
+          forecasted_power: parseFloat(row["PRONÓSTICO"].toString()) || 0,
+          executed_power: parseFloat(row.EJECUTADO.toString()) || 0,
+          user_id: user.id,
+        });
+      } catch (error) {
+        console.error('Error processing row:', error);
+      }
+
+      return acc;
+    }, []);
+
+    if (processedData.length === 0) {
+      throw new Error('No valid data found in the file');
+    }
+
+    // Borrar datos existentes
     const { error: deleteError } = await supabase
       .from('energy_data')
       .delete()
@@ -107,48 +112,21 @@ serve(async (req) => {
       throw deleteError;
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
-      type: 'array',
-      cellDates: true,
-      cellNF: false,
-      cellText: false,
-      dateNF: 'dd/mm/yyyy'
-    });
-    
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(worksheet);
-    
-    console.log('Excel data:', data);
+    // Insertar datos en lotes más pequeños
+    const BATCH_SIZE = 25;
+    for (let i = 0; i < processedData.length; i += BATCH_SIZE) {
+      const batch = processedData.slice(i, i + BATCH_SIZE);
+      const { error: insertError } = await supabase
+        .from('energy_data')
+        .insert(batch);
 
-    const BATCH_SIZE = 50;
-    const processedData = [];
-
-    for (let i = 0; i < data.length; i++) {
-      const processedRow = processRow(data[i], user.id);
-      if (processedRow) {
-        processedData.push(processedRow);
-      }
-
-      if (processedData.length === BATCH_SIZE || i === data.length - 1) {
-        if (processedData.length > 0) {
-          const { error: insertError } = await supabase
-            .from('energy_data')
-            .insert(processedData);
-
-          if (insertError) {
-            console.error('Insert error:', insertError);
-            throw insertError;
-          }
-
-          console.log(`Processed batch of ${processedData.length} rows`);
-        }
-        processedData.length = 0;
+      if (insertError) {
+        throw insertError;
       }
     }
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, rowsProcessed: processedData.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }}
     );
   } catch (error) {
