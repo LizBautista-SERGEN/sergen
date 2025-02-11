@@ -5,6 +5,7 @@ import About from "@/components/About";
 import Contact from "@/components/Contact";
 import { Award, ShieldCheck, Star } from "lucide-react";
 import AnimatedSection from "@/components/AnimatedSection";
+import Sustainability from "@/components/Sustainability";
 
 const Index = () => {
   const differentiators = [
@@ -84,6 +85,10 @@ const Index = () => {
           </div>
         </section>
 
+        <Sustainability />
+        <Sustainability />
+        <Sustainability />
+
         <Contact />
       </div>
     </div>
@@ -91,4 +96,3 @@ const Index = () => {
 };
 
 export default Index;
-
