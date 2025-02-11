@@ -18,21 +18,21 @@ const Services = () => {
     {
       title: "Control de Demanda",
       description:
-        "Se proporciona a los usuarios pueden ahorrar en sus facturas de energía al desplazar la demanda a las horas de poca actividad",
+        "Se proporciona a los usuarios un plan operativo en donde se incluyen reducciones mínimas de consumo eléctrico para obtener reducciones de factura eléctrica de hasta el 50%.",
       icon: <Gauge className="h-6 w-6" />,
       path: "/servicios/demanda"
     },
     {
       title: "Gestión Contractual",
       description:
-        "Analizamos y optimizamos tus contratos energéticos para maximizar el ahorro.",
+        "Nuestro servicio de gestión contractual se encarga de analizar, revisar y negociar los términos, cláusulas y condiciones de los contratos de suministros, asegurando que se ajusten a tus necesidades y protejan tus intereses.",
       icon: <FileSpreadsheet className="h-6 w-6" />,
       path: "/servicios/contractual"
     },
     {
       title: "Proyectos de Eficiencia",
       description:
-        "Implementamos soluciones integrales para mejorar la eficiencia energética.",
+        "En nuestros proyectos de eficiencia energética, diseñamos e implementamos soluciones personalizadas para optimizar el consumo de energía en tu empresa o instalaciones. Realizamos un análisis integral de tus procesos y sistemas para identificar oportunidades de ahorro, reducir costos operativos y minimizar el impacto ambiental.",
       icon: <Lightbulb className="h-6 w-6" />,
       path: "/servicios/efficiency"
     },

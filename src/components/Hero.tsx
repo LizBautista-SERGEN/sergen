@@ -12,7 +12,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative pt-16 bg-white">
+    <section className="relative pt-16 bg-black">
       <div className="container relative z-10 mx-auto px-4">
         <Card className="w-full bg-black/[0.96] relative border-black h-auto">
           <Spotlight

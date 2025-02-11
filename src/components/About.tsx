@@ -1,19 +1,45 @@
+
 import AnimatedSection from "./AnimatedSection";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const About = () => {
+  const images = [
+    "/placeholder.svg",
+    "/placeholder.svg",
+    "/placeholder.svg",
+    "/placeholder.svg",
+    "/placeholder.svg"
+  ];
+
   return (
     <section className="bg-white py-24">
       <div className="container mx-auto px-4">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <AnimatedSection>
-            <div className="relative h-[400px] overflow-hidden rounded-2xl">
-              <img
-                src="/placeholder.svg"
-                alt="Equipo SERGEN"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-            </div>
+            <Carousel className="w-full">
+              <CarouselContent>
+                {images.map((image, index) => (
+                  <CarouselItem key={index}>
+                    <div className="relative h-[400px] overflow-hidden rounded-2xl">
+                      <img
+                        src={image}
+                        alt={`Imagen ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
           </AnimatedSection>
 
           <AnimatedSection>

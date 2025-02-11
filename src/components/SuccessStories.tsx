@@ -7,10 +7,10 @@ const SuccessStories = () => {
     {
       title: "GCM PERU",
       description:
-        "Servicio realizado en Junio del 2024. Implementamos soluciones de eficiencia energética que resultaron en una reducción del 50% en la facturación eléctrica mensual.",
+        "Servicio realizado en Junio del 2024. Implementamos soluciones de eficiencia energética que resultaron en una reducción del 49% en la facturación eléctrica mensual.",
       icon: <Factory className="h-12 w-12" />,
-      savings: "50%",
-      image: "/lovable-uploads/energy-efficiency.jpg"
+      savings: "49%",
+      image: "/lovable-uploads/e403af71-9916-48a8-8973-676c684e3b5b.png"
     },
     {
       title: "ULTRAFRIO",
@@ -18,15 +18,15 @@ const SuccessStories = () => {
         "Servicio realizado en Junio 2024. Optimizamos los sistemas energéticos logrando hasta un 36% de reducción en la factura eléctrica.",
       icon: <Building2 className="h-12 w-12" />,
       savings: "36%",
-      image: "/lovable-uploads/energy-efficiency.jpg"
+      image: "/lovable-uploads/4d3125ff-cb81-43a5-83c5-69afee3db0ce.png"
     },
     {
       title: "MONT BLANC EXPORT",
       description:
-        "Instalación de sistemas inteligentes de gestión energética que permitieron una reducción del 20% en la factura eléctrica.",
+        "Instalación de sistemas inteligentes de gestión energética que permitieron una reducción del 21% en la factura eléctrica.",
       icon: <Building className="h-12 w-12" />,
-      savings: "20%",
-      image: "/lovable-uploads/energy-efficiency.jpg"
+      savings: "21%",
+      image: "/lovable-uploads/bccc5de9-7b23-4376-9d92-691ede516c1f.png"
     },
   ];
 

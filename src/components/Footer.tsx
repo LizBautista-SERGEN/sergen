@@ -1,5 +1,5 @@
 
-import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
+import { Facebook, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -16,6 +16,12 @@ const Footer = () => {
             <p className="text-gray-400">
               Transformando la gestión energética empresarial con soluciones innovadoras y sostenibles.
             </p>
+            <div className="mt-4">
+              <p className="text-gray-400">Dirección: Mz B Lt 11 Las Palmeras – Ate Vetarte – Lima</p>
+              <a href="https://wa.me/51985138443" className="text-gray-400 hover:text-sergen-500">
+                WhatsApp: +51 985 138 443
+              </a>
+            </div>
           </div>
           <div>
             <h3 className="text-xl font-semibold mb-4">Enlaces Rápidos</h3>
@@ -31,12 +37,6 @@ const Footer = () => {
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-sergen-500 transition-colors">
                 <Facebook className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-sergen-500 transition-colors">
-                <Twitter className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-sergen-500 transition-colors">
-                <Instagram className="h-6 w-6" />
               </a>
               <a href="#" className="text-gray-400 hover:text-sergen-500 transition-colors">
                 <Linkedin className="h-6 w-6" />
