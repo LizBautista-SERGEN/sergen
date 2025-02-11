@@ -13,62 +13,64 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-function parseExcelDate(serial: number): string {
-  const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+function parseExcelDate(serial: number | string | Date): string {
+  if (serial instanceof Date) {
+    return serial.toISOString().split('T')[0];
+  }
+  if (typeof serial === 'string') {
+    // Si es una fecha en formato ISO
+    if (serial.includes('T')) {
+      return serial.split('T')[0];
+    }
+    // Si es una fecha en formato DD/MM/YYYY
+    const parts = serial.split('/');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+  }
+  // Si es un número serial de Excel
+  const date = new Date(Math.round((serial as number - 25569) * 86400 * 1000));
   return date.toISOString().split('T')[0];
 }
 
-function parseExcelTime(serial: number): string {
-  const totalMinutes = Math.round(serial * 24 * 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+function getTimeFromDate(date: string | Date): string {
+  if (typeof date === 'string' && date.includes('T')) {
+    return date.split('T')[1].substring(0, 5);
+  }
+  if (date instanceof Date) {
+    return date.toTimeString().substring(0, 5);
+  }
+  return "00:00"; // tiempo por defecto
 }
 
 function processRow(row: any, userId: string): any | null {
-  console.log('Processing row:', row); // Debug log
+  console.log('Processing row:', row);
 
-  if (!row.FECHA || !row.HORA) {
+  // Verificar la existencia de los campos requeridos
+  if (!row.FECHA || (!row.EJECUTADO && row.EJECUTADO !== 0) || (!row["PRONÓSTICO"] && row["PRONÓSTICO"] !== 0)) {
     console.error('Skipping row due to missing required fields:', row);
     return null;
   }
 
-  let date: string;
-  if (typeof row.FECHA === 'number') {
-    date = parseExcelDate(row.FECHA);
-  } else if (row.FECHA instanceof Date) {
-    date = row.FECHA.toISOString().split('T')[0];
-  } else {
-    // Assume it's a string in the format DD/MM/YYYY
-    const parts = row.FECHA.split('/');
-    if (parts.length === 3) {
-      date = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-    } else {
-      console.error('Invalid date format:', row.FECHA);
-      return null;
-    }
+  try {
+    const dateValue = row.FECHA;
+    const date = parseExcelDate(dateValue);
+    const time = getTimeFromDate(dateValue);
+
+    const processedRow = {
+      date,
+      time,
+      forecasted_power: parseFloat(row["PRONÓSTICO"].toString()) || 0,
+      executed_power: parseFloat(row.EJECUTADO.toString()) || 0,
+      user_id: userId,
+    };
+
+    console.log('Processed row:', processedRow);
+    return processedRow;
+  } catch (error) {
+    console.error('Error processing row:', error);
+    return null;
   }
-
-  let time: string;
-  if (typeof row.HORA === 'number') {
-    time = parseExcelTime(row.HORA);
-  } else if (row.HORA instanceof Date) {
-    time = `${row.HORA.getHours().toString().padStart(2, '0')}:${row.HORA.getMinutes().toString().padStart(2, '0')}`;
-  } else {
-    // Assume it's a string in HH:mm format
-    time = row.HORA;
-  }
-
-  const processedRow = {
-    date,
-    time,
-    forecasted_power: parseFloat(row["PRONÓSTICO"]) || 0,
-    executed_power: parseFloat(row.EJECUTADO) || 0,
-    user_id: userId,
-  };
-
-  console.log('Processed row:', processedRow); // Debug log
-  return processedRow;
 }
 
 serve(async (req) => {
@@ -117,7 +119,7 @@ serve(async (req) => {
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(worksheet);
     
-    console.log('Excel data:', data); // Debug log
+    console.log('Excel data:', data);
 
     const BATCH_SIZE = 50;
     const processedData = [];
