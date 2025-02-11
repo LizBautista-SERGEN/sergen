@@ -47,10 +47,10 @@ const SuccessStories = () => {
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {stories.map((story, index) => (
-            <AnimatedSection key={index}>
-              <div className="group relative overflow-hidden rounded-lg bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl">
+            <AnimatedSection key={index} className="h-full">
+              <div className="group relative overflow-hidden rounded-lg bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl h-full flex flex-col">
                 <div className="absolute inset-0 bg-gradient-to-br from-sergen-50/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="relative z-10">
+                <div className="relative z-10 flex flex-col h-full">
                   <div className="mb-4">
                     <div className="aspect-video w-full overflow-hidden rounded-lg mb-4">
                       <img 
@@ -71,7 +71,7 @@ const SuccessStories = () => {
                   <h3 className="mb-3 text-xl font-semibold text-gray-900">
                     {story.title}
                   </h3>
-                  <p className="text-gray-600">{story.description}</p>
+                  <p className="text-gray-600 flex-grow">{story.description}</p>
                 </div>
               </div>
             </AnimatedSection>
