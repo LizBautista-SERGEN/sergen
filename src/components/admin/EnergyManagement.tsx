@@ -24,9 +24,12 @@ export const EnergyManagement = () => {
         return;
       }
 
+      console.log('Fetching energy data for user:', session.user.id);
+
       const { data, error } = await supabase
         .from('energy_data')
         .select('*')
+        .eq('user_id', session.user.id)
         .order('date', { ascending: false })
         .order('time', { ascending: true });
 
@@ -36,6 +39,7 @@ export const EnergyManagement = () => {
         return;
       }
 
+      console.log('Fetched energy data:', data);
       setEnergyData(data || []);
       if (data && data.length > 0) {
         setSelectedDate(data[0].date);

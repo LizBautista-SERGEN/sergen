@@ -29,6 +29,8 @@ export const UploadEnergyData = ({ onUploadSuccess }: UploadEnergyDataProps) => 
         throw new Error('No hay sesión activa');
       }
 
+      console.log('Uploading file for user:', session.user.id);
+
       const { error } = await supabase.functions.invoke('upload-energy-data', {
         body: formData,
         headers: {
@@ -39,7 +41,12 @@ export const UploadEnergyData = ({ onUploadSuccess }: UploadEnergyDataProps) => 
       if (error) throw error;
 
       toast.success('Datos subidos exitosamente');
-      onUploadSuccess();
+      
+      // Esperamos un momento antes de recargar los datos
+      setTimeout(() => {
+        onUploadSuccess();
+      }, 1000);
+      
     } catch (error: any) {
       console.error('Error:', error);
       toast.error(error.message || 'Error al subir datos');
