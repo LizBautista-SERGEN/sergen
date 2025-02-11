@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +21,9 @@ interface DailyPowerData {
 export const DailyPowerManagement = () => {
   const [dailyPowerData, setDailyPowerData] = useState<DailyPowerData[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [loadingCoes, setLoadingCoes] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
 
   const fetchDailyPowerData = async () => {
     const { data, error } = await supabase
@@ -54,6 +56,37 @@ export const DailyPowerManagement = () => {
 
     toast.success('Estado de modulación actualizado');
     fetchDailyPowerData();
+  };
+
+  const handleConsultarCoes = async () => {
+    if (!fechaInicio || !fechaFin) {
+      toast.error('Por favor seleccione las fechas');
+      return;
+    }
+
+    setLoadingCoes(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-coes-data', {
+        body: {
+          lectcodi: '1',
+          tipoempresa: '1',
+          empresas: '1',
+          fechaInicio,
+          fechaFin,
+        }
+      });
+
+      if (error) throw error;
+
+      console.log('Datos de COES:', data);
+      toast.success('Datos obtenidos exitosamente');
+      
+    } catch (error) {
+      console.error('Error al consultar COES:', error);
+      toast.error('Error al obtener datos de COES');
+    } finally {
+      setLoadingCoes(false);
+    }
   };
 
   const getBarChartData = () => {
@@ -99,6 +132,39 @@ export const DailyPowerManagement = () => {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Consulta COES</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Fecha Inicio</Label>
+              <Input
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Fecha Fin</Label>
+              <Input
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+              />
+            </div>
+          </div>
+          <Button 
+            onClick={handleConsultarCoes} 
+            disabled={loadingCoes}
+            className="w-full"
+          >
+            {loadingCoes ? 'Consultando...' : 'Consultar COES'}
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Histórico Diario de Potencia Máxima</CardTitle>
