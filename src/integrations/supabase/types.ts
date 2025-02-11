@@ -141,6 +141,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_power_data: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_modulated: boolean | null
+          max_power: number
+          peak_hour: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_modulated?: boolean | null
+          max_power: number
+          peak_hour: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_modulated?: boolean | null
+          max_power?: number
+          peak_hour?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
