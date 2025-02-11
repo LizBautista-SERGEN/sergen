@@ -20,9 +20,21 @@ function parseExcelDate(serial: number): string {
   return date.toISOString().split('T')[0];
 }
 
+// Helper function to parse Excel time
+function parseExcelTime(serial: number): string {
+  // Convert Excel time (fraction of 24 hours) to minutes
+  const totalMinutes = Math.round(serial * 24 * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  // Format as HH:mm
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
 // Helper function to process a single row
 function processRow(row: any, userId: string): any | null {
   if (!row.FECHA || !row.HORA) {
+    console.error('Skipping row due to missing required fields:', row);
     return null;
   }
 
@@ -33,8 +45,10 @@ function processRow(row: any, userId: string): any | null {
       : row.FECHA;
 
   const time = typeof row.HORA === 'number'
-    ? new Date(row.HORA * 24 * 60 * 60 * 1000).toISOString().split('T')[1].substring(0, 5)
-    : row.HORA;
+    ? parseExcelTime(row.HORA)
+    : row.HORA instanceof Date
+      ? `${row.HORA.getHours().toString().padStart(2, '0')}:${row.HORA.getMinutes().toString().padStart(2, '0')}`
+      : row.HORA;
 
   return {
     date,
