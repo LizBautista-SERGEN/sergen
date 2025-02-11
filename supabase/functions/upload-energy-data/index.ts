@@ -26,30 +26,49 @@ function parseExcelTime(serial: number): string {
 }
 
 function processRow(row: any, userId: string): any | null {
+  console.log('Processing row:', row); // Debug log
+
   if (!row.FECHA || !row.HORA) {
     console.error('Skipping row due to missing required fields:', row);
     return null;
   }
 
-  const date = typeof row.FECHA === 'number' 
-    ? parseExcelDate(row.FECHA)
-    : row.FECHA instanceof Date 
-      ? row.FECHA.toISOString().split('T')[0]
-      : row.FECHA;
+  let date: string;
+  if (typeof row.FECHA === 'number') {
+    date = parseExcelDate(row.FECHA);
+  } else if (row.FECHA instanceof Date) {
+    date = row.FECHA.toISOString().split('T')[0];
+  } else {
+    // Assume it's a string in the format DD/MM/YYYY
+    const parts = row.FECHA.split('/');
+    if (parts.length === 3) {
+      date = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    } else {
+      console.error('Invalid date format:', row.FECHA);
+      return null;
+    }
+  }
 
-  const time = typeof row.HORA === 'number'
-    ? parseExcelTime(row.HORA)
-    : row.HORA instanceof Date
-      ? `${row.HORA.getHours().toString().padStart(2, '0')}:${row.HORA.getMinutes().toString().padStart(2, '0')}`
-      : row.HORA;
+  let time: string;
+  if (typeof row.HORA === 'number') {
+    time = parseExcelTime(row.HORA);
+  } else if (row.HORA instanceof Date) {
+    time = `${row.HORA.getHours().toString().padStart(2, '0')}:${row.HORA.getMinutes().toString().padStart(2, '0')}`;
+  } else {
+    // Assume it's a string in HH:mm format
+    time = row.HORA;
+  }
 
-  return {
+  const processedRow = {
     date,
     time,
     forecasted_power: parseFloat(row["PRONÓSTICO"]) || 0,
     executed_power: parseFloat(row.EJECUTADO) || 0,
     user_id: userId,
   };
+
+  console.log('Processed row:', processedRow); // Debug log
+  return processedRow;
 }
 
 serve(async (req) => {
@@ -86,22 +105,23 @@ serve(async (req) => {
       throw deleteError;
     }
 
-    const BATCH_SIZE = 50;
     const arrayBuffer = await file.arrayBuffer();
     const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
       type: 'array',
       cellDates: true,
       cellNF: false,
       cellText: false,
-      sheetRows: 1000
+      dateNF: 'dd/mm/yyyy'
     });
     
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(worksheet);
+    
+    console.log('Excel data:', data); // Debug log
+
+    const BATCH_SIZE = 50;
     const processedData = [];
 
-    console.log('Starting processing of', data.length, 'rows');
-    
     for (let i = 0; i < data.length; i++) {
       const processedRow = processRow(data[i], user.id);
       if (processedRow) {
