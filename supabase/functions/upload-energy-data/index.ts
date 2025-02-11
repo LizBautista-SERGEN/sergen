@@ -15,6 +15,26 @@ serve(async (req) => {
   }
 
   try {
+    // Get and validate auth token
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
+
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Get user from token
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    
+    if (userError || !user) {
+      throw new Error('Authentication required')
+    }
+
     // Get file from request
     const formData = await req.formData()
     const file = formData.get('file')
@@ -28,18 +48,6 @@ serve(async (req) => {
     const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]
     const data = XLSX.utils.sheet_to_json(worksheet)
-
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // Get the current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) {
-      throw new Error('Authentication required')
-    }
 
     // Process and insert the data
     const processedData = data.map((row: any) => ({
