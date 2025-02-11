@@ -13,7 +13,7 @@ const Hero = () => {
 
   return (
     <section className="relative pt-16 bg-black">
-      <div className="container relative z-10 mx-auto flex flex-col items-center justify-center px-4 min-h-[600px]">
+      <div className="container relative z-10 mx-auto px-4">
         <Card className="w-full bg-black/[0.96] relative border-black">
           <Spotlight
             className="-top-40 left-0 md:left-60 md:-top-20"
@@ -43,7 +43,7 @@ const Hero = () => {
             </div>
 
             {/* Right content */}
-            <div className="flex-1 relative min-h-[400px]">
+            <div className="flex-1 relative h-[400px]">
               <SplineScene 
                 scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
                 className="w-full h-full"

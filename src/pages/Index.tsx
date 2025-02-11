@@ -5,7 +5,7 @@ import About from "@/components/About";
 import Contact from "@/components/Contact";
 import Sustainability from "@/components/Sustainability";
 import AnimatedSection from "@/components/AnimatedSection";
-import { ChartBarIncreasing, Handshake } from "lucide-react";
+import { Handshake, ChartBarIncreasing } from "lucide-react";
 
 const Index = () => {
   const differentiators = [
@@ -27,7 +27,7 @@ const Index = () => {
       <Services />
       <About />
       
-      <section id="differentiators" className="w-full bg-gray-50 py-24 mt-12">
+      <section id="differentiators" className="w-full bg-gray-50 py-24">
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-16">
             <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
