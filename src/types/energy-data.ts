@@ -8,4 +8,5 @@ export interface EnergyData {
   consumption: number;
   demand: number;
   cost: number;
+  is_modulated: boolean;
 }

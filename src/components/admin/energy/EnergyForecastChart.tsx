@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { EnergyData } from "@/types/energy-data";
@@ -21,7 +21,9 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
       .map(data => ({
         time: data.time,
         "Potencia Pronosticada": data.forecasted_power,
-        "Potencia Ejecutada": data.executed_power
+        "Potencia Ejecutada": data.executed_power,
+        "Consumo": data.consumption,
+        "Demanda": data.demand
       }));
   };
 
@@ -53,6 +55,7 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
                 <XAxis dataKey="time" />
                 <YAxis />
                 <Tooltip />
+                <Legend />
                 <Line
                   type="monotone"
                   dataKey="Potencia Pronosticada"
@@ -64,6 +67,20 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
                   type="monotone"
                   dataKey="Potencia Ejecutada"
                   stroke="#82ca9d"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Consumo"
+                  stroke="#ffc658"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Demanda"
+                  stroke="#ff7300"
                   strokeWidth={2}
                   dot={false}
                 />

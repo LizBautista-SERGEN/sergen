@@ -20,8 +20,12 @@ export const EnergyDataTable = ({ energyData }: EnergyDataTableProps) => {
             <TableRow>
               <TableHead>Fecha</TableHead>
               <TableHead>Hora</TableHead>
-              <TableHead>Potencia Pronosticada</TableHead>
-              <TableHead>Potencia Ejecutada</TableHead>
+              <TableHead>Potencia Pronosticada (kW)</TableHead>
+              <TableHead>Potencia Ejecutada (kW)</TableHead>
+              <TableHead>Consumo (kW)</TableHead>
+              <TableHead>Demanda (kW)</TableHead>
+              <TableHead>Costo</TableHead>
+              <TableHead>Modulado</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -29,8 +33,12 @@ export const EnergyDataTable = ({ energyData }: EnergyDataTableProps) => {
               <TableRow key={data.id}>
                 <TableCell>{format(new Date(data.date), 'dd/MM/yyyy')}</TableCell>
                 <TableCell>{data.time}</TableCell>
-                <TableCell>{data.forecasted_power} kW</TableCell>
-                <TableCell>{data.executed_power} kW</TableCell>
+                <TableCell>{data.forecasted_power.toFixed(2)}</TableCell>
+                <TableCell>{data.executed_power.toFixed(2)}</TableCell>
+                <TableCell>{data.consumption.toFixed(2)}</TableCell>
+                <TableCell>{data.demand.toFixed(2)}</TableCell>
+                <TableCell>{data.cost.toFixed(2)}</TableCell>
+                <TableCell>{data.is_modulated ? 'Sí' : 'No'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
