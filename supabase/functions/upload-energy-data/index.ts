@@ -9,7 +9,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -42,17 +42,20 @@ serve(async (req) => {
     }
 
     // Process and insert the data
+    const processedData = data.map((row: any) => ({
+      date: row.date,
+      time: row.time,
+      forecasted_power: parseFloat(row.forecasted_power) || 0,
+      executed_power: parseFloat(row.executed_power) || 0,
+      consumption: parseFloat(row.consumption) || 0,
+      demand: parseFloat(row.demand) || 0,
+      cost: parseFloat(row.cost) || 0,
+      user_id: user.id,
+    }))
+
     const { error: insertError } = await supabase
       .from('energy_data')
-      .insert(
-        data.map((row: any) => ({
-          date: row.date,
-          consumption: parseFloat(row.consumption) || 0,
-          demand: parseFloat(row.demand) || 0,
-          cost: parseFloat(row.cost) || 0,
-          user_id: user.id,
-        }))
-      )
+      .insert(processedData)
 
     if (insertError) {
       throw insertError
@@ -63,6 +66,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }}
     )
   } catch (error) {
+    console.error('Error in upload-energy-data function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
