@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { read, utils } from 'https://deno.land/x/excel@v1.4/mod.ts'
+import * as XLSX from 'https://deno.land/x/sheetjs@v0.18.3/xlsx.mjs'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,9 +25,9 @@ serve(async (req) => {
 
     // Parse Excel file
     const arrayBuffer = await file.arrayBuffer()
-    const workbook = read(new Uint8Array(arrayBuffer))
+    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-    const data = utils.sheet_to_json(worksheet)
+    const data = XLSX.utils.sheet_to_json(worksheet)
 
     // Initialize Supabase client
     const supabase = createClient(
