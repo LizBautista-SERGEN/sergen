@@ -1,31 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { toast } from "sonner";
-
-interface EnergyData {
-  id: string;
-  date: string;
-  time: string;
-  forecasted_power: number;
-  executed_power: number;
-  consumption: number;
-  demand: number;
-  cost: number;
-}
+import { EnergyData } from "@/types/energy-data";
+import { UploadEnergyData } from "./energy/UploadEnergyData";
+import { EnergyForecastChart } from "./energy/EnergyForecastChart";
+import { EnergyDataTable } from "./energy/EnergyDataTable";
 
 export const EnergyManagement = () => {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
 
   useEffect(() => {
@@ -63,57 +46,6 @@ export const EnergyManagement = () => {
     }
   };
 
-  const handleUploadEnergyData = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No hay sesión activa');
-      }
-
-      const { error } = await supabase.functions.invoke('upload-energy-data', {
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      toast.success('Datos subidos exitosamente');
-      await fetchEnergyData(); // Refrescar datos después de subir
-    } catch (error: any) {
-      console.error('Error:', error);
-      toast.error(error.message || 'Error al subir datos');
-    } finally {
-      setLoading(false);
-      // Limpiar el input file
-      if (event.target) {
-        event.target.value = '';
-      }
-    }
-  };
-
-  const getChartData = (date: string) => {
-    return energyData
-      .filter(data => data.date === date)
-      .map(data => ({
-        time: data.time,
-        "Potencia Pronosticada": data.forecasted_power,
-        "Potencia Ejecutada": data.executed_power
-      }));
-  };
-
-  const uniqueDates = [...new Set(energyData.map(data => data.date))];
-  const chartData = getChartData(selectedDate);
-
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
   };
@@ -122,106 +54,13 @@ export const EnergyManagement = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Subir Datos de Energía</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <Input
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleUploadEnergyData}
-              className="hidden"
-              id="energy-data-upload"
-              disabled={loading}
-            />
-            <Label
-              htmlFor="energy-data-upload"
-              className={`cursor-pointer flex flex-col items-center ${loading ? 'opacity-50' : ''}`}
-            >
-              <Upload className="h-12 w-12 text-gray-400 mb-4" />
-              <span className="text-gray-600">
-                {loading ? 'Subiendo archivo...' : 'Click para subir archivo de datos de energía'}
-              </span>
-            </Label>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Vista Previa del Pronóstico</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Select value={selectedDate} onValueChange={handleDateChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar fecha" />
-              </SelectTrigger>
-              <SelectContent>
-                {uniqueDates.map((date) => (
-                  <SelectItem key={date} value={date}>
-                    {format(new Date(date), 'dd/MM/yyyy', { locale: es })}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="Potencia Pronosticada"
-                    stroke="#8884d8"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="Potencia Ejecutada"
-                    stroke="#82ca9d"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Datos de Energía</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Hora</TableHead>
-                <TableHead>Potencia Pronosticada</TableHead>
-                <TableHead>Potencia Ejecutada</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEnergyData.map((data) => (
-                <TableRow key={data.id}>
-                  <TableCell>{format(new Date(data.date), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>{data.time}</TableCell>
-                  <TableCell>{data.forecasted_power} kW</TableCell>
-                  <TableCell>{data.executed_power} kW</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <UploadEnergyData onUploadSuccess={fetchEnergyData} />
+      <EnergyForecastChart 
+        energyData={energyData}
+        selectedDate={selectedDate}
+        onDateChange={handleDateChange}
+      />
+      <EnergyDataTable energyData={filteredEnergyData} />
     </div>
   );
 };
