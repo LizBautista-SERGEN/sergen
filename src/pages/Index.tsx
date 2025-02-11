@@ -24,50 +24,48 @@ const Index = () => {
   return (
     <div className="flex flex-col w-full">
       <Hero />
-      <div className="flex flex-col w-full min-h-screen">
-        <Services />
-        <About />
-        
-        <section id="differentiators" className="w-full bg-gray-50 py-24">
-          <div className="container mx-auto px-4">
-            <AnimatedSection className="text-center mb-12">
-              <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
-                ¿Por qué elegirnos?
-              </span>
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                Lo que nos diferencia
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Nuestro compromiso es brindar soluciones energéticas efectivas y accesibles
-              </p>
-            </AnimatedSection>
+      <Services />
+      <About />
+      
+      <section id="differentiators" className="w-full bg-gray-50 py-24 mt-12">
+        <div className="container mx-auto px-4">
+          <AnimatedSection className="text-center mb-16">
+            <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
+              ¿Por qué elegirnos?
+            </span>
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Lo que nos diferencia
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Nuestro compromiso es brindar soluciones energéticas efectivas y accesibles
+            </p>
+          </AnimatedSection>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              {differentiators.map((item, index) => (
-                <AnimatedSection 
-                  key={index}
-                  className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow"
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div className="mb-4 p-3 bg-sergen-50 rounded-full">
-                      {item.icon}
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {item.description}
-                    </p>
+          <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            {differentiators.map((item, index) => (
+              <AnimatedSection 
+                key={index}
+                className="bg-white p-10 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-6 p-4 bg-sergen-50 rounded-full">
+                    {item.icon}
                   </div>
-                </AnimatedSection>
-              ))}
-            </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    {item.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed text-lg">
+                    {item.description}
+                  </p>
+                </div>
+              </AnimatedSection>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <Sustainability />
-        <Contact />
-      </div>
+      <Sustainability />
+      <Contact />
     </div>
   );
 };
