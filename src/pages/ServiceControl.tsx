@@ -7,7 +7,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { RiskManagement } from "@/components/dashboard/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/PowerCharts";
 import { ServiceInfo } from "@/components/dashboard/ServiceInfo";
-import { EnergyData } from "@/types/energy";
+import { EnergyData } from "@/types/energy-data";
 
 const ServiceControl = () => {
   const [userData, setUserData] = useState<any>(null);
@@ -34,8 +34,17 @@ const ServiceControl = () => {
         return;
       }
 
-      console.log("Fetched energy data:", data);
-      setEnergyData(data || []);
+      // Convert the data to match EnergyData type
+      const formattedData: EnergyData[] = data?.map(item => ({
+        id: item.id,
+        date: item.date,
+        time: item.time,
+        forecasted_power: item.forecasted_power,
+        executed_power: item.executed_power
+      })) || [];
+
+      console.log("Fetched energy data:", formattedData);
+      setEnergyData(formattedData);
     };
 
     fetchUserData();

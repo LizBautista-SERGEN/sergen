@@ -21,9 +21,7 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
       .map(data => ({
         time: data.time,
         "Potencia Pronosticada": data.forecasted_power,
-        "Potencia Ejecutada": data.executed_power,
-        "Consumo": data.consumption,
-        "Demanda": data.demand
+        "Potencia Ejecutada": data.executed_power
       }));
   };
 
@@ -67,20 +65,6 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
                   type="monotone"
                   dataKey="Potencia Ejecutada"
                   stroke="#82ca9d"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Consumo"
-                  stroke="#ffc658"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="Demanda"
-                  stroke="#ff7300"
                   strokeWidth={2}
                   dot={false}
                 />
