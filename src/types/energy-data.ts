@@ -5,8 +5,4 @@ export interface EnergyData {
   time: string;
   forecasted_power: number;
   executed_power: number;
-  consumption: number;
-  demand: number;
-  cost: number;
-  is_modulated: boolean;
 }

@@ -22,10 +22,6 @@ export const EnergyDataTable = ({ energyData }: EnergyDataTableProps) => {
               <TableHead>Hora</TableHead>
               <TableHead>Potencia Pronosticada (kW)</TableHead>
               <TableHead>Potencia Ejecutada (kW)</TableHead>
-              <TableHead>Consumo (kW)</TableHead>
-              <TableHead>Demanda (kW)</TableHead>
-              <TableHead>Costo</TableHead>
-              <TableHead>Modulado</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -35,10 +31,6 @@ export const EnergyDataTable = ({ energyData }: EnergyDataTableProps) => {
                 <TableCell>{data.time}</TableCell>
                 <TableCell>{data.forecasted_power.toFixed(2)}</TableCell>
                 <TableCell>{data.executed_power.toFixed(2)}</TableCell>
-                <TableCell>{data.consumption.toFixed(2)}</TableCell>
-                <TableCell>{data.demand.toFixed(2)}</TableCell>
-                <TableCell>{data.cost.toFixed(2)}</TableCell>
-                <TableCell>{data.is_modulated ? 'Sí' : 'No'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -206,41 +206,29 @@ export type Database = {
       }
       energy_data: {
         Row: {
-          consumption: number
-          cost: number
           created_at: string
           date: string
-          demand: number
           executed_power: number
           forecasted_power: number
           id: string
-          is_modulated: boolean
           time: string
           user_id: string
         }
         Insert: {
-          consumption: number
-          cost: number
           created_at?: string
           date: string
-          demand: number
           executed_power: number
           forecasted_power: number
           id?: string
-          is_modulated?: boolean
           time: string
           user_id: string
         }
         Update: {
-          consumption?: number
-          cost?: number
           created_at?: string
           date?: string
-          demand?: number
           executed_power?: number
           forecasted_power?: number
           id?: string
-          is_modulated?: boolean
           time?: string
           user_id?: string
         }

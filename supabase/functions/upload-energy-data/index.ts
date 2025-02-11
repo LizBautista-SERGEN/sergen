@@ -8,30 +8,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Initialize Supabase client outside request handler
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-// Helper function to parse Excel date
 function parseExcelDate(serial: number): string {
   const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
   return date.toISOString().split('T')[0];
 }
 
-// Helper function to parse Excel time
 function parseExcelTime(serial: number): string {
-  // Convert Excel time (fraction of 24 hours) to minutes
   const totalMinutes = Math.round(serial * 24 * 60);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  
-  // Format as HH:mm
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 }
 
-// Helper function to process a single row
 function processRow(row: any, userId: string): any | null {
   if (!row.FECHA || !row.HORA) {
     console.error('Skipping row due to missing required fields:', row);
@@ -55,9 +48,6 @@ function processRow(row: any, userId: string): any | null {
     time,
     forecasted_power: parseFloat(row["PRONÓSTICO"]) || 0,
     executed_power: parseFloat(row.EJECUTADO) || 0,
-    consumption: 0, // Default values as they might not be in the Excel
-    demand: 0,
-    cost: 0,
     user_id: userId,
   };
 }
@@ -86,7 +76,16 @@ serve(async (req) => {
       throw new Error('No file uploaded');
     }
 
-    // Reduce memory usage by processing smaller chunks
+    // Borrar todos los datos existentes antes de la nueva carga
+    const { error: deleteError } = await supabase
+      .from('energy_data')
+      .delete()
+      .eq('user_id', user.id);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
     const BATCH_SIZE = 50;
     const arrayBuffer = await file.arrayBuffer();
     const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
@@ -94,7 +93,7 @@ serve(async (req) => {
       cellDates: true,
       cellNF: false,
       cellText: false,
-      sheetRows: 1000 // Limit rows to process at once
+      sheetRows: 1000
     });
     
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
