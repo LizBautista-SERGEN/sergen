@@ -112,11 +112,13 @@ export const EnergyManagement = () => {
   };
 
   const uniqueDates = [...new Set(energyData.map(data => data.date))];
-  const chartData = getChartData(selectedDate || uniqueDates[0] || '');
+  const chartData = getChartData(selectedDate);
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
   };
+
+  const filteredEnergyData = energyData.filter(data => data.date === selectedDate);
 
   return (
     <div className="space-y-6">
@@ -208,7 +210,7 @@ export const EnergyManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {energyData.map((data) => (
+              {filteredEnergyData.map((data) => (
                 <TableRow key={data.id}>
                   <TableCell>{format(new Date(data.date), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>{data.time}</TableCell>
