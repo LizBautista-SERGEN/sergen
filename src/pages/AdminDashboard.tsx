@@ -50,35 +50,69 @@ const AdminDashboard = () => {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!user) {
+      if (!session) {
+        console.log('No session found, redirecting to login');
         navigate('/login');
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .single();
 
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        toast.error('Error al verificar permisos');
+        navigate('/login');
+        return;
+      }
+
       if (profile?.role !== 'superuser') {
+        console.log('User is not superuser, redirecting to dashboard');
+        toast.error('No tienes permisos para acceder a esta página');
         navigate('/dashboard');
         return;
       }
 
-      fetchUsers();
-      fetchCourses();
-      fetchEnergyData();
-    };
+      // Setup auth state change listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || !session) {
+          navigate('/login');
+        }
+      });
 
-    checkAdmin();
-  }, [navigate]);
+      // Load data only if auth check passes
+      await Promise.all([
+        fetchUsers(),
+        fetchCourses(),
+        fetchEnergyData()
+      ]);
+
+      setLoading(false);
+
+      // Cleanup subscription on unmount
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch (error) {
+      console.error('Auth check error:', error);
+      toast.error('Error de autenticación');
+      navigate('/login');
+    }
+  };
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
@@ -227,6 +261,14 @@ const AdminDashboard = () => {
     toast.success('Estado de modulación actualizado');
     fetchEnergyData();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p>Cargando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
