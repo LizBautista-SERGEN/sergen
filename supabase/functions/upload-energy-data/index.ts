@@ -14,109 +14,116 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
+// Helper function to parse Excel date
+function parseExcelDate(serial: number): string {
+  const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+  return date.toISOString().split('T')[0];
+}
+
+// Helper function to process a single row
+function processRow(row: any, userId: string): any | null {
+  if (!row.FECHA || !row.HORA) {
+    return null;
+  }
+
+  const date = typeof row.FECHA === 'number' 
+    ? parseExcelDate(row.FECHA)
+    : row.FECHA instanceof Date 
+      ? row.FECHA.toISOString().split('T')[0]
+      : row.FECHA;
+
+  const time = typeof row.HORA === 'number'
+    ? new Date(row.HORA * 24 * 60 * 60 * 1000).toISOString().split('T')[1].substring(0, 5)
+    : row.HORA;
+
+  return {
+    date,
+    time,
+    forecasted_power: parseFloat(row["PRONÓSTICO"]) || 0,
+    executed_power: parseFloat(row.EJECUTADO) || 0,
+    consumption: 0, // Default values as they might not be in the Excel
+    demand: 0,
+    cost: 0,
+    user_id: userId,
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Validate auth token
-    const authHeader = req.headers.get('Authorization')
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header')
+      throw new Error('No authorization header');
     }
 
-    // Get user from token
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
-      throw new Error('Authentication required')
+      throw new Error('Authentication required');
     }
 
-    // Get and validate file
-    const formData = await req.formData()
-    const file = formData.get('file')
+    const formData = await req.formData();
+    const file = formData.get('file');
     if (!file) {
-      throw new Error('No file uploaded')
+      throw new Error('No file uploaded');
     }
 
-    // Process file in chunks to optimize memory usage
-    const arrayBuffer = await file.arrayBuffer()
+    // Reduce memory usage by processing smaller chunks
+    const BATCH_SIZE = 50;
+    const arrayBuffer = await file.arrayBuffer();
     const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
       type: 'array',
       cellDates: true,
       cellNF: false,
-      cellText: false
-    })
+      cellText: false,
+      sheetRows: 1000 // Limit rows to process at once
+    });
     
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-    const data = XLSX.utils.sheet_to_json(worksheet, { 
-      raw: true,
-      dateNF: 'yyyy-mm-dd'
-    })
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+    const processedData = [];
 
-    // Process data in smaller batches
-    const BATCH_SIZE = 100
-    const processedData = []
+    console.log('Starting processing of', data.length, 'rows');
     
     for (let i = 0; i < data.length; i++) {
-      const row: any = data[i]
-      
-      // Validate required fields
-      if (!row.date || !row.time) {
-        console.error('Skipping row due to missing required fields:', row)
-        continue
+      const processedRow = processRow(data[i], user.id);
+      if (processedRow) {
+        processedData.push(processedRow);
       }
 
-      // Format date to ensure it's in the correct format (YYYY-MM-DD)
-      let formattedDate = row.date
-      if (row.date instanceof Date) {
-        formattedDate = row.date.toISOString().split('T')[0]
-      } else if (typeof row.date === 'number') {
-        // Handle Excel serial date numbers
-        const date = new Date(Math.round((row.date - 25569) * 86400 * 1000))
-        formattedDate = date.toISOString().split('T')[0]
-      }
-
-      processedData.push({
-        date: formattedDate,
-        time: row.time,
-        forecasted_power: parseFloat(row.forecasted_power) || 0,
-        executed_power: parseFloat(row.executed_power) || 0,
-        consumption: parseFloat(row.consumption) || 0,
-        demand: parseFloat(row.demand) || 0,
-        cost: parseFloat(row.cost) || 0,
-        user_id: user.id,
-      })
-
-      // Insert in batches
       if (processedData.length === BATCH_SIZE || i === data.length - 1) {
-        const { error: insertError } = await supabase
-          .from('energy_data')
-          .insert(processedData)
+        if (processedData.length > 0) {
+          const { error: insertError } = await supabase
+            .from('energy_data')
+            .insert(processedData);
 
-        if (insertError) {
-          throw insertError
+          if (insertError) {
+            console.error('Insert error:', insertError);
+            throw insertError;
+          }
+
+          console.log(`Processed batch of ${processedData.length} rows`);
         }
-
-        // Clear the batch
-        processedData.length = 0
+        processedData.length = 0;
       }
     }
 
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }}
-    )
+    );
   } catch (error) {
-    console.error('Error in upload-energy-data function:', error)
+    console.error('Error in upload-energy-data function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400
       }
-    )
+    );
   }
-})
+});
