@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,6 +26,11 @@ interface EnergyData {
 
 export const EnergyManagement = () => {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchEnergyData();
+  }, []);
 
   const fetchEnergyData = async () => {
     const { data, error } = await supabase
@@ -46,21 +51,33 @@ export const EnergyManagement = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setLoading(true);
     const formData = new FormData();
     formData.append('file', file);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No hay sesión activa');
+      }
+
       const { error } = await supabase.functions.invoke('upload-energy-data', {
         body: formData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
 
       toast.success('Datos subidos exitosamente');
       fetchEnergyData();
-    } catch (error) {
-      toast.error('Error al subir datos');
+    } catch (error: any) {
       console.error('Error:', error);
+      toast.error(error.message || 'Error al subir datos');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,14 +109,15 @@ export const EnergyManagement = () => {
               onChange={handleUploadEnergyData}
               className="hidden"
               id="energy-data-upload"
+              disabled={loading}
             />
             <Label
               htmlFor="energy-data-upload"
-              className="cursor-pointer flex flex-col items-center"
+              className={`cursor-pointer flex flex-col items-center ${loading ? 'opacity-50' : ''}`}
             >
               <Upload className="h-12 w-12 text-gray-400 mb-4" />
               <span className="text-gray-600">
-                Click para subir archivo de datos de energía
+                {loading ? 'Subiendo archivo...' : 'Click para subir archivo de datos de energía'}
               </span>
             </Label>
           </div>
