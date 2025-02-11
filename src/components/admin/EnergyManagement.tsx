@@ -50,8 +50,6 @@ export const EnergyManagement = () => {
     setSelectedDate(date);
   };
 
-  const filteredEnergyData = energyData.filter(data => data.date === selectedDate);
-
   return (
     <div className="space-y-6">
       <UploadEnergyData onUploadSuccess={fetchEnergyData} />
@@ -60,7 +58,7 @@ export const EnergyManagement = () => {
         selectedDate={selectedDate}
         onDateChange={handleDateChange}
       />
-      <EnergyDataTable energyData={filteredEnergyData} />
+      <EnergyDataTable energyData={energyData} />
     </div>
   );
 };
