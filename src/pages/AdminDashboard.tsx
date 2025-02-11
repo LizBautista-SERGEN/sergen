@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { CourseManagement } from "@/components/admin/CourseManagement";
 import { EnergyManagement } from "@/components/admin/EnergyManagement";
+import { DailyPowerManagement } from "@/components/admin/DailyPowerManagement";
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -46,7 +47,6 @@ const AdminDashboard = () => {
         return;
       }
 
-      // Setup auth state change listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_OUT' || !session) {
           navigate('/login');
@@ -55,7 +55,6 @@ const AdminDashboard = () => {
 
       setLoading(false);
 
-      // Cleanup subscription on unmount
       return () => {
         subscription.unsubscribe();
       };
@@ -82,6 +81,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
             <TabsTrigger value="courses">Gestión de Cursos</TabsTrigger>
             <TabsTrigger value="energy">Gestión de Energía</TabsTrigger>
+            <TabsTrigger value="daily-power">Potencia Diaria</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -94,6 +94,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="energy">
             <EnergyManagement />
+          </TabsContent>
+
+          <TabsContent value="daily-power">
+            <DailyPowerManagement />
           </TabsContent>
         </Tabs>
       </div>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,6 @@ interface EnergyData {
   consumption: number;
   demand: number;
   cost: number;
-  is_modulated: boolean;
 }
 
 export const EnergyManagement = () => {
@@ -62,21 +62,6 @@ export const EnergyManagement = () => {
       toast.error('Error al subir datos');
       console.error('Error:', error);
     }
-  };
-
-  const handleToggleModulation = async (id: string, isModulated: boolean) => {
-    const { error } = await supabase
-      .from('energy_data')
-      .update({ is_modulated: !isModulated })
-      .eq('id', id);
-
-    if (error) {
-      toast.error('Error al actualizar estado de modulación');
-      return;
-    }
-
-    toast.success('Estado de modulación actualizado');
-    fetchEnergyData();
   };
 
   const getChartData = (date: string) => {
@@ -179,8 +164,6 @@ export const EnergyManagement = () => {
                 <TableHead>Hora</TableHead>
                 <TableHead>Potencia Pronosticada</TableHead>
                 <TableHead>Potencia Ejecutada</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -190,17 +173,6 @@ export const EnergyManagement = () => {
                   <TableCell>{data.time}</TableCell>
                   <TableCell>{data.forecasted_power} kW</TableCell>
                   <TableCell>{data.executed_power} kW</TableCell>
-                  <TableCell>
-                    {data.is_modulated ? 'Modulado' : 'No Modulado'}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleToggleModulation(data.id, data.is_modulated)}
-                    >
-                      {data.is_modulated ? 'Desactivar Modulación' : 'Activar Modulación'}
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
