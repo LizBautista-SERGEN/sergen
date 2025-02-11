@@ -26,10 +26,10 @@ const Index = () => {
   ];
 
   return (
-    <main className="relative">
+    <div className="w-full">
       <Hero />
       
-      <section className="bg-white py-24">
+      <section id="presentation" className="w-full bg-white py-24">
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
@@ -46,7 +46,7 @@ const Index = () => {
       <Services />
       <About />
       
-      <section className="bg-gray-50 py-16">
+      <section id="differentiators" className="w-full bg-gray-50 py-16">
         <div className="container mx-auto px-4">
           <AnimatedSection className="text-center mb-12">
             <span className="mb-4 inline-block rounded-full bg-sergen-100 px-4 py-1.5 text-sm font-medium text-sergen-800">
@@ -84,7 +84,7 @@ const Index = () => {
       </section>
 
       <Contact />
-    </main>
+    </div>
   );
 };
 
