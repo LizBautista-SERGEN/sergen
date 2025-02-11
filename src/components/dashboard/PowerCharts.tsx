@@ -24,8 +24,8 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
         const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         intervals.push({
           name: time,
-          "Potencia Pronosticada": dayData.demand * (0.85 + Math.random() * 0.3),
-          "Potencia Ejecutada": dayData.consumption * (0.85 + Math.random() * 0.3)
+          "Potencia Pronosticada": dayData.forecasted_power * (0.85 + Math.random() * 0.3),
+          "Potencia Ejecutada": dayData.executed_power * (0.85 + Math.random() * 0.3)
         });
       }
     }
@@ -44,7 +44,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     const data = currentMonthData.map(data => ({
       date: format(new Date(data.date), 'dd/MM'),
       fullDate: new Date(data.date),
-      value: data.demand || 0,
+      value: data.forecasted_power || 0,
       selected: date && isSameDay(new Date(data.date), date)
     }));
 

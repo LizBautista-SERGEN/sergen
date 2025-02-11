@@ -7,4 +7,7 @@ export interface EnergyData {
   executed_power: number;
   user_id: string;
   created_at?: string;
+  demand?: number;
+  consumption?: number;
+  is_modulated?: boolean;
 }

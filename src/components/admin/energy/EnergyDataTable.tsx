@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from 'date-fns';
-import { EnergyData } from "@/types/energy-data";
+import { EnergyData } from "@/types/energy";
 
 interface EnergyDataTableProps {
   energyData: EnergyData[];

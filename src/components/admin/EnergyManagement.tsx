@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { EnergyData } from "@/types/energy-data";
+import { EnergyData } from "@/types/energy";
 import { UploadEnergyData } from "./energy/UploadEnergyData";
 import { EnergyForecastChart } from "./energy/EnergyForecastChart";
 import { EnergyDataTable } from "./energy/EnergyDataTable";

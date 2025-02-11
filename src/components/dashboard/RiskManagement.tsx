@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -37,7 +36,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
       const intervals = [];
       for (let hour = 18; hour <= 23; hour++) {
         for (let minute = 0; minute < 60; minute += 15) {
-          intervals.push(dayData.demand * (0.85 + Math.random() * 0.3));
+          intervals.push(dayData.forecasted_power * (0.85 + Math.random() * 0.3));
         }
       }
       
@@ -142,4 +141,3 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     </>
   );
 };
-

@@ -1,10 +1,9 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { EnergyData } from "@/types/energy-data";
+import { EnergyData } from "@/types/energy";
 
 interface EnergyForecastChartProps {
   energyData: EnergyData[];
