@@ -37,9 +37,10 @@ serve(async (req) => {
       throw new Error('Las fechas son requeridas');
     }
 
-    // URL base del COES
+    // URL específica para el pronóstico de demanda TR
     const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
-    console.log('Consultando URL:', baseUrl);
+    const pronosticoUrl = `${baseUrl}/pronostico`;
+    console.log('Consultando URL:', pronosticoUrl);
 
     // Headers comunes para todas las peticiones
     const commonHeaders = {
@@ -52,7 +53,7 @@ serve(async (req) => {
     };
 
     // Primera petición para obtener cookies y token
-    const initResponse = await fetch(baseUrl, {
+    const initResponse = await fetch(pronosticoUrl, {
       headers: commonHeaders,
       redirect: 'follow',
     });
@@ -68,17 +69,17 @@ serve(async (req) => {
     const formBody = new URLSearchParams({
       'fechaInicial': fechaInicio,
       'fechaFinal': fechaFin,
-      'indicador': '0',
+      'indicador': '1', // Cambiado a 1 para pronóstico TR
       'formato': '0'
     });
 
-    const dataResponse = await fetch(`${baseUrl}/postdemanda`, {
+    const dataResponse = await fetch(`${pronosticoUrl}/postpronostico`, {
       method: 'POST',
       headers: {
         ...commonHeaders,
         'Content-Type': 'application/x-www-form-urlencoded',
         'Origin': 'https://www.coes.org.pe',
-        'Referer': baseUrl,
+        'Referer': pronosticoUrl,
         'Cookie': cookies || '',
         'Upgrade-Insecure-Requests': '1',
       },
@@ -100,7 +101,7 @@ serve(async (req) => {
       throw new Error('No se pudo parsear el HTML');
     }
 
-    // Buscar la tabla de demanda
+    // Buscar la tabla de pronóstico
     const tables = document.querySelectorAll("table");
     console.log(`Tablas encontradas: ${tables.length}`);
 
