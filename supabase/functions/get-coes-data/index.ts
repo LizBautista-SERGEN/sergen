@@ -6,6 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function formatDateForCOES(dateStr: string) {
+  // Convertir YYYY-MM-DD a DD/MM/YYYY
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${month}/${year}`;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -21,17 +27,27 @@ serve(async (req) => {
       throw new Error('Todos los parámetros son requeridos');
     }
 
+    // Formatear fechas para la API del COES
+    const fechaInicioFormateada = formatDateForCOES(fechaInicio);
+    const fechaFinFormateada = formatDateForCOES(fechaFin);
+
     // Construir la URL de la API del COES
-    const coesUrl = `https://appserver.coes.org.pe/waMediciones/api/Demanda?lectcodi=${lectcodi}&tipoempresa=${tipoempresa}&empresas=${empresas}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`;
+    const coesUrl = `https://appserver.coes.org.pe/waMediciones/api/Demanda?lectcodi=${lectcodi}&tipoempresa=${tipoempresa}&empresas=${empresas}&fechaInicio=${fechaInicioFormateada}&fechaFin=${fechaFinFormateada}`;
 
     console.log('Consultando API COES:', coesUrl);
 
-    const response = await fetch(coesUrl);
+    const response = await fetch(coesUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
     
     if (!response.ok) {
       console.error('Error en respuesta COES:', {
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
+        url: coesUrl
       });
       throw new Error(`Error en respuesta COES: ${response.status} ${response.statusText}`);
     }

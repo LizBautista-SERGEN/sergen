@@ -31,6 +31,8 @@ export const ForecastManagement = () => {
 
     setLoadingCoes(true);
     try {
+      console.log('Enviando consulta con fechas:', { fechaInicio, fechaFin });
+      
       const { data, error } = await supabase.functions.invoke('get-coes-data', {
         body: {
           lectcodi: '1',
@@ -41,7 +43,15 @@ export const ForecastManagement = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error en respuesta de función:', error);
+        throw error;
+      }
+
+      if (!data || !Array.isArray(data)) {
+        console.error('Respuesta inválida:', data);
+        throw new Error('Formato de respuesta inválido');
+      }
 
       setCoesData(data);
       console.log('Datos de COES:', data);
@@ -49,7 +59,7 @@ export const ForecastManagement = () => {
       
     } catch (error) {
       console.error('Error al consultar COES:', error);
-      toast.error('Error al obtener datos de COES');
+      toast.error(`Error al obtener datos de COES: ${error.message || 'Error desconocido'}`);
     } finally {
       setLoadingCoes(false);
     }
