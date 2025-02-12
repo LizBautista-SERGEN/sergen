@@ -25,6 +25,11 @@ export const ForecastManagement = () => {
   const [coesData, setCoesData] = useState<CoesData[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const formatDateForCOES = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
+  };
+
   const handleConsultarCoes = async () => {
     if (!fechaInicio || !fechaFin) {
       toast.error('Por favor seleccione las fechas');
@@ -34,12 +39,15 @@ export const ForecastManagement = () => {
     setLoadingCoes(true);
     setError(null);
     try {
-      console.log('Enviando consulta con fechas:', { fechaInicio, fechaFin });
+      const formattedFechaInicio = formatDateForCOES(fechaInicio);
+      const formattedFechaFin = formatDateForCOES(fechaFin);
+      
+      console.log('Enviando consulta con fechas:', { formattedFechaInicio, formattedFechaFin });
       
       const { data, error: functionError } = await supabase.functions.invoke('get-coes-data', {
         body: {
-          fechaInicio,
-          fechaFin,
+          fechaInicio: formattedFechaInicio,
+          fechaFin: formattedFechaFin,
         }
       });
 
