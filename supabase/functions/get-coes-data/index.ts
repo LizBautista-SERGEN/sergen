@@ -32,7 +32,7 @@ serve(async (req) => {
     const fechaFinFormateada = formatDateForCOES(fechaFin);
 
     // Construir la URL de la API del COES
-    const coesUrl = `https://appserver.coes.org.pe/waMediciones/api/Demanda`;
+    const coesUrl = `https://appserver.coes.org.pe/waMedicionesSIEM/api/Demanda`;
 
     console.log('Consultando API COES:', coesUrl, {
       lectcodi,
