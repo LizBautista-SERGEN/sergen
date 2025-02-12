@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface CoesData {
   Fecha: string;
@@ -22,6 +23,7 @@ export const ForecastManagement = () => {
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [coesData, setCoesData] = useState<CoesData[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleConsultarCoes = async () => {
     if (!fechaInicio || !fechaFin) {
@@ -30,22 +32,20 @@ export const ForecastManagement = () => {
     }
 
     setLoadingCoes(true);
+    setError(null);
     try {
       console.log('Enviando consulta con fechas:', { fechaInicio, fechaFin });
       
-      const { data, error } = await supabase.functions.invoke('get-coes-data', {
+      const { data, error: functionError } = await supabase.functions.invoke('get-coes-data', {
         body: {
-          lectcodi: '1',
-          tipoempresa: '1',
-          empresas: '1',
           fechaInicio,
           fechaFin,
         }
       });
 
-      if (error) {
-        console.error('Error en respuesta de función:', error);
-        throw error;
+      if (functionError) {
+        console.error('Error en respuesta de función:', functionError);
+        throw functionError;
       }
 
       if (!data || !Array.isArray(data)) {
@@ -53,13 +53,20 @@ export const ForecastManagement = () => {
         throw new Error('Formato de respuesta inválido');
       }
 
-      setCoesData(data);
-      console.log('Datos de COES:', data);
-      toast.success('Datos obtenidos exitosamente');
+      if (data.length === 0) {
+        setError('No se encontraron datos para el período seleccionado');
+        toast.warning('No se encontraron datos para el período seleccionado');
+      } else {
+        setCoesData(data);
+        console.log('Datos de COES:', data);
+        toast.success('Datos obtenidos exitosamente');
+      }
       
     } catch (error) {
       console.error('Error al consultar COES:', error);
-      toast.error(`Error al obtener datos de COES: ${error.message || 'Error desconocido'}`);
+      const errorMessage = error.message || 'Error desconocido';
+      setError(`Error al obtener datos de COES: ${errorMessage}`);
+      toast.error(`Error al obtener datos de COES: ${errorMessage}`);
     } finally {
       setLoadingCoes(false);
     }
@@ -92,12 +99,23 @@ export const ForecastManagement = () => {
             disabled={loadingCoes}
             className="w-full"
           >
-            {loadingCoes ? 'Consultando...' : 'Consultar'}
+            {loadingCoes ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Consultando...
+              </>
+            ) : 'Consultar'}
           </Button>
           <Button variant="outline" className="w-full">
             Exportar
           </Button>
         </div>
+
+        {error && (
+          <div className="text-red-500 text-sm mt-2">
+            {error}
+          </div>
+        )}
 
         {coesData.length > 0 && (
           <div className="mt-4 space-y-6">
