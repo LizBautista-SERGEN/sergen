@@ -39,7 +39,7 @@ serve(async (req) => {
 
     // URL específica para el pronóstico de demanda TR
     const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
-    const pronosticoUrl = `${baseUrl}/pronostico`;
+    const pronosticoUrl = `${baseUrl}/PronosticoDemandaTR`;
     console.log('Consultando URL:', pronosticoUrl);
 
     // Headers comunes para todas las peticiones
@@ -69,11 +69,11 @@ serve(async (req) => {
     const formBody = new URLSearchParams({
       'fechaInicial': fechaInicio,
       'fechaFinal': fechaFin,
-      'indicador': '1', // Cambiado a 1 para pronóstico TR
+      'tipoPronostico': '1', // Para pronóstico TR
       'formato': '0'
     });
 
-    const dataResponse = await fetch(`${pronosticoUrl}/postpronostico`, {
+    const dataResponse = await fetch(`${pronosticoUrl}/ObtenerPronostico`, {
       method: 'POST',
       headers: {
         ...commonHeaders,
@@ -88,11 +88,16 @@ serve(async (req) => {
     });
 
     if (!dataResponse.ok) {
+      console.error('Error en respuesta del COES:', {
+        status: dataResponse.status,
+        statusText: dataResponse.statusText
+      });
       throw new Error(`Error en respuesta del COES: ${dataResponse.status}`);
     }
 
     const html = await dataResponse.text();
     console.log('Longitud de la respuesta:', html.length);
+    console.log('Respuesta HTML:', html);
 
     const parser = new DOMParser();
     const document = parser.parseFromString(html, "text/html");
