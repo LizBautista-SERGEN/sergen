@@ -20,7 +20,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const trimmedEmail = email.trim();
+      const trimmedEmail = email.trim().toLowerCase(); // Normalizar email
       
       if (password.length < 6) {
         toast.error("La contraseña debe tener al menos 6 caracteres");
@@ -49,11 +49,28 @@ const LoginPage = () => {
         }
 
         if (data.user) {
-          const { data: profile } = await supabase
+          // Verificar si el usuario existe en la tabla profiles
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, has_access')
             .eq('id', data.user.id)
             .single();
+
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+            toast.error("Error al cargar el perfil del usuario");
+            setLoading(false);
+            return;
+          }
+
+          // Verificar si el usuario tiene acceso
+          if (!profile?.has_access) {
+            toast.error("Su cuenta está pendiente de activación");
+            // Cerrar sesión ya que no tiene acceso
+            await supabase.auth.signOut();
+            setLoading(false);
+            return;
+          }
 
           if (profile?.role === 'superuser') {
             navigate('/admin/dashboard');
