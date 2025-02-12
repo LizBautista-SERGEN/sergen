@@ -1,6 +1,5 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
-import { format } from 'https://deno.land/x/date_fns@v2.22.1/esm/format/index.js';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -9,7 +8,11 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 Deno.serve(async () => {
   try {
     const today = new Date();
-    const fechaStr = format(today, 'dd/MM/yyyy');
+    // Formatear la fecha manualmente en lugar de usar date-fns
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    const fechaStr = `${day}/${month}/${year}`;
     
     const { data, error } = await supabase.functions.invoke('get-coes-data', {
       body: {
