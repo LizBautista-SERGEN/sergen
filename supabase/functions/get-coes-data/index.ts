@@ -84,22 +84,27 @@ serve(async (req) => {
     const initialHtml = await initResponse.text();
     console.log('Longitud del HTML inicial:', initialHtml.length);
 
+    // Buscar el formulario y su estructura en el HTML inicial
+    console.log('Buscando formulario en HTML inicial...');
+    const formMatch = initialHtml.match(/action="([^"]+)"/);
+    if (formMatch) {
+      console.log('URL del formulario encontrada:', formMatch[1]);
+    }
+
     // Petición para obtener los datos
     const dataUrl = `${pronosticoUrl}/maxima/ObtenerPronostico`;
     console.log('Realizando petición de datos a:', dataUrl);
 
-    const formBody = new URLSearchParams({
-      'fechaInicial': fechaInicio,
-      'fechaFinal': fechaFin,
-      'tipoPronostico': '1',
-      'formato': '0'
-    });
+    const formData = new FormData();
+    formData.append('fechaInicial', fechaInicio);
+    formData.append('fechaFinal', fechaFin);
+    formData.append('tipoPronostico', '1');
+    formData.append('formato', '0');
 
     const dataResponse = await fetch(dataUrl, {
       method: 'POST',
       headers: {
         ...commonHeaders,
-        'Content-Type': 'application/x-www-form-urlencoded',
         'Origin': baseUrl,
         'Referer': initUrl,
         'Cookie': cookies || '',
@@ -108,7 +113,7 @@ serve(async (req) => {
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Dest': 'empty'
       },
-      body: formBody.toString(),
+      body: new URLSearchParams(formData as any),
     });
 
     if (!dataResponse.ok) {
