@@ -65,7 +65,7 @@ serve(async (req) => {
     const cookies = initResponse.headers.get('set-cookie');
     console.log('Cookies recibidas:', cookies);
 
-    // Segunda petición para obtener los datos
+    // Segunda petición para obtener los datos, directamente usando el endpoint de exportación
     const formBody = new URLSearchParams({
       'fechaInicial': fechaInicio,
       'fechaFinal': fechaFin,
@@ -81,10 +81,9 @@ serve(async (req) => {
         'Origin': 'https://www.coes.org.pe',
         'Referer': pronosticoUrl,
         'Cookie': cookies || '',
-        'Upgrade-Insecure-Requests': '1',
+        'X-Requested-With': 'XMLHttpRequest',
       },
       body: formBody.toString(),
-      redirect: 'follow',
     });
 
     if (!dataResponse.ok) {
