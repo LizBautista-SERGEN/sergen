@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { CourseManagement } from "@/components/admin/CourseManagement";
 import { DailyPowerManagement } from "@/components/admin/DailyPowerManagement";
+import { ForecastManagement } from "@/components/admin/ForecastManagement";
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -80,6 +81,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
             <TabsTrigger value="courses">Gestión de Cursos</TabsTrigger>
             <TabsTrigger value="daily-power">Potencia Diaria</TabsTrigger>
+            <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -92,6 +94,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="daily-power">
             <DailyPowerManagement />
+          </TabsContent>
+
+          <TabsContent value="forecast">
+            <ForecastManagement />
           </TabsContent>
         </Tabs>
       </div>
