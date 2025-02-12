@@ -32,24 +32,40 @@ serve(async (req) => {
     const fechaFinFormateada = formatDateForCOES(fechaFin);
 
     // Construir la URL de la API del COES
-    const coesUrl = `https://appserver.coes.org.pe/waMediciones/api/Demanda?lectcodi=${lectcodi}&tipoempresa=${tipoempresa}&empresas=${empresas}&fechaInicio=${fechaInicioFormateada}&fechaFin=${fechaFinFormateada}`;
+    const coesUrl = `https://appserver.coes.org.pe/waMediciones/api/Demanda`;
 
-    console.log('Consultando API COES:', coesUrl);
+    console.log('Consultando API COES:', coesUrl, {
+      lectcodi,
+      tipoempresa,
+      empresas,
+      fechaInicio: fechaInicioFormateada,
+      fechaFin: fechaFinFormateada
+    });
 
     const response = await fetch(coesUrl, {
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify({
+        lectcodi,
+        tipoempresa,
+        empresas,
+        fechaInicio: fechaInicioFormateada,
+        fechaFin: fechaFinFormateada
+      })
     });
     
     if (!response.ok) {
+      const responseText = await response.text();
       console.error('Error en respuesta COES:', {
         status: response.status,
         statusText: response.statusText,
-        url: coesUrl
+        url: coesUrl,
+        responseBody: responseText
       });
-      throw new Error(`Error en respuesta COES: ${response.status} ${response.statusText}`);
+      throw new Error(`Error en respuesta COES: ${response.status} ${response.statusText} - ${responseText}`);
     }
 
     const data = await response.json();
