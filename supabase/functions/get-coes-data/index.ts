@@ -37,16 +37,14 @@ serve(async (req) => {
       throw new Error('Las fechas son requeridas');
     }
 
-    // URLs actualizadas según la nueva estructura proporcionada
     const baseUrl = 'https://www.coes.org.pe';
     const pronosticoUrl = `${baseUrl}/Portal/portalinformacion/ExportarPronosticoTiempoReal`;
     
     console.log('Iniciando proceso con URL:', pronosticoUrl);
 
-    // Headers específicos para una descarga directa
     const requestHeaders = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept': '*/*',
       'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br',
       'Cache-Control': 'no-cache',
@@ -70,6 +68,9 @@ serve(async (req) => {
       redirect: 'follow'
     });
 
+    console.log('Headers de respuesta:', Object.fromEntries(dataResponse.headers));
+    console.log('Content-Type de respuesta:', dataResponse.headers.get('content-type'));
+    
     if (!dataResponse.ok) {
       console.error('Error en respuesta del COES:', {
         status: dataResponse.status,
@@ -84,7 +85,14 @@ serve(async (req) => {
 
     const html = await dataResponse.text();
     console.log('Longitud de la respuesta de datos:', html.length);
+    console.log('Tipo de respuesta:', typeof html);
     console.log('HTML completo:', html);
+
+    // Verificar si la respuesta contiene ciertas palabras clave
+    const keywords = ['table', 'Ejecutado', 'Prog. Diaria', 'tr', 'td'];
+    keywords.forEach(keyword => {
+      console.log(`Contiene "${keyword}":`, html.includes(keyword));
+    });
 
     const parser = new DOMParser();
     const document = parser.parseFromString(html, "text/html");
@@ -93,9 +101,16 @@ serve(async (req) => {
       throw new Error('No se pudo parsear el HTML');
     }
 
+    console.log('Documento parseado:', document.documentElement.outerHTML);
+
     // Buscar cualquier tabla en el documento
     const tables = document.querySelectorAll("table");
     console.log(`Tablas encontradas: ${tables.length}`);
+
+    // Buscar también por otros selectores comunes
+    console.log('Elementos div:', document.querySelectorAll('div').length);
+    console.log('Elementos tr:', document.querySelectorAll('tr').length);
+    console.log('Elementos td:', document.querySelectorAll('td').length);
 
     // Inspeccionar todas las tablas encontradas
     tables.forEach((table, index) => {
@@ -118,7 +133,17 @@ serve(async (req) => {
     });
 
     if (!targetTable) {
-      throw new Error('No se encontró la tabla de datos en la respuesta');
+      // Si no encontramos la tabla, intentemos buscar los datos directamente en el HTML
+      const matches = html.match(/<tr>.*?<\/tr>/gs);
+      if (matches) {
+        console.log('Encontradas filas directamente en el HTML:', matches.length);
+        console.log('Primera fila encontrada:', matches[0]);
+        // Crear una tabla con las filas encontradas
+        const tableHtml = `<table>${matches.join('')}</table>`;
+        targetTable = parser.parseFromString(tableHtml, "text/html").querySelector('table');
+      } else {
+        throw new Error('No se encontró la tabla de datos en la respuesta');
+      }
     }
 
     const data = [];
