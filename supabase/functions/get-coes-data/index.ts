@@ -56,17 +56,19 @@ serve(async (req) => {
       'Accept-Encoding': 'gzip, deflate, br',
       'Cache-Control': 'no-cache',
       'Pragma': 'no-cache',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none',
-      'Sec-Fetch-User': '?1',
       'Connection': 'keep-alive',
     };
 
     // Primera petición para obtener la página inicial y cookies
     console.log('Realizando petición inicial a:', demandaUrl);
     const initResponse = await fetch(demandaUrl, {
-      headers: commonHeaders,
+      headers: {
+        ...commonHeaders,
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+      },
       redirect: 'follow',
     });
 
@@ -91,7 +93,10 @@ serve(async (req) => {
         'Origin': baseUrl,
         'Referer': demandaUrl,
         'Cookie': cookies || '',
-        'X-Requested-With': 'XMLHttpRequest',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Dest': 'empty',
+        'X-Requested-With': 'XMLHttpRequest'
       },
     });
 
