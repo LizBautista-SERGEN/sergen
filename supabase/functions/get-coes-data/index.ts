@@ -116,6 +116,9 @@ serve(async (req) => {
     console.log('Longitud de la respuesta de datos:', html.length);
     console.log('Primeros 500 caracteres de la respuesta:', html.substring(0, 500));
 
+    // Añadir logging para depurar el HTML completo
+    console.log('HTML completo:', html);
+
     const parser = new DOMParser();
     const document = parser.parseFromString(html, "text/html");
 
@@ -123,15 +126,31 @@ serve(async (req) => {
       throw new Error('No se pudo parsear el HTML');
     }
 
-    // Buscar la tabla de pronóstico
+    // Buscar cualquier tabla en el documento
     const tables = document.querySelectorAll("table");
     console.log(`Tablas encontradas: ${tables.length}`);
+
+    // Inspeccionar todas las tablas encontradas
+    tables.forEach((table, index) => {
+      console.log(`Tabla ${index}:`, table.outerHTML);
+      const rows = table.querySelectorAll('tr');
+      console.log(`Filas en tabla ${index}:`, rows.length);
+      if (rows.length > 0) {
+        console.log(`Primera fila de tabla ${index}:`, rows[0].outerHTML);
+      }
+    });
+
+    // Intentar encontrar la tabla correcta buscando también por otros elementos
+    const allElements = document.querySelectorAll('*');
+    console.log('Todos los elementos encontrados:', allElements.length);
+    console.log('Primeros 10 elementos:', Array.from(allElements).slice(0, 10).map(el => el.outerHTML).join('\n'));
 
     let targetTable = null;
     tables.forEach((table, index) => {
       const tableHtml = table.outerHTML;
-      console.log(`Contenido de tabla ${index}:`, tableHtml);
+      console.log(`Analizando tabla ${index}:`, tableHtml);
       if (tableHtml.includes('Ejecutado') || tableHtml.includes('Prog. Diaria')) {
+        console.log(`Tabla objetivo encontrada en índice ${index}`);
         targetTable = table;
       }
     });
@@ -142,7 +161,7 @@ serve(async (req) => {
 
     const data = [];
     const rows = targetTable.querySelectorAll("tr");
-    console.log(`Filas encontradas: ${rows.length}`);
+    console.log(`Filas encontradas en tabla objetivo: ${rows.length}`);
 
     for (let i = 1; i < rows.length; i++) {
       const cells = rows[i].querySelectorAll("td");
