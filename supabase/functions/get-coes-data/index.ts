@@ -37,51 +37,77 @@ serve(async (req) => {
       throw new Error('Las fechas son requeridas');
     }
 
-    // URL específica para el pronóstico de demanda TR
-    const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
-    const pronosticoUrl = `${baseUrl}/PronosticoDemandaTR`;
-    console.log('Consultando URL:', pronosticoUrl);
+    // URLs actualizadas para el COES
+    const baseUrl = 'https://www.coes.org.pe';
+    const portalUrl = `${baseUrl}/portal`;
+    const pronosticoUrl = `${portalUrl}/portalinformacion/demanda/pronosticodemandatr`;
+    
+    console.log('Iniciando proceso con URLs:', {
+      baseUrl,
+      portalUrl,
+      pronosticoUrl
+    });
 
-    // Headers comunes para todas las peticiones
+    // Headers mejorados para simular mejor un navegador
     const commonHeaders = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
       'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+      'Accept-Encoding': 'gzip, deflate, br',
       'Cache-Control': 'no-cache',
       'Pragma': 'no-cache',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
       'Connection': 'keep-alive',
     };
 
-    // Primera petición para obtener cookies y token
+    // Primera petición para obtener la página inicial y cookies
+    console.log('Realizando petición inicial a:', pronosticoUrl);
     const initResponse = await fetch(pronosticoUrl, {
       headers: commonHeaders,
       redirect: 'follow',
     });
 
     if (!initResponse.ok) {
+      console.error('Error en petición inicial:', {
+        status: initResponse.status,
+        statusText: initResponse.statusText
+      });
       throw new Error(`Error en petición inicial: ${initResponse.status}`);
     }
 
     const cookies = initResponse.headers.get('set-cookie');
     console.log('Cookies recibidas:', cookies);
 
-    // Segunda petición para obtener los datos, directamente usando el endpoint de exportación
+    // Obtener el contenido inicial para verificar la estructura
+    const initialHtml = await initResponse.text();
+    console.log('Longitud del HTML inicial:', initialHtml.length);
+
+    // Petición para obtener los datos
+    const dataUrl = `${pronosticoUrl}/ObtenerPronostico`;
+    console.log('Realizando petición de datos a:', dataUrl);
+
     const formBody = new URLSearchParams({
       'fechaInicial': fechaInicio,
       'fechaFinal': fechaFin,
-      'tipoPronostico': '1', // Para pronóstico TR
+      'tipoPronostico': '1',
       'formato': '0'
     });
 
-    const dataResponse = await fetch(`${pronosticoUrl}/ObtenerPronostico`, {
+    const dataResponse = await fetch(dataUrl, {
       method: 'POST',
       headers: {
         ...commonHeaders,
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': 'https://www.coes.org.pe',
+        'Origin': baseUrl,
         'Referer': pronosticoUrl,
         'Cookie': cookies || '',
         'X-Requested-With': 'XMLHttpRequest',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Dest': 'empty'
       },
       body: formBody.toString(),
     });
@@ -89,14 +115,18 @@ serve(async (req) => {
     if (!dataResponse.ok) {
       console.error('Error en respuesta del COES:', {
         status: dataResponse.status,
-        statusText: dataResponse.statusText
+        statusText: dataResponse.statusText,
+        url: dataUrl,
+        headers: JSON.stringify(Object.fromEntries(dataResponse.headers)),
       });
+      const errorText = await dataResponse.text();
+      console.error('Contenido de error:', errorText);
       throw new Error(`Error en respuesta del COES: ${dataResponse.status}`);
     }
 
     const html = await dataResponse.text();
-    console.log('Longitud de la respuesta:', html.length);
-    console.log('Respuesta HTML:', html);
+    console.log('Longitud de la respuesta de datos:', html.length);
+    console.log('Primeros 500 caracteres de la respuesta:', html.substring(0, 500));
 
     const parser = new DOMParser();
     const document = parser.parseFromString(html, "text/html");
