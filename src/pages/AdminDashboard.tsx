@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { CourseManagement } from "@/components/admin/CourseManagement";
-import { EnergyManagement } from "@/components/admin/EnergyManagement";
 import { DailyPowerManagement } from "@/components/admin/DailyPowerManagement";
 
 const AdminDashboard = () => {
@@ -80,7 +79,6 @@ const AdminDashboard = () => {
           <TabsList>
             <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
             <TabsTrigger value="courses">Gestión de Cursos</TabsTrigger>
-            <TabsTrigger value="energy">Gestión de Energía</TabsTrigger>
             <TabsTrigger value="daily-power">Potencia Diaria</TabsTrigger>
           </TabsList>
 
@@ -90,10 +88,6 @@ const AdminDashboard = () => {
 
           <TabsContent value="courses">
             <CourseManagement />
-          </TabsContent>
-
-          <TabsContent value="energy">
-            <EnergyManagement />
           </TabsContent>
 
           <TabsContent value="daily-power">
