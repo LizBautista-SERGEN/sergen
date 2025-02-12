@@ -41,61 +41,79 @@ serve(async (req) => {
     const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     console.log('Consultando URL:', baseUrl);
 
-    const cookieResponse = await fetch(baseUrl);
-    const cookies = cookieResponse.headers.get('set-cookie');
-    console.log('Cookies obtenidas:', cookies);
+    // Headers comunes para todas las peticiones
+    const commonHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Connection': 'keep-alive',
+    };
 
-    // Construir el cuerpo de la solicitud
-    const body = new URLSearchParams();
-    body.append('fechaInicial', fechaInicio);
-    body.append('fechaFinal', fechaFin);
-    body.append('indicador', '0');
-    body.append('formato', '0');
+    // Primera petición para obtener cookies y token
+    const initResponse = await fetch(baseUrl, {
+      headers: commonHeaders,
+      redirect: 'follow',
+    });
 
-    // Realizar la solicitud POST para obtener los datos
+    if (!initResponse.ok) {
+      throw new Error(`Error en petición inicial: ${initResponse.status}`);
+    }
+
+    const cookies = initResponse.headers.get('set-cookie');
+    console.log('Cookies recibidas:', cookies);
+
+    // Segunda petición para obtener los datos
+    const formBody = new URLSearchParams({
+      'fechaInicial': fechaInicio,
+      'fechaFinal': fechaFin,
+      'indicador': '0',
+      'formato': '0'
+    });
+
     const dataResponse = await fetch(`${baseUrl}/postdemanda`, {
       method: 'POST',
-      body,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+        ...commonHeaders,
         'Content-Type': 'application/x-www-form-urlencoded',
         'Origin': 'https://www.coes.org.pe',
         'Referer': baseUrl,
         'Cookie': cookies || '',
-      }
+        'Upgrade-Insecure-Requests': '1',
+      },
+      body: formBody.toString(),
+      redirect: 'follow',
     });
 
     if (!dataResponse.ok) {
-      console.error('Error en respuesta del COES:', dataResponse.status, dataResponse.statusText);
-      throw new Error(`Error al obtener datos: ${dataResponse.status} ${dataResponse.statusText}`);
+      throw new Error(`Error en respuesta del COES: ${dataResponse.status}`);
     }
 
-    const responseData = await dataResponse.text();
-    console.log('Respuesta del COES recibida, longitud:', responseData.length);
-    console.log('Contenido de la respuesta:', responseData);
+    const html = await dataResponse.text();
+    console.log('Longitud de la respuesta:', html.length);
 
     const parser = new DOMParser();
-    const document = parser.parseFromString(responseData, "text/html");
+    const document = parser.parseFromString(html, "text/html");
 
     if (!document) {
       throw new Error('No se pudo parsear el HTML');
     }
 
+    // Buscar la tabla de demanda
     const tables = document.querySelectorAll("table");
     console.log(`Tablas encontradas: ${tables.length}`);
 
     let targetTable = null;
     tables.forEach((table, index) => {
-      console.log(`Tabla ${index}:`, table.innerHTML);
-      if (table.innerHTML.includes('Ejecutado') || table.innerHTML.includes('Prog. Diaria')) {
+      const tableHtml = table.outerHTML;
+      console.log(`Contenido de tabla ${index}:`, tableHtml);
+      if (tableHtml.includes('Ejecutado') || tableHtml.includes('Prog. Diaria')) {
         targetTable = table;
       }
     });
 
     if (!targetTable) {
-      console.error('No se encontró la tabla de datos');
       throw new Error('No se encontró la tabla de datos en la respuesta');
     }
 
@@ -128,7 +146,6 @@ serve(async (req) => {
     }
 
     if (data.length === 0) {
-      console.warn('No se encontraron datos para procesar');
       return new Response(
         JSON.stringify({ 
           error: 'No se encontraron datos para el período seleccionado',
@@ -141,8 +158,6 @@ serve(async (req) => {
         }
       );
     }
-
-    console.log(`Total de registros procesados: ${data.length}`);
 
     // Guardar datos en la base de datos
     for (const item of data) {
