@@ -33,6 +33,36 @@ export type Database = {
         }
         Relationships: []
       }
+      coes_demand_data: {
+        Row: {
+          created_at: string
+          daily_forecast: number | null
+          date: string
+          executed_power: number | null
+          id: string
+          maximum_power: number | null
+          weekly_forecast: number | null
+        }
+        Insert: {
+          created_at?: string
+          daily_forecast?: number | null
+          date: string
+          executed_power?: number | null
+          id?: string
+          maximum_power?: number | null
+          weekly_forecast?: number | null
+        }
+        Update: {
+          created_at?: string
+          daily_forecast?: number | null
+          date?: string
+          executed_power?: number | null
+          id?: string
+          maximum_power?: number | null
+          weekly_forecast?: number | null
+        }
+        Relationships: []
+      }
       course_access: {
         Row: {
           course_id: string
