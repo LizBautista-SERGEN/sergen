@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, isSameDay, isSameMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from "sonner";
@@ -18,12 +19,20 @@ interface DailyPowerData {
   peak_hour: string;
 }
 
+interface CoesData {
+  Fecha: string;
+  Ejecutado: number;
+  "Prog. Diaria": number;
+  "Prog. Semanal": number;
+}
+
 export const DailyPowerManagement = () => {
   const [dailyPowerData, setDailyPowerData] = useState<DailyPowerData[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [loadingCoes, setLoadingCoes] = useState(false);
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
+  const [coesData, setCoesData] = useState<CoesData[]>([]);
 
   const fetchDailyPowerData = async () => {
     const { data, error } = await supabase
@@ -78,6 +87,7 @@ export const DailyPowerManagement = () => {
 
       if (error) throw error;
 
+      setCoesData(data);
       console.log('Datos de COES:', data);
       toast.success('Datos obtenidos exitosamente');
       
@@ -162,6 +172,64 @@ export const DailyPowerManagement = () => {
           >
             {loadingCoes ? 'Consultando...' : 'Consultar COES'}
           </Button>
+
+          {coesData.length > 0 && (
+            <div className="mt-4">
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={coesData}>
+                    <XAxis 
+                      dataKey="Fecha"
+                      tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
+                      formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Ejecutado" 
+                      stroke="#156082" 
+                      strokeWidth={2}
+                      dot={false}
+                      name="Ejecutado"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Prog. Diaria" 
+                      stroke="#f39200" 
+                      strokeWidth={2}
+                      dot={false}
+                      name="Programación Diaria"
+                      strokeDasharray="5 5"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <Table className="mt-6">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Ejecutado</TableHead>
+                    <TableHead>Prog. Diaria</TableHead>
+                    <TableHead>Prog. Semanal</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {coesData.map((data, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
+                      <TableCell>{data.Ejecutado.toLocaleString()} MW</TableCell>
+                      <TableCell>{data["Prog. Diaria"].toLocaleString()} MW</TableCell>
+                      <TableCell>{data["Prog. Semanal"].toLocaleString()} MW</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
