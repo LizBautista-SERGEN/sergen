@@ -37,14 +37,12 @@ serve(async (req) => {
       throw new Error('Las fechas son requeridas');
     }
 
-    // URLs actualizadas para el COES
+    // URLs actualizadas según la nueva estructura proporcionada
     const baseUrl = 'https://www.coes.org.pe';
-    const portalUrl = `${baseUrl}/portal`;
-    const pronosticoUrl = `${portalUrl}/portalinformacion/demanda/pronosticodemandatr`;
+    const pronosticoUrl = `${baseUrl}/Portal/portalinformacion/demanda`;
     
     console.log('Iniciando proceso con URLs:', {
       baseUrl,
-      portalUrl,
       pronosticoUrl
     });
 
@@ -64,8 +62,9 @@ serve(async (req) => {
     };
 
     // Primera petición para obtener la página inicial y cookies
-    console.log('Realizando petición inicial a:', pronosticoUrl);
-    const initResponse = await fetch(pronosticoUrl, {
+    const initUrl = `${pronosticoUrl}?indicador=maxima`;
+    console.log('Realizando petición inicial a:', initUrl);
+    const initResponse = await fetch(initUrl, {
       headers: commonHeaders,
       redirect: 'follow',
     });
@@ -102,7 +101,7 @@ serve(async (req) => {
         ...commonHeaders,
         'Content-Type': 'application/x-www-form-urlencoded',
         'Origin': baseUrl,
-        'Referer': pronosticoUrl,
+        'Referer': initUrl,
         'Cookie': cookies || '',
         'X-Requested-With': 'XMLHttpRequest',
         'Sec-Fetch-Site': 'same-origin',
