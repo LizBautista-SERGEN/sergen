@@ -39,65 +39,35 @@ serve(async (req) => {
 
     // URLs actualizadas según la nueva estructura proporcionada
     const baseUrl = 'https://www.coes.org.pe';
-    const demandaUrl = `${baseUrl}/Portal/portalinformacion/demanda`;
     const pronosticoUrl = `${baseUrl}/Portal/portalinformacion/ExportarPronosticoTiempoReal`;
     
-    console.log('Iniciando proceso con URLs:', {
-      baseUrl,
-      demandaUrl,
-      pronosticoUrl
-    });
+    console.log('Iniciando proceso con URL:', pronosticoUrl);
 
-    // Headers mejorados para simular mejor un navegador
-    const commonHeaders = {
+    // Headers específicos para una descarga directa
+    const requestHeaders = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
       'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br',
       'Cache-Control': 'no-cache',
       'Pragma': 'no-cache',
-      'Connection': 'keep-alive',
+      'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+      'Sec-Ch-Ua-Mobile': '?0',
+      'Sec-Ch-Ua-Platform': '"Windows"',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'same-origin',
+      'Sec-Fetch-User': '?1',
+      'Upgrade-Insecure-Requests': '1',
+      'Connection': 'keep-alive'
     };
 
-    // Primera petición para obtener la página inicial y cookies
-    console.log('Realizando petición inicial a:', demandaUrl);
-    const initResponse = await fetch(demandaUrl, {
-      headers: {
-        ...commonHeaders,
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-      },
-      redirect: 'follow',
-    });
-
-    if (!initResponse.ok) {
-      console.error('Error en petición inicial:', {
-        status: initResponse.status,
-        statusText: initResponse.statusText
-      });
-      throw new Error(`Error en petición inicial: ${initResponse.status}`);
-    }
-
-    const cookies = initResponse.headers.get('set-cookie');
-    console.log('Cookies recibidas:', cookies);
-
-    // Petición para obtener los datos directamente del endpoint de exportación
-    console.log('Realizando petición de datos a:', pronosticoUrl);
+    console.log('Realizando petición de datos con headers:', requestHeaders);
     
     const dataResponse = await fetch(pronosticoUrl, {
       method: 'GET',
-      headers: {
-        ...commonHeaders,
-        'Origin': baseUrl,
-        'Referer': demandaUrl,
-        'Cookie': cookies || '',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Dest': 'empty',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
+      headers: requestHeaders,
+      redirect: 'follow'
     });
 
     if (!dataResponse.ok) {
@@ -114,9 +84,6 @@ serve(async (req) => {
 
     const html = await dataResponse.text();
     console.log('Longitud de la respuesta de datos:', html.length);
-    console.log('Primeros 500 caracteres de la respuesta:', html.substring(0, 500));
-
-    // Añadir logging para depurar el HTML completo
     console.log('HTML completo:', html);
 
     const parser = new DOMParser();
@@ -139,11 +106,6 @@ serve(async (req) => {
         console.log(`Primera fila de tabla ${index}:`, rows[0].outerHTML);
       }
     });
-
-    // Intentar encontrar la tabla correcta buscando también por otros elementos
-    const allElements = document.querySelectorAll('*');
-    console.log('Todos los elementos encontrados:', allElements.length);
-    console.log('Primeros 10 elementos:', Array.from(allElements).slice(0, 10).map(el => el.outerHTML).join('\n'));
 
     let targetTable = null;
     tables.forEach((table, index) => {
