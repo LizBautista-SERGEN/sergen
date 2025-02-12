@@ -12,6 +12,17 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Función para parsear números con formato de miles
+const parseNumber = (value: string): number => {
+  try {
+    // Eliminar todos los separadores de miles (,) y convertir a número
+    return parseFloat(value.replace(/,/g, ''));
+  } catch (error) {
+    console.error('Error parseando número:', value, error);
+    return 0;
+  }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -51,42 +62,76 @@ serve(async (req) => {
       throw new Error('No se pudo parsear el HTML');
     }
 
-    // Intentar obtener datos del pronóstico
-    const pronosticoRows = document.querySelectorAll("#tblPronostico tr");
-    const demandaRows = document.querySelectorAll("#tblDemanda tr");
-    
     const data = [];
     const today = new Date().toISOString().split('T')[0];
     const isToday = fechaInicio.includes(today);
 
-    if (isToday && pronosticoRows.length > 1) {
-      // Procesar datos de pronóstico para el día actual
-      pronosticoRows.forEach((row, index) => {
-        if (index === 0) return; // Skip header
-        const cells = row.querySelectorAll("td");
-        if (cells.length >= 4) {
-          data.push({
-            Fecha: cells[0].textContent?.trim(),
-            Ejecutado: parseFloat(cells[1].textContent?.trim().replace(',', '') || '0'),
-            "Prog. Diaria": parseFloat(cells[2].textContent?.trim().replace(',', '') || '0'),
-            "Prog. Semanal": parseFloat(cells[3].textContent?.trim().replace(',', '') || '0')
-          });
-        }
-      });
-    } else if (demandaRows.length > 1) {
-      // Procesar datos históricos
-      demandaRows.forEach((row, index) => {
-        if (index === 0) return; // Skip header
-        const cells = row.querySelectorAll("td");
-        if (cells.length >= 4) {
-          data.push({
-            Fecha: cells[0].textContent?.trim(),
-            Ejecutado: parseFloat(cells[1].textContent?.trim().replace(',', '') || '0'),
-            "Prog. Diaria": parseFloat(cells[2].textContent?.trim().replace(',', '') || '0'),
-            "Prog. Semanal": parseFloat(cells[3].textContent?.trim().replace(',', '') || '0')
-          });
-        }
-      });
+    // Para el día actual, usar datos de Pronóstico Demanda TR
+    if (isToday) {
+      console.log('Obteniendo datos de pronóstico para el día actual');
+      const pronosticoRows = document.querySelectorAll("#tblPronostico tr");
+      
+      if (pronosticoRows.length > 1) {
+        pronosticoRows.forEach((row, index) => {
+          if (index === 0) return; // Skip header
+          const cells = row.querySelectorAll("td");
+          if (cells.length >= 4) {
+            const fechaHora = cells[0].textContent?.trim() || '';
+            const ejecutado = parseNumber(cells[1].textContent?.trim() || '0');
+            const progDiaria = parseNumber(cells[2].textContent?.trim() || '0');
+            const progSemanal = parseNumber(cells[3].textContent?.trim() || '0');
+
+            console.log('Datos de pronóstico:', {
+              fechaHora,
+              ejecutado,
+              progDiaria,
+              progSemanal
+            });
+
+            data.push({
+              Fecha: fechaHora,
+              Ejecutado: ejecutado,
+              "Prog. Diaria": progDiaria,
+              "Prog. Semanal": progSemanal
+            });
+          }
+        });
+      }
+    } else {
+      // Para días anteriores, usar datos de la pestaña Demanda
+      console.log('Obteniendo datos históricos de demanda');
+      const demandaRows = document.querySelectorAll("#tblDemanda tr");
+      
+      if (demandaRows.length > 1) {
+        demandaRows.forEach((row, index) => {
+          if (index === 0) return; // Skip header
+          const cells = row.querySelectorAll("td");
+          if (cells.length >= 4) {
+            const fechaHora = cells[0].textContent?.trim() || '';
+            const ejecutado = parseNumber(cells[1].textContent?.trim() || '0');
+            const progDiaria = parseNumber(cells[2].textContent?.trim() || '0');
+            const progSemanal = parseNumber(cells[3].textContent?.trim() || '0');
+
+            console.log('Datos históricos:', {
+              fechaHora,
+              ejecutado,
+              progDiaria,
+              progSemanal
+            });
+
+            data.push({
+              Fecha: fechaHora,
+              Ejecutado: ejecutado,
+              "Prog. Diaria": progDiaria,
+              "Prog. Semanal": progSemanal
+            });
+          }
+        });
+      }
+    }
+
+    if (data.length === 0) {
+      console.warn('No se encontraron datos para procesar');
     }
 
     // Guardar datos en la base de datos
