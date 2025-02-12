@@ -39,10 +39,12 @@ serve(async (req) => {
 
     // URLs actualizadas según la nueva estructura proporcionada
     const baseUrl = 'https://www.coes.org.pe';
-    const pronosticoUrl = `${baseUrl}/Portal/portalinformacion/demanda`;
+    const demandaUrl = `${baseUrl}/Portal/portalinformacion/demanda`;
+    const pronosticoUrl = `${baseUrl}/Portal/portalinformacion/ExportarPronosticoTiempoReal`;
     
     console.log('Iniciando proceso con URLs:', {
       baseUrl,
+      demandaUrl,
       pronosticoUrl
     });
 
@@ -62,9 +64,8 @@ serve(async (req) => {
     };
 
     // Primera petición para obtener la página inicial y cookies
-    const initUrl = `${pronosticoUrl}?indicador=maxima`;
-    console.log('Realizando petición inicial a:', initUrl);
-    const initResponse = await fetch(initUrl, {
+    console.log('Realizando petición inicial a:', demandaUrl);
+    const initResponse = await fetch(demandaUrl, {
       headers: commonHeaders,
       redirect: 'follow',
     });
@@ -80,47 +81,25 @@ serve(async (req) => {
     const cookies = initResponse.headers.get('set-cookie');
     console.log('Cookies recibidas:', cookies);
 
-    // Obtener el contenido inicial para verificar la estructura
-    const initialHtml = await initResponse.text();
-    console.log('Longitud del HTML inicial:', initialHtml.length);
-
-    // Buscar el formulario y su estructura en el HTML inicial
-    console.log('Buscando formulario en HTML inicial...');
-    const formMatch = initialHtml.match(/action="([^"]+)"/);
-    if (formMatch) {
-      console.log('URL del formulario encontrada:', formMatch[1]);
-    }
-
-    // Petición para obtener los datos
-    const dataUrl = `${pronosticoUrl}/maxima/ObtenerPronostico`;
-    console.log('Realizando petición de datos a:', dataUrl);
-
-    const formData = new FormData();
-    formData.append('fechaInicial', fechaInicio);
-    formData.append('fechaFinal', fechaFin);
-    formData.append('tipoPronostico', '1');
-    formData.append('formato', '0');
-
-    const dataResponse = await fetch(dataUrl, {
-      method: 'POST',
+    // Petición para obtener los datos directamente del endpoint de exportación
+    console.log('Realizando petición de datos a:', pronosticoUrl);
+    
+    const dataResponse = await fetch(pronosticoUrl, {
+      method: 'GET',
       headers: {
         ...commonHeaders,
         'Origin': baseUrl,
-        'Referer': initUrl,
+        'Referer': demandaUrl,
         'Cookie': cookies || '',
         'X-Requested-With': 'XMLHttpRequest',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Dest': 'empty'
       },
-      body: new URLSearchParams(formData as any),
     });
 
     if (!dataResponse.ok) {
       console.error('Error en respuesta del COES:', {
         status: dataResponse.status,
         statusText: dataResponse.statusText,
-        url: dataUrl,
+        url: pronosticoUrl,
         headers: JSON.stringify(Object.fromEntries(dataResponse.headers)),
       });
       const errorText = await dataResponse.text();
