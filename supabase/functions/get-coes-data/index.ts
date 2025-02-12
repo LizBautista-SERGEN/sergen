@@ -85,7 +85,7 @@ serve(async (req) => {
     console.log('Longitud del HTML inicial:', initialHtml.length);
 
     // Petición para obtener los datos
-    const dataUrl = `${pronosticoUrl}/ObtenerPronostico`;
+    const dataUrl = `${pronosticoUrl}/maxima/ObtenerPronostico`;
     console.log('Realizando petición de datos a:', dataUrl);
 
     const formBody = new URLSearchParams({
