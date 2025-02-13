@@ -41,7 +41,6 @@ export const ForecastManagement = () => {
         setError('No se encontraron datos disponibles');
         toast.warning('No se encontraron datos disponibles');
       } else {
-        // Usar los datos directamente sin transformación
         setCoesData(response);
         console.log('Datos de COES:', response);
         toast.success('Datos obtenidos exitosamente');
@@ -100,7 +99,10 @@ export const ForecastManagement = () => {
                     dataKey="Fecha"
                     tickFormatter={(value) => format(new Date(value), 'HH:mm')}
                   />
-                  <YAxis />
+                  <YAxis 
+                    domain={[6000, 9000]}
+                    tickFormatter={(value) => `${value.toLocaleString()}`}
+                  />
                   <Tooltip 
                     labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
                     formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
