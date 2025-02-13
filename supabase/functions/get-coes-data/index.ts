@@ -90,6 +90,7 @@ serve(async (req) => {
     }
 
     try {
+      console.log('Iniciando procesamiento del archivo Excel');
       const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
         type: 'array',
         cellDates: true,
@@ -110,14 +111,19 @@ serve(async (req) => {
       console.log('Primera hoja:', workbook.SheetNames[0]);
       console.log('Rango de la hoja:', worksheet['!ref']);
 
+      // Convertir a JSON con opciones específicas para manejar fechas
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
         header: 1,
-        raw: false,
+        raw: true, // Cambiado a true para obtener valores sin formato
         dateNF: 'yyyy-mm-dd HH:mm:ss'
       });
 
       console.log('Filas encontradas:', jsonData.length);
       console.log('Primeras filas:', JSON.stringify(jsonData.slice(0, 3), null, 2));
+
+      if (!Array.isArray(jsonData) || jsonData.length === 0) {
+        throw new Error('No se encontraron datos en el archivo Excel');
+      }
 
       // Encontrar el índice de la fila de encabezados
       let headerRowIndex = -1;
@@ -135,6 +141,7 @@ serve(async (req) => {
       }
 
       if (headerRowIndex === -1) {
+        console.log('Contenido completo del Excel:', JSON.stringify(jsonData, null, 2));
         throw new Error('No se encontró la fila de encabezados en el Excel');
       }
 
