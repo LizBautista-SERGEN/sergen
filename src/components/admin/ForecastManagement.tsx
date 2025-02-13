@@ -1,11 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { toast } from "sonner";
@@ -20,53 +18,31 @@ interface CoesData {
 
 export const ForecastManagement = () => {
   const [loadingCoes, setLoadingCoes] = useState(false);
-  const [fechaInicio, setFechaInicio] = useState('');
-  const [fechaFin, setFechaFin] = useState('');
   const [coesData, setCoesData] = useState<CoesData[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const formatDateForCOES = (dateStr: string): string => {
-    const date = new Date(dateStr);
-    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
-  };
-
-  const handleConsultarCoes = async () => {
-    if (!fechaInicio || !fechaFin) {
-      toast.error('Por favor seleccione las fechas');
-      return;
-    }
-
+  const fetchCoesData = async () => {
     setLoadingCoes(true);
     setError(null);
     try {
-      const formattedFechaInicio = formatDateForCOES(fechaInicio);
-      const formattedFechaFin = formatDateForCOES(fechaFin);
-      
-      console.log('Enviando consulta con fechas:', { formattedFechaInicio, formattedFechaFin });
-      
-      const { data, error: functionError } = await supabase.functions.invoke('get-coes-data', {
-        body: {
-          fechaInicio: formattedFechaInicio,
-          fechaFin: formattedFechaFin,
-        }
-      });
+      const { data: response, error: functionError } = await supabase.functions.invoke('get-coes-data');
 
       if (functionError) {
         console.error('Error en respuesta de función:', functionError);
         throw functionError;
       }
 
-      if (!data || !Array.isArray(data)) {
-        console.error('Respuesta inválida:', data);
+      if (!response || !Array.isArray(response)) {
+        console.error('Respuesta inválida:', response);
         throw new Error('Formato de respuesta inválido');
       }
 
-      if (data.length === 0) {
-        setError('No se encontraron datos para el período seleccionado');
-        toast.warning('No se encontraron datos para el período seleccionado');
+      if (response.length === 0) {
+        setError('No se encontraron datos disponibles');
+        toast.warning('No se encontraron datos disponibles');
       } else {
-        setCoesData(data);
-        console.log('Datos de COES:', data);
+        setCoesData(response);
+        console.log('Datos de COES:', response);
         toast.success('Datos obtenidos exitosamente');
       }
       
@@ -80,43 +56,33 @@ export const ForecastManagement = () => {
     }
   };
 
+  // Cargar datos automáticamente al montar el componente
+  useEffect(() => {
+    fetchCoesData();
+  }, []);
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col space-y-4 rounded-lg border p-6 bg-white">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
-            <Label>Desde:</Label>
-            <Input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              className="w-full"
-            />
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Pronóstico de Demanda</h2>
+          <div className="flex gap-4">
+            <Button 
+              onClick={fetchCoesData} 
+              disabled={loadingCoes}
+              variant="outline"
+            >
+              {loadingCoes ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Actualizando...
+                </>
+              ) : 'Actualizar datos'}
+            </Button>
+            <Button variant="outline">
+              Exportar
+            </Button>
           </div>
-          <div>
-            <Label>Hasta:</Label>
-            <Input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <Button 
-            onClick={handleConsultarCoes} 
-            disabled={loadingCoes}
-            className="w-full"
-          >
-            {loadingCoes ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Consultando...
-              </>
-            ) : 'Consultar'}
-          </Button>
-          <Button variant="outline" className="w-full">
-            Exportar
-          </Button>
         </div>
 
         {error && (

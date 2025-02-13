@@ -30,13 +30,6 @@ serve(async (req) => {
   }
 
   try {
-    const { fechaInicio, fechaFin } = await req.json();
-    console.log('Fechas recibidas:', { fechaInicio, fechaFin });
-
-    if (!fechaInicio || !fechaFin) {
-      throw new Error('Las fechas son requeridas');
-    }
-
     const baseUrl = 'https://www.coes.org.pe';
     const pronosticoUrl = `${baseUrl}/Portal/portalinformacion/ExportarPronosticoTiempoReal`;
     
@@ -60,8 +53,6 @@ serve(async (req) => {
       'Connection': 'keep-alive'
     };
 
-    console.log('Realizando petición de datos con headers:', requestHeaders);
-    
     const dataResponse = await fetch(pronosticoUrl, {
       method: 'GET',
       headers: requestHeaders,
@@ -88,12 +79,6 @@ serve(async (req) => {
     console.log('Tipo de respuesta:', typeof html);
     console.log('HTML completo:', html);
 
-    // Verificar si la respuesta contiene ciertas palabras clave
-    const keywords = ['table', 'Ejecutado', 'Prog. Diaria', 'tr', 'td'];
-    keywords.forEach(keyword => {
-      console.log(`Contiene "${keyword}":`, html.includes(keyword));
-    });
-
     const parser = new DOMParser();
     const document = parser.parseFromString(html, "text/html");
 
@@ -106,21 +91,6 @@ serve(async (req) => {
     // Buscar cualquier tabla en el documento
     const tables = document.querySelectorAll("table");
     console.log(`Tablas encontradas: ${tables.length}`);
-
-    // Buscar también por otros selectores comunes
-    console.log('Elementos div:', document.querySelectorAll('div').length);
-    console.log('Elementos tr:', document.querySelectorAll('tr').length);
-    console.log('Elementos td:', document.querySelectorAll('td').length);
-
-    // Inspeccionar todas las tablas encontradas
-    tables.forEach((table, index) => {
-      console.log(`Tabla ${index}:`, table.outerHTML);
-      const rows = table.querySelectorAll('tr');
-      console.log(`Filas en tabla ${index}:`, rows.length);
-      if (rows.length > 0) {
-        console.log(`Primera fila de tabla ${index}:`, rows[0].outerHTML);
-      }
-    });
 
     let targetTable = null;
     tables.forEach((table, index) => {
@@ -138,7 +108,6 @@ serve(async (req) => {
       if (matches) {
         console.log('Encontradas filas directamente en el HTML:', matches.length);
         console.log('Primera fila encontrada:', matches[0]);
-        // Crear una tabla con las filas encontradas
         const tableHtml = `<table>${matches.join('')}</table>`;
         targetTable = parser.parseFromString(tableHtml, "text/html").querySelector('table');
       } else {
