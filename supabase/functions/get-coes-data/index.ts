@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { read, utils } from 'https://deno.land/x/excel@v1.4.5/mod.ts';
+import * as XLSX from 'https://deno.land/x/xlsx@v0.0.2/mod.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
 
 const corsHeaders = {
@@ -78,7 +78,7 @@ serve(async (req) => {
     }
 
     try {
-      const workbook = read(new Uint8Array(arrayBuffer));
+      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
       console.log('Hojas en el Excel:', workbook.SheetNames);
 
       if (workbook.SheetNames.length === 0) {
@@ -88,7 +88,7 @@ serve(async (req) => {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       console.log('Primera hoja:', workbook.SheetNames[0]);
 
-      const jsonData = utils.sheet_to_json(worksheet, { header: 1 });
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       console.log('Filas encontradas:', jsonData.length);
       console.log('Muestra de datos:', jsonData.slice(0, 2));
 
