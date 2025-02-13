@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
-import { format, isSameMonth, isSameDay, parseISO } from "date-fns";
+import { format, isSameMonth, isSameDay } from "date-fns";
 import { EnergyData, CoesData } from "@/types/energy";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,12 +11,9 @@ interface PowerChartsProps {
   date: Date | undefined;
 }
 
-interface ChartDataPoint {
-  name: string;
-  [key: string]: string | number | null;
-}
+type CoesDataResponse = Awaited<ReturnType<typeof fetchCoesData>>;
 
-async function fetchCoesData() {
+const fetchCoesData = async (): Promise<CoesData[]> => {
   const today = new Date();
   const formattedDate = format(today, 'yyyy-MM-dd');
   
@@ -27,14 +24,16 @@ async function fetchCoesData() {
     .order('date', { ascending: true });
 
   if (error) throw error;
-  return (data || []) as CoesData[];
-}
+  return data || [];
+};
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const { data: coesData = [] } = useQuery({
+  const coesDataQuery = useQuery({
     queryKey: ['coes-data'],
     queryFn: fetchCoesData
   });
+
+  const coesData = coesDataQuery.data || [];
 
   const getChartData = () => {
     return coesData.map(data => ({
