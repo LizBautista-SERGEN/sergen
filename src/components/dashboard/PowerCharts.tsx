@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
-import { format, isSameMonth, isSameDay, setHours, setMinutes, addMinutes } from "date-fns";
+import { format, isSameMonth, isSameDay } from "date-fns";
 import { EnergyData, CoesData } from "@/types/energy";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,34 +11,38 @@ interface PowerChartsProps {
   date: Date | undefined;
 }
 
-type ChartDataPoint = {
+// Simplified LineChart data type
+type LineChartData = {
   name: string;
-  timestamp: string;
   pronosticoCOES: number | null;
   ejecutadoCOES: number | null;
   pronosticoSemanal: number | null;
 };
 
-type BarChartDataPoint = {
+// Simplified BarChart data type
+type BarChartData = {
   date: string;
-  fullDate: Date;
   value: number;
   selected: boolean;
-  color?: string;
+  color: string;
 };
 
-interface CustomBackgroundProps {
+// Background props type
+type BackgroundProps = {
   x: number;
   width: number;
   selected: boolean;
-}
+};
 
-// Fixed time slots for a day
-const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
-  const hours = Math.floor(i / 2);
-  const minutes = (i % 2) * 30;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-});
+// Predefined time slots
+const TIME_SLOTS = [
+  "00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30",
+  "04:00", "04:30", "05:00", "05:30", "06:00", "06:30", "07:00", "07:30",
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
+  "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30"
+] as const;
 
 const fetchCoesData = async (): Promise<CoesData[]> => {
   const today = new Date();
@@ -63,26 +67,23 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     queryFn: fetchCoesData
   });
 
-  const getBarChartData = (): BarChartDataPoint[] => {
+  const prepareBarChartData = (data: EnergyData[]): BarChartData[] => {
     if (!date) return [];
 
-    const currentMonthData = energyData.filter(data => {
-      const dataDate = new Date(data.date);
-      return isSameMonth(dataDate, date);
-    });
-
-    const data = currentMonthData.map(data => ({
-      date: format(new Date(data.date), 'dd/MM'),
-      fullDate: new Date(data.date),
-      value: data.forecasted_power || 0,
-      selected: date && isSameDay(new Date(data.date), date)
+    const monthData = data.filter(item => 
+      isSameMonth(new Date(item.date), date)
+    ).map(item => ({
+      date: format(new Date(item.date), 'dd/MM'),
+      value: item.forecasted_power || 0,
+      selected: date && isSameDay(new Date(item.date), date),
+      color: '#156082' // Default color
     }));
 
-    const sortedData = [...data].sort((a, b) => b.value - a.value);
-    const maxValue = sortedData[0]?.value;
-    const secondMaxValue = sortedData[1]?.value;
+    const sortedValues = [...monthData].sort((a, b) => b.value - a.value);
+    const maxValue = sortedValues[0]?.value;
+    const secondMaxValue = sortedValues[1]?.value;
 
-    return data.map(item => ({
+    return monthData.map(item => ({
       ...item,
       color: item.value === maxValue ? '#C00000' : 
              item.value === secondMaxValue ? '#f39200' : 
@@ -90,7 +91,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     }));
   };
 
-  const CustomBackground = ({ x, width, selected }: CustomBackgroundProps) => {
+  const CustomBackground = ({ x, width, selected }: BackgroundProps) => {
     if (!selected) return null;
     return (
       <Rectangle
@@ -103,19 +104,23 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     );
   };
 
-  const getChartData = (): ChartDataPoint[] => {
-    return TIME_SLOTS.map(timeSlot => {
-      const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === timeSlot);
+  const prepareLineChartData = (): LineChartData[] => {
+    return TIME_SLOTS.map(slot => {
+      const slotData = coesData.find(data => 
+        format(new Date(data.date), 'HH:mm') === slot
+      );
       
       return {
-        name: timeSlot,
-        timestamp: timeSlot,
-        pronosticoCOES: timeSlot >= currentTimeStr ? (slotData?.daily_forecast || null) : null,
-        ejecutadoCOES: timeSlot <= currentTimeStr ? (slotData?.executed_power || null) : null,
-        pronosticoSemanal: timeSlot >= currentTimeStr ? (slotData?.weekly_forecast || null) : null
+        name: slot,
+        pronosticoCOES: slot >= currentTimeStr ? slotData?.daily_forecast ?? null : null,
+        ejecutadoCOES: slot <= currentTimeStr ? slotData?.executed_power ?? null : null,
+        pronosticoSemanal: slot >= currentTimeStr ? slotData?.weekly_forecast ?? null : null
       };
     });
   };
+
+  const barChartData = prepareBarChartData(energyData);
+  const lineChartData = prepareLineChartData();
 
   return (
     <>
@@ -132,7 +137,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
           <LineChart 
             width={650} 
             height={300} 
-            data={getChartData()}
+            data={lineChartData}
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
           >
             <XAxis 
@@ -188,23 +193,23 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
           <CardTitle>Histórico diario de potencia máxima</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <BarChart width={650} height={300} data={getBarChartData()}>
+          <BarChart width={650} height={300} data={barChartData}>
             <XAxis dataKey="date" />
             <YAxis />
             <Tooltip 
               formatter={(value) => [`${value} kW`, 'Potencia']}
               labelFormatter={(label) => `Fecha: ${label}`}
             />
-            {getBarChartData().map((entry, index) => (
+            {barChartData.map((entry, index) => (
               <CustomBackground
                 key={`background-${index}`}
-                x={index * (650 / getBarChartData().length)}
-                width={650 / getBarChartData().length}
+                x={index * (650 / barChartData.length)}
+                width={650 / barChartData.length}
                 selected={entry.selected}
               />
             ))}
             <Bar dataKey="value">
-              {getBarChartData().map((entry, index) => (
+              {barChartData.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.color}
