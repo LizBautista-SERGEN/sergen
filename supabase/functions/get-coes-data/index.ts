@@ -31,150 +31,135 @@ serve(async (req) => {
 
   try {
     const baseUrl = 'https://www.coes.org.pe';
+    const portalUrl = `${baseUrl}/Portal/`;
     const pronosticoUrl = `${baseUrl}/Portal/portalinformacion/ExportarPronosticoTiempoReal`;
     
-    console.log('Iniciando proceso con URL:', pronosticoUrl);
+    console.log('Iniciando proceso...');
 
-    // Cookies recibidas
-    const cookies = req.headers.get('cookie');
-    console.log('Cookies recibidas:', cookies);
+    // Primera petición para obtener cookies iniciales
+    const initialResponse = await fetch(portalUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+      }
+    });
 
-    const requestHeaders = {
+    if (!initialResponse.ok) {
+      throw new Error(`Error en petición inicial: ${initialResponse.status}`);
+    }
+
+    const cookies = initialResponse.headers.get('set-cookie');
+    console.log('Cookies iniciales:', cookies);
+
+    // Construir headers con las cookies obtenidas
+    const headers = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
       'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br',
-      'Cache-Control': 'max-age=0',
       'Connection': 'keep-alive',
-      'Host': 'www.coes.org.pe',
-      'Referer': 'https://www.coes.org.pe/Portal/',
+      'Referer': portalUrl,
       'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
       'Sec-Ch-Ua-Mobile': '?0',
       'Sec-Ch-Ua-Platform': '"Windows"',
       'Sec-Fetch-Dest': 'document',
       'Sec-Fetch-Mode': 'navigate',
       'Sec-Fetch-Site': 'same-origin',
-      'Sec-Fetch-User': '?1',
       'Upgrade-Insecure-Requests': '1',
-      ...(cookies ? { 'Cookie': cookies } : {})
     };
 
-    const initialResponse = await fetch(baseUrl + '/Portal/', {
-      method: 'GET',
-      headers: requestHeaders,
-    });
-
-    const sessionCookies = initialResponse.headers.get('set-cookie');
-    if (sessionCookies) {
-      requestHeaders['Cookie'] = sessionCookies;
+    if (cookies) {
+      headers['Cookie'] = cookies;
     }
 
-    console.log('Headers de petición:', requestHeaders);
-    
+    // Segunda petición para obtener los datos
+    console.log('Realizando petición de datos con headers:', headers);
     const dataResponse = await fetch(pronosticoUrl, {
       method: 'GET',
-      headers: requestHeaders,
+      headers,
       redirect: 'follow'
     });
 
     console.log('Status de respuesta:', dataResponse.status);
     console.log('Headers de respuesta:', Object.fromEntries(dataResponse.headers));
-    console.log('Content-Type de respuesta:', dataResponse.headers.get('content-type'));
     
     if (!dataResponse.ok) {
-      console.error('Error en respuesta del COES:', {
-        status: dataResponse.status,
-        statusText: dataResponse.statusText,
-        url: pronosticoUrl,
-      });
-      const errorText = await dataResponse.text();
-      console.error('Contenido de error:', errorText);
       throw new Error(`Error en respuesta del COES: ${dataResponse.status}`);
     }
 
     const html = await dataResponse.text();
-    console.log('Longitud de la respuesta:', html.length);
-    
-    // Si la respuesta es muy corta, probablemente sea un error o redirección
-    if (html.length < 100) {
-      console.error('Respuesta demasiado corta:', html);
-      throw new Error('Respuesta incompleta del servidor');
-    }
+    console.log('Longitud de respuesta:', html.length);
+    console.log('Primeros 500 caracteres:', html.substring(0, 500));
 
     const parser = new DOMParser();
     const document = parser.parseFromString(html, "text/html");
 
     if (!document) {
-      console.error('Error al parsear HTML');
       throw new Error('No se pudo parsear el HTML');
     }
 
-    // Primero intentamos encontrar la tabla por su contenido
-    const tables = document.querySelectorAll("table");
-    console.log(`Tablas encontradas: ${tables.length}`);
-
-    let targetTable = null;
     let data = [];
+    const regex = /<tr[^>]*>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>[\s\S]*?<\/tr>/gi;
+    let match;
 
-    // Primero intentamos encontrar una tabla completa
-    for (const table of tables) {
-      if (table.textContent?.includes('Ejecutado') || table.textContent?.includes('Prog. Diaria')) {
-        targetTable = table;
-        break;
+    while ((match = regex.exec(html)) !== null) {
+      const [_, fechaHora, ejecutado, progDiaria, progSemanal] = match.map(val => 
+        val?.replace(/<[^>]+>/g, '').trim() || ''
+      );
+
+      // Validar que tenemos datos numéricos
+      const ejecutadoNum = parseNumber(ejecutado);
+      const progDiariaNum = parseNumber(progDiaria);
+      const progSemanalNum = parseNumber(progSemanal);
+
+      if (fechaHora && (ejecutadoNum > 0 || progDiariaNum > 0)) {
+        data.push({
+          Fecha: fechaHora,
+          Ejecutado: ejecutadoNum,
+          "Prog. Diaria": progDiariaNum,
+          "Prog. Semanal": progSemanalNum
+        });
       }
     }
 
-    // Si no encontramos una tabla, buscamos las filas directamente
-    if (!targetTable) {
-      console.log('Buscando datos en el HTML raw...');
-      const rowMatches = html.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
-      
-      if (rowMatches) {
-        console.log(`Encontradas ${rowMatches.length} filas en HTML raw`);
-        
-        // Procesar cada fila encontrada
-        for (const row of rowMatches) {
-          const cellMatches = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
-          
-          if (cellMatches && cellMatches.length >= 4) {
-            const cleanCells = cellMatches.map(cell => {
-              return cell.replace(/<[^>]+>/g, '').trim();
-            });
+    if (data.length === 0) {
+      // Intento alternativo: buscar en tablas del DOM
+      const tables = document.querySelectorAll('table');
+      console.log(`Tablas encontradas: ${tables.length}`);
 
-            const [fechaHora, ejecutado, progDiaria, progSemanal] = cleanCells;
-            
-            data.push({
-              Fecha: fechaHora,
-              Ejecutado: parseNumber(ejecutado),
-              "Prog. Diaria": parseNumber(progDiaria),
-              "Prog. Semanal": parseNumber(progSemanal)
-            });
+      for (const table of tables) {
+        const rows = table.querySelectorAll('tr');
+        console.log(`Filas en tabla: ${rows.length}`);
+
+        for (let i = 1; i < rows.length; i++) {
+          const cells = rows[i].querySelectorAll('td');
+          if (cells.length >= 4) {
+            const fechaHora = cells[0].textContent?.trim() || '';
+            const ejecutado = parseNumber(cells[1].textContent || '0');
+            const progDiaria = parseNumber(cells[2].textContent || '0');
+            const progSemanal = parseNumber(cells[3].textContent || '0');
+
+            if (fechaHora && (ejecutado > 0 || progDiaria > 0)) {
+              data.push({
+                Fecha: fechaHora,
+                Ejecutado: ejecutado,
+                "Prog. Diaria": progDiaria,
+                "Prog. Semanal": progSemanal
+              });
+            }
           }
-        }
-      }
-    } else {
-      // Procesar la tabla si la encontramos
-      const rows = targetTable.querySelectorAll("tr");
-      
-      for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].querySelectorAll("td");
-        if (cells.length >= 4) {
-          data.push({
-            Fecha: cells[0].textContent?.trim() || '',
-            Ejecutado: parseNumber(cells[1].textContent || '0'),
-            "Prog. Diaria": parseNumber(cells[2].textContent || '0'),
-            "Prog. Semanal": parseNumber(cells[3].textContent || '0')
-          });
         }
       }
     }
 
     if (data.length === 0) {
-      console.error('No se encontraron datos en la respuesta');
       throw new Error('No se encontraron datos en la respuesta');
     }
 
-    console.log(`Datos procesados: ${data.length} registros`);
+    console.log(`Datos encontrados: ${data.length} registros`);
+    console.log('Primer registro:', data[0]);
 
     // Guardar datos en la base de datos
     for (const item of data) {
