@@ -19,20 +19,23 @@ type ChartDataPoint = {
   "Pronóstico Semanal": number | null;
 };
 
+type BarChartDataPoint = {
+  date: string;
+  fullDate: Date;
+  value: number;
+  selected: boolean;
+  color?: string;
+};
+
 interface CustomBackgroundProps {
   x: number;
   width: number;
   selected: boolean;
 }
 
-type TimeSlot = {
-  date: Date;
-  key: string;
-};
-
-// Simplified createTimeSlots function with explicit types
-function createTimeSlots(baseDate: Date): TimeSlot[] {
-  const slots: TimeSlot[] = [];
+// Explicitly define time slots creation
+const generateTimeSlots = (baseDate: Date) => {
+  const slots = [];
   const startOfDay = setMinutes(setHours(baseDate, 0), 0);
   
   for (let i = 0; i < 48; i++) {
@@ -44,7 +47,7 @@ function createTimeSlots(baseDate: Date): TimeSlot[] {
   }
   
   return slots;
-}
+};
 
 const fetchCoesData = async (): Promise<CoesData[]> => {
   const today = new Date();
@@ -69,7 +72,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     queryFn: fetchCoesData
   });
 
-  const getBarChartData = () => {
+  const getBarChartData = (): BarChartDataPoint[] => {
     if (!date) return [];
 
     const currentMonthData = energyData.filter(data => {
@@ -110,7 +113,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   };
 
   const getChartData = (): ChartDataPoint[] => {
-    const slots = createTimeSlots(new Date());
+    const slots = generateTimeSlots(new Date());
     return slots.map(({ key }) => {
       const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === key);
       
