@@ -100,7 +100,10 @@ export const ForecastManagement = () => {
                     dataKey="Fecha"
                     tickFormatter={(value) => format(new Date(value), 'HH:mm')}
                   />
-                  <YAxis />
+                  <YAxis 
+                    domain={[6000, 10000]}
+                    tickCount={9}
+                  />
                   <Tooltip 
                     labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
                     formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
@@ -152,3 +155,4 @@ export const ForecastManagement = () => {
     </div>
   );
 };
+
