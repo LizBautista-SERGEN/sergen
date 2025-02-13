@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
-import { format, isSameMonth, isSameDay } from "date-fns";
+import { format, isSameMonth, isSameDay, setHours, setMinutes, addMinutes } from "date-fns";
 import { EnergyData, CoesData } from "@/types/energy";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ interface PowerChartsProps {
 
 interface DailyChartData {
   name: string;
+  timestamp: Date;
   "Pronóstico COES": number | null;
   "Ejecutado COES": number | null;
   "Pronóstico Semanal": number | null;
@@ -24,7 +25,18 @@ interface CustomBackgroundProps {
   selected: boolean;
 }
 
-async function fetchCoesData() {
+const createTimeSlots = (baseDate: Date): Date[] => {
+  const slots: Date[] = [];
+  const startOfDay = setMinutes(setHours(baseDate, 0), 0);
+  
+  for (let i = 0; i < 48; i++) {
+    slots.push(addMinutes(startOfDay, i * 30));
+  }
+  
+  return slots;
+};
+
+const fetchCoesData = async () => {
   const today = new Date();
   const formattedDate = format(today, 'yyyy-MM-dd');
   
@@ -36,7 +48,7 @@ async function fetchCoesData() {
 
   if (error) throw error;
   return data as CoesData[];
-}
+};
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const { data: coesData = [] } = useQuery({
@@ -45,15 +57,30 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   });
 
   const getChartData = (): DailyChartData[] => {
-    return coesData.map(data => ({
-      name: format(new Date(data.date), 'HH:mm'),
-      "Pronóstico COES": data.daily_forecast,
-      "Ejecutado COES": data.executed_power,
-      "Pronóstico Semanal": data.weekly_forecast
-    })).sort((a, b) => {
-      const [aHours, aMinutes] = a.name.split(':').map(Number);
-      const [bHours, bMinutes] = b.name.split(':').map(Number);
-      return (aHours * 60 + aMinutes) - (bHours * 60 + bMinutes);
+    const today = new Date();
+    const timeSlots = createTimeSlots(today);
+    
+    // Crear un mapa de los datos existentes indexados por hora:minuto
+    const dataMap = new Map(
+      coesData.map(data => {
+        const date = new Date(data.date);
+        const key = format(date, 'HH:mm');
+        return [key, data];
+      })
+    );
+
+    // Generar datos para cada intervalo de 30 minutos
+    return timeSlots.map(slot => {
+      const timeKey = format(slot, 'HH:mm');
+      const existingData = dataMap.get(timeKey);
+
+      return {
+        name: timeKey,
+        timestamp: slot,
+        "Pronóstico COES": existingData?.daily_forecast || null,
+        "Ejecutado COES": existingData?.executed_power || null,
+        "Pronóstico Semanal": existingData?.weekly_forecast || null
+      };
     });
   };
 
@@ -105,17 +132,28 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
           <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <LineChart width={650} height={300} data={getChartData()}>
+          <LineChart 
+            width={650} 
+            height={300} 
+            data={getChartData()}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
             <XAxis 
               dataKey="name"
               interval="preserveStartEnd"
+              minTickGap={30}
+              ticks={[
+                "00:00", "02:00", "04:00", "06:00", "08:00", "10:00", 
+                "12:00", "14:00", "16:00", "18:00", "20:00", "22:00", "23:59"
+              ]}
             />
             <YAxis 
               domain={[6000, 9000]}
               tickFormatter={(value) => `${value.toLocaleString()}`}
             />
             <Tooltip 
-              formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
+              formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['Sin datos', '']}
+              labelFormatter={(label) => `Hora: ${label}`}
             />
             <Line 
               type="monotone" 
@@ -123,7 +161,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
               stroke="#f39200" 
               strokeWidth={2}
               dot={false}
-              connectNulls
+              connectNulls={false}
             />
             <Line 
               type="monotone" 
@@ -131,7 +169,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
               stroke="#156082" 
               strokeWidth={2}
               dot={false}
-              connectNulls
+              connectNulls={false}
             />
             <Line 
               type="monotone" 
@@ -139,7 +177,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
               stroke="#C00000" 
               strokeWidth={2}
               dot={false}
-              connectNulls
+              connectNulls={false}
             />
           </LineChart>
         </CardContent>
