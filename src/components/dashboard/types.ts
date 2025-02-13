@@ -1,5 +1,4 @@
 
-// Tipos simplificados para los datos del gráfico
 export type SimpleLineChartData = {
   name: string;
   pronosticoCOES: number | null;

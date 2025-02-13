@@ -1,14 +1,14 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { SimpleLineChartData, CHART_COLORS } from "./types";
 
-type DailyForecastChartProps = {
+type Props = {
   data: SimpleLineChartData[];
   currentTime: string;
 };
 
-export const DailyForecastChart = ({ data, currentTime }: DailyForecastChartProps) => (
+export const DailyForecastChart = ({ data, currentTime }: Props) => (
   <Card className="mb-6">
     <CardHeader className="pb-2">
       <CardTitle className="flex justify-between items-center">
@@ -42,6 +42,7 @@ export const DailyForecastChart = ({ data, currentTime }: DailyForecastChartProp
           formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['Sin datos', '']}
           labelFormatter={(label) => `Hora: ${label}`}
         />
+        <Legend verticalAlign="top" height={36}/>
         <Line 
           type="monotone" 
           dataKey="ejecutadoCOES" 
@@ -49,7 +50,7 @@ export const DailyForecastChart = ({ data, currentTime }: DailyForecastChartProp
           stroke={CHART_COLORS.primary}
           strokeWidth={2}
           dot={false}
-          connectNulls={false}
+          connectNulls={true}
         />
         <Line 
           type="monotone" 
@@ -58,7 +59,7 @@ export const DailyForecastChart = ({ data, currentTime }: DailyForecastChartProp
           stroke={CHART_COLORS.secondary}
           strokeWidth={2}
           dot={false}
-          connectNulls={false}
+          connectNulls={true}
         />
         <Line 
           type="monotone" 
@@ -67,7 +68,7 @@ export const DailyForecastChart = ({ data, currentTime }: DailyForecastChartProp
           stroke={CHART_COLORS.highlight}
           strokeWidth={2}
           dot={false}
-          connectNulls={false}
+          connectNulls={true}
         />
       </LineChart>
     </CardContent>
