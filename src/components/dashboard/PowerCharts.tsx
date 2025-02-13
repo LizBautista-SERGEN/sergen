@@ -24,22 +24,24 @@ interface CustomBackgroundProps {
   selected: boolean;
 }
 
+async function fetchCoesData() {
+  const today = new Date();
+  const formattedDate = format(today, 'yyyy-MM-dd');
+  
+  const { data, error } = await supabase
+    .from('coes_demand_data')
+    .select('*')
+    .eq('date::date', formattedDate)
+    .order('date', { ascending: true });
+
+  if (error) throw error;
+  return data as CoesData[];
+}
+
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const { data: coesData = [] } = useQuery({
-    queryKey: ['coes-data'] as const,
-    queryFn: async () => {
-      const today = new Date();
-      const formattedDate = format(today, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('coes_demand_data')
-        .select('*')
-        .eq('date::date', formattedDate)
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as CoesData[];
-    }
+    queryKey: ['coes-data'],
+    queryFn: fetchCoesData
   });
 
   const getChartData = (): DailyChartData[] => {
