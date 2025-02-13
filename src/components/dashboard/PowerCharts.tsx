@@ -11,9 +11,14 @@ interface PowerChartsProps {
   date: Date | undefined;
 }
 
-type CoesDataResponse = Awaited<ReturnType<typeof fetchCoesData>>;
+interface DailyChartData {
+  name: string;
+  "Pronóstico COES": number | null;
+  "Ejecutado COES": number | null;
+  "Pronóstico Semanal": number | null;
+}
 
-const fetchCoesData = async (): Promise<CoesData[]> => {
+const fetchCoesData = async () => {
   const today = new Date();
   const formattedDate = format(today, 'yyyy-MM-dd');
   
@@ -24,18 +29,16 @@ const fetchCoesData = async (): Promise<CoesData[]> => {
     .order('date', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  return (data || []) as CoesData[];
 };
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const coesDataQuery = useQuery({
-    queryKey: ['coes-data'],
+  const { data: coesData = [] } = useQuery({
+    queryKey: ['coes-data'] as const,
     queryFn: fetchCoesData
   });
 
-  const coesData = coesDataQuery.data || [];
-
-  const getChartData = () => {
+  const getChartData = (): DailyChartData[] => {
     return coesData.map(data => ({
       name: format(new Date(data.date), 'HH:mm'),
       "Pronóstico COES": data.daily_forecast,
@@ -75,7 +78,11 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     }));
   };
 
-  const CustomBackground = ({ x, width, selected }: any) => {
+  const CustomBackground = ({ x, width, selected }: { 
+    x: number;
+    width: number;
+    selected: boolean;
+  }) => {
     if (!selected) return null;
     
     return (
