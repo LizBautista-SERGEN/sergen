@@ -11,9 +11,7 @@ interface PowerChartsProps {
   date: Date | undefined;
 }
 
-type CoesDataResponse = Awaited<ReturnType<typeof fetchCoesData>>;
-
-const fetchCoesData = async (): Promise<CoesData[]> => {
+const fetchCoesData = async () => {
   const today = new Date();
   const formattedDate = format(today, 'yyyy-MM-dd');
   
@@ -24,16 +22,14 @@ const fetchCoesData = async (): Promise<CoesData[]> => {
     .order('date', { ascending: true })
     .throwOnError();
   
-  return data || [];
+  return (data || []) as CoesData[];
 };
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const query = useQuery({
-    queryKey: ['coes-data'],
+  const { data: coesData = [] } = useQuery({
+    queryKey: ['coes-data'] as const,
     queryFn: fetchCoesData
   });
-
-  const coesData = query.data || [];
 
   const getChartData = () => {
     return coesData.map(data => ({
