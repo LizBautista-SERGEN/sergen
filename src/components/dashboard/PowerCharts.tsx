@@ -1,10 +1,7 @@
 
 import { format, isSameMonth, isSameDay } from "date-fns";
-import { EnergyData, CoesData } from "@/types/energy";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { TIME_SLOTS, CHART_COLORS, SimpleLineChartData, SimpleBarChartData } from "./types";
-import { DailyForecastChart } from "./DailyForecastChart";
+import { EnergyData } from "@/types/energy";
+import { CHART_COLORS, SimpleBarChartData } from "./types";
 import { HistoricalPowerChart } from "./HistoricalPowerChart";
 
 type Props = {
@@ -13,27 +10,6 @@ type Props = {
 };
 
 export const PowerCharts = ({ energyData, date }: Props) => {
-  const currentTime = new Date();
-  const currentTimeStr = format(currentTime, 'HH:mm');
-
-  const { data: coesData } = useQuery<CoesData[]>({
-    queryKey: ['coes-data'],
-    queryFn: async () => {
-      const today = new Date();
-      const formattedDate = format(today, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('coes_demand_data')
-        .select('*')
-        .eq('date::date', formattedDate)
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    },
-    initialData: []
-  });
-
   const prepareBarChartData = () => {
     if (!date) return [];
 
@@ -58,28 +34,7 @@ export const PowerCharts = ({ energyData, date }: Props) => {
     }));
   };
 
-  const prepareLineChartData = () => {
-    return TIME_SLOTS.map(slot => {
-      const slotData = coesData.find(data => 
-        format(new Date(data.date), 'HH:mm') === slot
-      );
-      
-      return {
-        name: slot,
-        pronosticoCOES: slotData?.daily_forecast ?? null,
-        ejecutadoCOES: slotData?.executed_power ?? null,
-        pronosticoSemanal: slotData?.weekly_forecast ?? null
-      };
-    });
-  };
-
   const barChartData = prepareBarChartData();
-  const lineChartData = prepareLineChartData();
 
-  return (
-    <>
-      <DailyForecastChart data={lineChartData} currentTime={currentTimeStr} />
-      <HistoricalPowerChart data={barChartData} />
-    </>
-  );
+  return <HistoricalPowerChart data={barChartData} />;
 };
