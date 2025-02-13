@@ -7,35 +7,34 @@ import { TIME_SLOTS, CHART_COLORS, SimpleLineChartData, SimpleBarChartData } fro
 import { DailyForecastChart } from "./DailyForecastChart";
 import { HistoricalPowerChart } from "./HistoricalPowerChart";
 
-type PowerChartsProps = {
-  energyData: EnergyData[];
-  date: Date | undefined;
-};
-
-const fetchCoesData = async (): Promise<CoesData[]> => {
-  const today = new Date();
-  const formattedDate = format(today, 'yyyy-MM-dd');
-  
-  const { data, error } = await supabase
-    .from('coes_demand_data')
-    .select('*')
-    .eq('date::date', formattedDate)
-    .order('date', { ascending: true });
-
-  if (error) throw error;
-  return data || [];
-};
-
-export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
+export const PowerCharts = ({ 
+  energyData, 
+  date 
+}: { 
+  energyData: Array<EnergyData>; 
+  date: Date | undefined; 
+}) => {
   const currentTime = new Date();
   const currentTimeStr = format(currentTime, 'HH:mm');
 
   const { data: coesData = [] } = useQuery({
     queryKey: ['coes-data'],
-    queryFn: fetchCoesData
+    queryFn: async () => {
+      const today = new Date();
+      const formattedDate = format(today, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('coes_demand_data')
+        .select('*')
+        .eq('date::date', formattedDate)
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
   });
 
-  const prepareBarChartData = (): SimpleBarChartData[] => {
+  const prepareBarChartData = () => {
     if (!date) return [];
 
     const monthData = energyData
@@ -59,7 +58,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     }));
   };
 
-  const prepareLineChartData = (): SimpleLineChartData[] => {
+  const prepareLineChartData = () => {
     return TIME_SLOTS.map(slot => {
       const slotData = coesData.find(data => 
         format(new Date(data.date), 'HH:mm') === slot
