@@ -33,20 +33,26 @@ interface CustomBackgroundProps {
   selected: boolean;
 }
 
-// Explicitly define time slots creation
-const generateTimeSlots = (baseDate: Date) => {
-  const slots = [];
+interface TimeSlot {
+  date: Date;
+  key: string;
+}
+
+// Simplified time slots generation with explicit return type
+const generateTimeSlots = (): TimeSlot[] => {
+  const baseDate = new Date();
   const startOfDay = setMinutes(setHours(baseDate, 0), 0);
+  const result: TimeSlot[] = [];
   
   for (let i = 0; i < 48; i++) {
     const date = addMinutes(startOfDay, i * 30);
-    slots.push({
+    result.push({
       date,
       key: format(date, 'HH:mm')
     });
   }
   
-  return slots;
+  return result;
 };
 
 const fetchCoesData = async (): Promise<CoesData[]> => {
@@ -113,8 +119,8 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   };
 
   const getChartData = (): ChartDataPoint[] => {
-    const slots = generateTimeSlots(new Date());
-    return slots.map(({ key }) => {
+    const timeSlots = generateTimeSlots();
+    return timeSlots.map(({ key }) => {
       const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === key);
       
       return {
