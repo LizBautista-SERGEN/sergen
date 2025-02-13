@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -106,12 +105,7 @@ serve(async (req) => {
     const contentType = exportResponse.headers.get('content-type');
     console.log('Tipo de contenido recibido:', contentType);
 
-    if (!contentType?.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
-      const text = await exportResponse.text();
-      console.log('Contenido recibido (no es Excel):', text.substring(0, 500));
-      throw new Error('La respuesta no es un archivo Excel válido');
-    }
-
+    // Intentamos procesar el archivo independientemente del content-type
     const arrayBuffer = await exportResponse.arrayBuffer();
     console.log('Tamaño del archivo:', arrayBuffer.byteLength, 'bytes');
 
