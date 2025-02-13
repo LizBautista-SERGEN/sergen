@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, isSameMonth, isSameDay, setHours, setMinutes, addMinutes } from "date-fns";
@@ -11,13 +10,13 @@ interface PowerChartsProps {
   date: Date | undefined;
 }
 
-interface DailyChartData {
+type ChartDataPoint = {
   name: string;
   timestamp: Date;
   "Pronóstico COES": number | null;
   "Ejecutado COES": number | null;
   "Pronóstico Semanal": number | null;
-}
+};
 
 interface CustomBackgroundProps {
   x: number;
@@ -25,13 +24,8 @@ interface CustomBackgroundProps {
   selected: boolean;
 }
 
-interface TimeSlot {
-  date: Date;
-  key: string;
-}
-
-const createTimeSlots = (baseDate: Date): TimeSlot[] => {
-  const slots: TimeSlot[] = [];
+const createTimeSlots = (baseDate: Date) => {
+  const slots = [];
   const startOfDay = setMinutes(setHours(baseDate, 0), 0);
   
   for (let i = 0; i < 48; i++) {
@@ -45,28 +39,30 @@ const createTimeSlots = (baseDate: Date): TimeSlot[] => {
   return slots;
 };
 
+const fetchCoesData = async () => {
+  const today = new Date();
+  const formattedDate = format(today, 'yyyy-MM-dd');
+  
+  const { data, error } = await supabase
+    .from('coes_demand_data')
+    .select('*')
+    .eq('date::date', formattedDate)
+    .order('date', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const currentTime = new Date();
   const currentTimeStr = format(currentTime, 'HH:mm');
 
   const { data: coesData = [] } = useQuery({
     queryKey: ['coes-data'],
-    queryFn: async () => {
-      const today = new Date();
-      const formattedDate = format(today, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('coes_demand_data')
-        .select('*')
-        .eq('date::date', formattedDate)
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as CoesData[];
-    }
+    queryFn: fetchCoesData
   });
 
-  const getChartData = (): DailyChartData[] => {
+  const getChartData = (): ChartDataPoint[] => {
     const today = new Date();
     const timeSlots = createTimeSlots(today);
     
