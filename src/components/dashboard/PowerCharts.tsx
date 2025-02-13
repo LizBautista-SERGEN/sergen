@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, isSameMonth, isSameDay } from "date-fns";
 import { EnergyData } from "@/types/energy";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PowerChartsProps {
   energyData: EnergyData[];
@@ -10,27 +12,27 @@ interface PowerChartsProps {
 }
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const getChartData = () => {
-    if (!date) return [];
-
-    const selectedDateStr = format(date, 'yyyy-MM-dd');
-    const dayData = energyData.find(data => data.date === selectedDateStr);
-    
-    if (!dayData) return [];
-
-    const intervals = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        intervals.push({
-          name: time,
-          "Potencia Pronosticada": dayData.forecasted_power * (0.85 + Math.random() * 0.3),
-          "Potencia Ejecutada": dayData.executed_power * (0.85 + Math.random() * 0.3)
-        });
-      }
+  const { data: coesData } = useQuery({
+    queryKey: ['coes-data'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('coes_demand_data')
+        .select('*')
+        .order('date', { ascending: true });
+      
+      if (error) throw error;
+      return data;
     }
-    
-    return intervals;
+  });
+
+  const getChartData = () => {
+    if (!coesData) return [];
+
+    return coesData.map(data => ({
+      name: format(new Date(data.date), 'HH:mm'),
+      "Potencia Pronosticada": data.daily_forecast,
+      "Potencia Ejecutada": data.executed_power
+    }));
   };
 
   const getBarChartData = () => {
@@ -83,19 +85,24 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
         <CardContent className="p-4">
           <LineChart width={650} height={300} data={getChartData()}>
             <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
+            <YAxis 
+              domain={[6000, 9000]}
+              tickFormatter={(value) => `${value.toLocaleString()}`}
+            />
+            <Tooltip 
+              formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
+            />
             <Line 
               type="monotone" 
               dataKey="Potencia Pronosticada" 
-              stroke="#8884d8" 
+              stroke="#f39200" 
               strokeWidth={2}
               dot={false}
             />
             <Line 
               type="monotone" 
               dataKey="Potencia Ejecutada" 
-              stroke="#82ca9d" 
+              stroke="#156082" 
               strokeWidth={2}
               dot={false}
             />
