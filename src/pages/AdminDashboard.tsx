@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { UserManagement } from "@/components/admin/UserManagement";
+import { ForecastManagement } from "@/components/admin/ForecastManagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, LineChart } from "lucide-react";
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -72,7 +75,24 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="container mx-auto px-4 py-8">
-        <UserManagement />
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Usuarios
+            </TabsTrigger>
+            <TabsTrigger value="forecast" className="flex items-center gap-2">
+              <LineChart className="h-4 w-4" />
+              Pronóstico
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
+          <TabsContent value="forecast">
+            <ForecastManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
