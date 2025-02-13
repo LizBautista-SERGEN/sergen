@@ -13,10 +13,10 @@ interface PowerChartsProps {
 
 type ChartDataPoint = {
   name: string;
-  timestamp: Date;
-  "Pronóstico COES": number | null;
-  "Ejecutado COES": number | null;
-  "Pronóstico Semanal": number | null;
+  timestamp: string;
+  pronosticoCOES: number | null;
+  ejecutadoCOES: number | null;
+  pronosticoSemanal: number | null;
 };
 
 type BarChartDataPoint = {
@@ -33,27 +33,12 @@ interface CustomBackgroundProps {
   selected: boolean;
 }
 
-interface TimeSlot {
-  date: Date;
-  key: string;
-}
-
-// Simplified time slots generation with explicit return type
-const generateTimeSlots = (): TimeSlot[] => {
-  const baseDate = new Date();
-  const startOfDay = setMinutes(setHours(baseDate, 0), 0);
-  const result: TimeSlot[] = [];
-  
-  for (let i = 0; i < 48; i++) {
-    const date = addMinutes(startOfDay, i * 30);
-    result.push({
-      date,
-      key: format(date, 'HH:mm')
-    });
-  }
-  
-  return result;
-};
+// Fixed time slots for a day
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const hours = Math.floor(i / 2);
+  const minutes = (i % 2) * 30;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+});
 
 const fetchCoesData = async (): Promise<CoesData[]> => {
   const today = new Date();
@@ -119,16 +104,15 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   };
 
   const getChartData = (): ChartDataPoint[] => {
-    const timeSlots = generateTimeSlots();
-    return timeSlots.map(({ key }) => {
-      const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === key);
+    return TIME_SLOTS.map(timeSlot => {
+      const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === timeSlot);
       
       return {
-        name: key,
-        timestamp: new Date(),
-        "Pronóstico COES": key >= currentTimeStr ? (slotData?.daily_forecast || null) : null,
-        "Ejecutado COES": key <= currentTimeStr ? (slotData?.executed_power || null) : null,
-        "Pronóstico Semanal": key >= currentTimeStr ? (slotData?.weekly_forecast || null) : null
+        name: timeSlot,
+        timestamp: timeSlot,
+        pronosticoCOES: timeSlot >= currentTimeStr ? (slotData?.daily_forecast || null) : null,
+        ejecutadoCOES: timeSlot <= currentTimeStr ? (slotData?.executed_power || null) : null,
+        pronosticoSemanal: timeSlot >= currentTimeStr ? (slotData?.weekly_forecast || null) : null
       };
     });
   };
@@ -170,7 +154,8 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
             />
             <Line 
               type="monotone" 
-              dataKey="Pronóstico COES" 
+              dataKey="pronosticoCOES" 
+              name="Pronóstico COES"
               stroke="#f39200" 
               strokeWidth={2}
               dot={false}
@@ -178,7 +163,8 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
             />
             <Line 
               type="monotone" 
-              dataKey="Ejecutado COES" 
+              dataKey="ejecutadoCOES"
+              name="Ejecutado COES" 
               stroke="#156082" 
               strokeWidth={2}
               dot={false}
@@ -186,7 +172,8 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
             />
             <Line 
               type="monotone" 
-              dataKey="Pronóstico Semanal" 
+              dataKey="pronosticoSemanal"
+              name="Pronóstico Semanal" 
               stroke="#C00000" 
               strokeWidth={2}
               dot={false}
