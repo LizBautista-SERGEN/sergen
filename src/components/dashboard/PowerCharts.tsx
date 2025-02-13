@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, isSameMonth, isSameDay, parseISO } from "date-fns";
-import { EnergyData } from "@/types/energy";
+import { EnergyData, CoesData } from "@/types/energy";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,7 +12,7 @@ interface PowerChartsProps {
 }
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const { data: coesData } = useQuery({
+  const { data: coesData } = useQuery<CoesData[]>({
     queryKey: ['coes-data'],
     queryFn: async () => {
       const today = new Date();
