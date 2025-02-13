@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import * as XLSX from 'https://deno.land/x/xlsx@v0.0.2/mod.ts';
+import { readExcel } from "https://deno.land/x/excel_to_json@v1.0.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
 
 const corsHeaders = {
@@ -105,32 +105,18 @@ serve(async (req) => {
 
     try {
       console.log('Iniciando procesamiento del archivo Excel');
-      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
-        type: 'array',
-        cellDates: true,
-        dateNF: 'yyyy-mm-dd HH:mm:ss'
-      });
+      // Crear un archivo temporal para guardar el Excel
+      const tempFilePath = await Deno.makeTempFile({suffix: '.xlsx'});
+      await Deno.writeFile(tempFilePath, new Uint8Array(arrayBuffer));
       
-      console.log('Hojas en el Excel:', workbook.SheetNames);
-
-      if (workbook.SheetNames.length === 0) {
-        throw new Error('El archivo Excel no contiene hojas');
-      }
-
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      if (!worksheet) {
-        throw new Error('No se pudo acceder a la primera hoja del Excel');
-      }
-
-      console.log('Primera hoja:', workbook.SheetNames[0]);
-      console.log('Rango de la hoja:', worksheet['!ref']);
-
-      // Convertir a JSON con opciones específicas para manejar fechas
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-        header: 1,
-        raw: true, // Cambiado a true para obtener valores sin formato
-        dateNF: 'yyyy-mm-dd HH:mm:ss'
+      // Leer el archivo Excel
+      const jsonData = await readExcel(tempFilePath, {
+        sheet: 0,
+        header: true
       });
+
+      // Eliminar el archivo temporal
+      await Deno.remove(tempFilePath);
 
       console.log('Filas encontradas:', jsonData.length);
       console.log('Primeras filas:', JSON.stringify(jsonData.slice(0, 3), null, 2));
@@ -139,50 +125,13 @@ serve(async (req) => {
         throw new Error('No se encontraron datos en el archivo Excel');
       }
 
-      // Encontrar el índice de la fila de encabezados
-      let headerRowIndex = -1;
-      for (let i = 0; i < Math.min(10, jsonData.length); i++) {
-        const row = jsonData[i] as any[];
-        if (row && Array.isArray(row) && row.some(cell => 
-          typeof cell === 'string' && 
-          (cell.toLowerCase().includes('fecha') || 
-           cell.toLowerCase().includes('ejecutado') ||
-           cell.toLowerCase().includes('prog'))
-        )) {
-          headerRowIndex = i;
-          break;
-        }
-      }
-
-      if (headerRowIndex === -1) {
-        console.log('Contenido completo del Excel:', JSON.stringify(jsonData, null, 2));
-        throw new Error('No se encontró la fila de encabezados en el Excel');
-      }
-
-      // Obtener los nombres de las columnas
-      const headers = jsonData[headerRowIndex] as string[];
-      console.log('Encabezados encontrados:', headers);
-
-      // Procesar los datos desde la siguiente fila después de los encabezados
-      const processedData = [];
-      for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
-        const row = jsonData[i] as any[];
-        if (!row || !Array.isArray(row) || row.length < 3) {
-          console.log('Saltando fila inválida:', row);
-          continue;
-        }
-
-        const data = {
-          Fecha: row[0],
-          Ejecutado: parseNumber(row[1]),
-          "Prog. Diaria": parseNumber(row[2]),
-          "Prog. Semanal": row.length > 3 ? parseNumber(row[3]) : 0
-        };
-
-        if (data.Fecha && (data.Ejecutado > 0 || data["Prog. Diaria"] > 0)) {
-          processedData.push(data);
-        }
-      }
+      // Procesar los datos
+      const processedData = jsonData.map((row: any) => ({
+        Fecha: row['Fecha'] || row['fecha'] || row[Object.keys(row)[0]],
+        Ejecutado: parseNumber(row['Ejecutado'] || row['ejecutado'] || row[Object.keys(row)[1]]),
+        "Prog. Diaria": parseNumber(row['Prog. Diaria'] || row['prog. diaria'] || row[Object.keys(row)[2]]),
+        "Prog. Semanal": parseNumber(row['Prog. Semanal'] || row['prog. semanal'] || row[Object.keys(row)[3]] || 0)
+      })).filter(data => data.Fecha && (data.Ejecutado > 0 || data["Prog. Diaria"] > 0));
 
       if (processedData.length === 0) {
         throw new Error('No se encontraron datos válidos en el archivo Excel');
