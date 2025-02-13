@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, isSameMonth, isSameDay, parseISO } from "date-fns";
 import { EnergyData, CoesData } from "@/types/energy";
-import { useQuery, QueryFunction } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PowerChartsProps {
@@ -11,7 +11,7 @@ interface PowerChartsProps {
   date: Date | undefined;
 }
 
-const queryFn: QueryFunction<CoesData[]> = async () => {
+async function fetchCoesData() {
   const today = new Date();
   const formattedDate = format(today, 'yyyy-MM-dd');
   
@@ -22,13 +22,13 @@ const queryFn: QueryFunction<CoesData[]> = async () => {
     .order('date', { ascending: true });
   
   if (error) throw error;
-  return data || [];
-};
+  return (data || []) as CoesData[];
+}
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const { data: coesData = [] } = useQuery({
-    queryKey: ['coes-data'] as const,
-    queryFn
+    queryKey: ['coes-data'],
+    queryFn: fetchCoesData
   });
 
   const getChartData = () => {
