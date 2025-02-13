@@ -30,16 +30,21 @@ type TimeSlot = {
   key: string;
 };
 
-const createTimeSlots = (baseDate: Date): TimeSlot[] => {
+// Simplified createTimeSlots function with explicit types
+function createTimeSlots(baseDate: Date): TimeSlot[] {
+  const slots: TimeSlot[] = [];
   const startOfDay = setMinutes(setHours(baseDate, 0), 0);
-  return Array.from({ length: 48 }, (_, i) => {
+  
+  for (let i = 0; i < 48; i++) {
     const date = addMinutes(startOfDay, i * 30);
-    return {
+    slots.push({
       date,
       key: format(date, 'HH:mm')
-    };
-  });
-};
+    });
+  }
+  
+  return slots;
+}
 
 const fetchCoesData = async (): Promise<CoesData[]> => {
   const today = new Date();
@@ -105,8 +110,8 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   };
 
   const getChartData = (): ChartDataPoint[] => {
-    const timeSlots = createTimeSlots(new Date());
-    return timeSlots.map(({ key }) => {
+    const slots = createTimeSlots(new Date());
+    return slots.map(({ key }) => {
       const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === key);
       
       return {
