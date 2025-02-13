@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { readExcel } from "https://deno.land/x/excel_to_json@v1.0.0/mod.ts";
+import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
 
 const corsHeaders = {
@@ -105,18 +105,25 @@ serve(async (req) => {
 
     try {
       console.log('Iniciando procesamiento del archivo Excel');
-      // Crear un archivo temporal para guardar el Excel
-      const tempFilePath = await Deno.makeTempFile({suffix: '.xlsx'});
-      await Deno.writeFile(tempFilePath, new Uint8Array(arrayBuffer));
       
-      // Leer el archivo Excel
-      const jsonData = await readExcel(tempFilePath, {
-        sheet: 0,
-        header: true
+      // Leer el archivo Excel directamente desde el ArrayBuffer
+      const workbook = read(new Uint8Array(arrayBuffer), { 
+        type: 'array',
+        cellDates: true
       });
 
-      // Eliminar el archivo temporal
-      await Deno.remove(tempFilePath);
+      if (!workbook.SheetNames.length) {
+        throw new Error('El archivo Excel no contiene hojas');
+      }
+
+      // Obtener la primera hoja
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      
+      // Convertir a JSON
+      const jsonData = utils.sheet_to_json(worksheet, {
+        raw: false,
+        dateNF: 'yyyy-mm-dd HH:mm:ss'
+      });
 
       console.log('Filas encontradas:', jsonData.length);
       console.log('Primeras filas:', JSON.stringify(jsonData.slice(0, 3), null, 2));
