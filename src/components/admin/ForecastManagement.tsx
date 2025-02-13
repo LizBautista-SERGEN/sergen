@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -167,7 +166,7 @@ export const ForecastManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
-                  <TableHead>Reprogramación</TableHead>
+                  <TableHead>Programado</TableHead>
                   <TableHead>Pronóstico</TableHead>
                   <TableHead>Rango Mínimo</TableHead>
                   <TableHead>Rango Máximo</TableHead>
@@ -178,11 +177,11 @@ export const ForecastManagement = () => {
                 {coesData.map((data, index) => (
                   <TableRow key={index}>
                     <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-                    <TableCell>{formatNumber(data["Reprogramación Diaria"])} MW</TableCell>
-                    <TableCell>{formatNumber(data["Pronóstico"])} MW</TableCell>
-                    <TableCell>{formatNumber(data["Rango Mínimo"])} MW</TableCell>
-                    <TableCell>{formatNumber(data["Rango Máximo"])} MW</TableCell>
-                    <TableCell>{formatNumber(data["Ejecutado"])} MW</TableCell>
+                    <TableCell>{data["Reprogramación Diaria"] ? `${formatNumber(data["Reprogramación Diaria"])} MW` : '-'}</TableCell>
+                    <TableCell>{data["Pronóstico"] ? `${formatNumber(data["Pronóstico"])} MW` : '-'}</TableCell>
+                    <TableCell>{data["Rango Mínimo"] ? `${formatNumber(data["Rango Mínimo"])} MW` : '-'}</TableCell>
+                    <TableCell>{data["Rango Máximo"] ? `${formatNumber(data["Rango Máximo"])} MW` : '-'}</TableCell>
+                    <TableCell>{data["Ejecutado"] ? `${formatNumber(data["Ejecutado"])} MW` : '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

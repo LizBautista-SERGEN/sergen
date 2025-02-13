@@ -22,16 +22,12 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       cellText: false
     });
 
-    console.log('Hojas disponibles:', workbook.SheetNames);
-
     if (!workbook.SheetNames.length) {
       throw new Error('El archivo Excel no contiene hojas');
     }
 
-    // Usar la primera hoja
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     
-    // Convertir a JSON con opciones más flexibles
     const jsonData = utils.sheet_to_json(worksheet, {
       raw: false,
       dateNF: 'yyyy-mm-dd HH:mm:ss',
@@ -39,22 +35,22 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       blankrows: false
     });
 
-    console.log('Datos crudos del Excel:', jsonData.slice(0, 2));
-
     if (!Array.isArray(jsonData) || jsonData.length === 0) {
       throw new Error('No se encontraron datos en el archivo Excel');
     }
 
-    // Procesar los datos con manejo más flexible
+    const currentTime = new Date();
+
     const processedData = jsonData.map((row: any) => {
-      // Intentar encontrar las columnas por diferentes nombres posibles
       const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
       const reprogramacion = row['Reprogramación Diaria'] || row['REPROGRAMACIÓN DIARIA'];
       const pronostico = row['Pronóstico de Demanda Automático de Tiempo Real'] || 
                         row['PRONÓSTICO DE DEMANDA AUTOMÁTICO DE TIEMPO REAL'] ||
                         row['Pronóstico de Demanda Automatico de Tiempo Real'];
-      const rangoMin = row['Rango Mínimo'] || row['RANGO MÍNIMO'];
-      const rangoMax = row['Rango Máximo'] || row['RANGO MÁXIMO'];
+      const rangoMin = row['Rango Mínimo del Pronóstico de Demanda Automático de Tiempo Real'] || 
+                      row['RANGO MÍNIMO DEL PRONÓSTICO DE DEMANDA AUTOMÁTICO DE TIEMPO REAL'];
+      const rangoMax = row['Rango Máximo del Pronóstico de Demanda Automático de Tiempo Real'] || 
+                      row['RANGO MÁXIMO DEL PRONÓSTICO DE DEMANDA AUTOMÁTICO DE TIEMPO REAL'];
       const ejecutado = row['Ejecutado'] || row['EJECUTADO'];
 
       if (!fecha) {
@@ -62,23 +58,23 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
         return null;
       }
 
-      // Log para depuración
-      console.log('Procesando fila:', {
-        fecha,
-        reprogramacion,
-        pronostico,
-        rangoMin,
-        rangoMax,
-        ejecutado
-      });
+      const rowDate = new Date(fecha);
+      const shouldShowForecast = rowDate >= currentTime;
+
+      // Procesar valores numéricos, convertir 0 a null
+      const processValue = (value: any, showForecast = false): number | null => {
+        if (!showForecast) return null;
+        const processed = parseNumber(value);
+        return processed === 0 ? null : processed;
+      };
 
       return {
         Fecha: fecha,
-        "Reprogramación Diaria": reprogramacion !== undefined ? parseNumber(reprogramacion) : null,
-        "Pronóstico": pronostico !== undefined ? parseNumber(pronostico) : null,
-        "Rango Mínimo": rangoMin !== undefined ? parseNumber(rangoMin) : null,
-        "Rango Máximo": rangoMax !== undefined ? parseNumber(rangoMax) : null,
-        "Ejecutado": ejecutado !== undefined ? parseNumber(ejecutado) : null
+        "Reprogramación Diaria": processValue(reprogramacion, true),
+        "Pronóstico": processValue(pronostico, shouldShowForecast),
+        "Rango Mínimo": processValue(rangoMin, shouldShowForecast),
+        "Rango Máximo": processValue(rangoMax, shouldShowForecast),
+        "Ejecutado": processValue(ejecutado, true)
       };
     }).filter((item): item is ProcessedData => item !== null);
 
@@ -87,8 +83,6 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
     }
 
     console.log('Datos procesados exitosamente. Total de registros:', processedData.length);
-    console.log('Muestra de datos procesados:', processedData.slice(0, 2));
-
     return processedData;
   } catch (error) {
     console.error('Error procesando Excel:', error);
