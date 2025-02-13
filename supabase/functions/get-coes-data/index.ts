@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -30,6 +31,10 @@ serve(async (req) => {
   }
 
   try {
+    // Obtener fecha actual en formato dd/mm/yyyy
+    const today = new Date();
+    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+
     // Primero, simulamos una sesión web completa
     const mainPageUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     console.log('Visitando página principal:', mainPageUrl);
@@ -41,17 +46,8 @@ serve(async (req) => {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'document',
-        'sec-fetch-mode': 'navigate',
-        'sec-fetch-site': 'none',
-        'sec-fetch-user': '?1',
-        'upgrade-insecure-requests': '1'
-      },
-      redirect: 'follow'
+        'Pragma': 'no-cache'
+      }
     });
 
     if (!mainPageResponse.ok) {
@@ -59,13 +55,39 @@ serve(async (req) => {
     }
 
     const cookies = mainPageResponse.headers.get('set-cookie');
-    if (!cookies) {
-      console.log('No se recibieron cookies de la página principal');
-    } else {
-      console.log('Cookies obtenidas:', cookies);
-    }
+    console.log('Cookies iniciales:', cookies);
 
     // Esperamos un momento antes de hacer la siguiente petición
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Preparar los datos del formulario
+    const formData = new URLSearchParams();
+    formData.append('txtFechaInicio', formattedDate);
+    formData.append('txtFechaFin', formattedDate);
+
+    // Realizar la petición POST al endpoint de búsqueda
+    const searchUrl = 'https://www.coes.org.pe/Portal/portalinformacion/BusquedaProTiempoReal';
+    console.log('Enviando búsqueda con fecha:', formattedDate);
+
+    const searchResponse = await fetch(searchUrl, {
+      method: 'POST',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': '*/*',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        'Origin': 'https://www.coes.org.pe',
+        'Referer': mainPageUrl,
+        'Cookie': cookies || '',
+      },
+      body: formData.toString()
+    });
+
+    if (!searchResponse.ok) {
+      throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
+    }
+
+    console.log('Búsqueda completada, esperando antes de descargar');
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Hacemos la petición al endpoint de exportación
@@ -78,21 +100,13 @@ serve(async (req) => {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
         'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-        'Referer': mainPageUrl,
-        'Cookie': cookies || '',
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
-        'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin'
-      },
-      redirect: 'follow'
+        'Referer': mainPageUrl,
+        'Cookie': cookies || '',
+      }
     });
 
-    // Loguear la respuesta completa para debugging
     console.log('Estado de la respuesta:', exportResponse.status);
     console.log('Headers de la respuesta:', Object.fromEntries(exportResponse.headers.entries()));
 
@@ -102,10 +116,6 @@ serve(async (req) => {
       throw new Error(`Error en la descarga: ${exportResponse.status} ${exportResponse.statusText}`);
     }
 
-    const contentType = exportResponse.headers.get('content-type');
-    console.log('Tipo de contenido recibido:', contentType);
-
-    // Intentamos procesar el archivo independientemente del content-type
     const arrayBuffer = await exportResponse.arrayBuffer();
     console.log('Tamaño del archivo:', arrayBuffer.byteLength, 'bytes');
 
@@ -120,7 +130,7 @@ serve(async (req) => {
       const firstBytes = new Uint8Array(arrayBuffer.slice(0, 4));
       console.log('Primeros bytes del archivo:', Array.from(firstBytes));
       
-      // Leer el archivo Excel directamente desde el ArrayBuffer
+      // Leer el archivo Excel
       const workbook = read(new Uint8Array(arrayBuffer), { 
         type: 'array',
         cellDates: true,
@@ -138,7 +148,7 @@ serve(async (req) => {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       console.log('Rango de la hoja:', worksheet['!ref']);
       
-      // Convertir a JSON con opciones específicas
+      // Convertir a JSON
       const jsonData = utils.sheet_to_json(worksheet, {
         raw: true,
         dateNF: 'yyyy-mm-dd HH:mm:ss',
@@ -155,7 +165,7 @@ serve(async (req) => {
 
       // Encontrar la fila de encabezados
       const headerRow = jsonData.find((row: any[]) => 
-        row.some((cell: any) => 
+        Array.isArray(row) && row.some((cell: any) => 
           typeof cell === 'string' && 
           (cell.toLowerCase().includes('fecha') || 
            cell.toLowerCase().includes('ejecutado'))
@@ -170,7 +180,7 @@ serve(async (req) => {
       const headerIndex = jsonData.indexOf(headerRow);
       const dataRows = jsonData.slice(headerIndex + 1);
 
-      // Procesar los datos usando los índices de las columnas
+      // Procesar los datos
       const processedData = dataRows
         .filter((row: any[]) => row && row.length >= 3)
         .map((row: any[]) => ({
