@@ -50,7 +50,9 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       // Intentar encontrar las columnas por diferentes nombres posibles
       const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
       const reprogramacion = row['Reprogramación Diaria'] || row['REPROGRAMACIÓN DIARIA'];
-      const pronostico = row['Pronóstico'] || row['PRONÓSTICO'];
+      const pronostico = row['Pronóstico de Demanda Automático de Tiempo Real'] || 
+                        row['PRONÓSTICO DE DEMANDA AUTOMÁTICO DE TIEMPO REAL'] ||
+                        row['Pronóstico de Demanda Automatico de Tiempo Real'];
       const rangoMin = row['Rango Mínimo'] || row['RANGO MÍNIMO'];
       const rangoMax = row['Rango Máximo'] || row['RANGO MÁXIMO'];
       const ejecutado = row['Ejecutado'] || row['EJECUTADO'];
@@ -59,6 +61,16 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
         console.log('Fila sin fecha encontrada:', row);
         return null;
       }
+
+      // Log para depuración
+      console.log('Procesando fila:', {
+        fecha,
+        reprogramacion,
+        pronostico,
+        rangoMin,
+        rangoMax,
+        ejecutado
+      });
 
       return {
         Fecha: fecha,
