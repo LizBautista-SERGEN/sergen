@@ -22,15 +22,34 @@ export const UserManagement = () => {
   }, []);
 
   const fetchUsers = async () => {
+    // Primero, obtenemos el rol del usuario actual
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user.id) return;
+
+    const { data: currentUserProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError || currentUserProfile?.role !== 'superuser') {
+      toast.error('No tienes permisos para ver usuarios');
+      return;
+    }
+
+    // Ahora hacemos la consulta para obtener todos los usuarios
     const { data, error } = await supabase
       .from('profiles')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('Error fetching users:', error);
       toast.error('Error al cargar usuarios');
       return;
     }
 
+    console.log('Usuarios obtenidos:', data); // Para debugging
     setUsers(data || []);
   };
 
@@ -41,6 +60,7 @@ export const UserManagement = () => {
       .eq('id', userId);
 
     if (error) {
+      console.error('Error toggling access:', error);
       toast.error('Error al actualizar acceso');
       return;
     }
@@ -55,8 +75,8 @@ export const UserManagement = () => {
       if (error) throw error;
       toast.success('Correo de restablecimiento enviado');
     } catch (error) {
+      console.error('Error resetting password:', error);
       toast.error('Error al enviar correo de restablecimiento');
-      console.error('Error:', error);
     }
   };
 
