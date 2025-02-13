@@ -60,6 +60,12 @@ export const ForecastManagement = () => {
     fetchCoesData();
   }, []);
 
+  // Función auxiliar para formatear números de manera segura
+  const formatNumber = (value: number | null | undefined): string => {
+    if (value === null || value === undefined) return '-';
+    return value.toLocaleString();
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col space-y-4 rounded-lg border p-6 bg-white">
@@ -150,9 +156,9 @@ export const ForecastManagement = () => {
                 {coesData.map((data, index) => (
                   <TableRow key={index}>
                     <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-                    <TableCell>{data.Ejecutado !== null ? `${data.Ejecutado.toLocaleString()} MW` : '-'}</TableCell>
-                    <TableCell>{data["Prog. Diaria"] !== null ? `${data["Prog. Diaria"].toLocaleString()} MW` : '-'}</TableCell>
-                    <TableCell>{data["Prog. Semanal"] !== null ? `${data["Prog. Semanal"].toLocaleString()} MW` : '-'}</TableCell>
+                    <TableCell>{formatNumber(data.Ejecutado)} MW</TableCell>
+                    <TableCell>{formatNumber(data["Prog. Diaria"])} MW</TableCell>
+                    <TableCell>{formatNumber(data["Prog. Semanal"])} MW</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
