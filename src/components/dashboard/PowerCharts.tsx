@@ -18,24 +18,28 @@ interface DailyChartData {
   "Pronóstico Semanal": number | null;
 }
 
-const fetchCoesData = async () => {
-  const today = new Date();
-  const formattedDate = format(today, 'yyyy-MM-dd');
-  
-  const { data, error } = await supabase
-    .from('coes_demand_data')
-    .select('*')
-    .eq('date::date', formattedDate)
-    .order('date', { ascending: true });
-
-  if (error) throw error;
-  return (data || []) as CoesData[];
-};
+interface CustomBackgroundProps {
+  x: number;
+  width: number;
+  selected: boolean;
+}
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const { data: coesData = [] } = useQuery({
     queryKey: ['coes-data'] as const,
-    queryFn: fetchCoesData
+    queryFn: async () => {
+      const today = new Date();
+      const formattedDate = format(today, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('coes_demand_data')
+        .select('*')
+        .eq('date::date', formattedDate)
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as CoesData[];
+    }
   });
 
   const getChartData = (): DailyChartData[] => {
@@ -78,11 +82,7 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     }));
   };
 
-  const CustomBackground = ({ x, width, selected }: { 
-    x: number;
-    width: number;
-    selected: boolean;
-  }) => {
+  const CustomBackground = ({ x, width, selected }: CustomBackgroundProps) => {
     if (!selected) return null;
     
     return (
