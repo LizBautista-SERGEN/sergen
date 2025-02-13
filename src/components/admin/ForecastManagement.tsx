@@ -12,8 +12,8 @@ import { Loader2 } from "lucide-react";
 interface CoesData {
   Fecha: string;
   Ejecutado: number | null;
-  "Prog. Diaria": number;
-  "Prog. Semanal": number;
+  Programado: number;
+  Pronostico: number;
 }
 
 export const ForecastManagement = () => {
@@ -41,9 +41,15 @@ export const ForecastManagement = () => {
         setError('No se encontraron datos disponibles');
         toast.warning('No se encontraron datos disponibles');
       } else {
-        // Mantener el orden original de los datos
-        setCoesData(response);
-        console.log('Datos de COES:', response);
+        // Transformar los datos para usar los nuevos nombres de columnas
+        const transformedData = response.map(item => ({
+          Fecha: item.Fecha,
+          Ejecutado: item.Ejecutado,
+          Programado: item["Prog. Diaria"],
+          Pronostico: item["Prog. Semanal"]
+        }));
+        setCoesData(transformedData);
+        console.log('Datos de COES:', transformedData);
         toast.success('Datos obtenidos exitosamente');
       }
       
@@ -107,18 +113,29 @@ export const ForecastManagement = () => {
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="Ejecutado" 
+                    dataKey="Ejecutado"
                     stroke="#156082" 
                     strokeWidth={2}
                     name="Ejecutado"
+                    dot={false}
                     connectNulls={true}
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="Prog. Diaria" 
-                    stroke="#f39200" 
+                    dataKey="Programado"
+                    stroke="#C00000"
                     strokeWidth={2}
-                    name="Programación Diaria"
+                    strokeDasharray="5 5"
+                    name="Programado"
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Pronostico"
+                    stroke="#F39200"
+                    strokeWidth={2}
+                    name="Pronóstico"
+                    dot={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -129,8 +146,8 @@ export const ForecastManagement = () => {
                 <TableRow>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Ejecutado</TableHead>
-                  <TableHead>Prog. Diaria</TableHead>
-                  <TableHead>Prog. Semanal</TableHead>
+                  <TableHead>Programado</TableHead>
+                  <TableHead>Pronóstico</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -138,8 +155,8 @@ export const ForecastManagement = () => {
                   <TableRow key={index}>
                     <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
                     <TableCell>{data.Ejecutado !== null ? `${data.Ejecutado.toLocaleString()} MW` : '-'}</TableCell>
-                    <TableCell>{data["Prog. Diaria"] !== null ? `${data["Prog. Diaria"].toLocaleString()} MW` : '-'}</TableCell>
-                    <TableCell>{data["Prog. Semanal"] !== null ? `${data["Prog. Semanal"].toLocaleString()} MW` : '-'}</TableCell>
+                    <TableCell>{data.Programado !== null ? `${data.Programado.toLocaleString()} MW` : '-'}</TableCell>
+                    <TableCell>{data.Pronostico !== null ? `${data.Pronostico.toLocaleString()} MW` : '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
