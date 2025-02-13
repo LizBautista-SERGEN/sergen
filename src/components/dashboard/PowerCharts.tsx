@@ -45,25 +45,27 @@ const createTimeSlots = (baseDate: Date): TimeSlot[] => {
   return slots;
 };
 
+const fetchCoesData = async (): Promise<CoesData[]> => {
+  const today = new Date();
+  const formattedDate = format(today, 'yyyy-MM-dd');
+  
+  const { data, error } = await supabase
+    .from('coes_demand_data')
+    .select('*')
+    .eq('date::date', formattedDate)
+    .order('date', { ascending: true });
+
+  if (error) throw error;
+  return (data || []) as CoesData[];
+};
+
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const currentTime = new Date();
   const currentTimeStr = format(currentTime, 'HH:mm');
 
   const { data: coesData = [] } = useQuery({
     queryKey: ['coes-data'],
-    queryFn: async () => {
-      const today = new Date();
-      const formattedDate = format(today, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('coes_demand_data')
-        .select('*')
-        .eq('date::date', formattedDate)
-        .order('date', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as CoesData[];
-    }
+    queryFn: fetchCoesData
   });
 
   const getChartData = (): DailyChartData[] => {
