@@ -16,7 +16,7 @@ export const PowerCharts = ({ energyData, date }: Props) => {
   const currentTime = new Date();
   const currentTimeStr = format(currentTime, 'HH:mm');
 
-  const { data: coesData = [] } = useQuery({
+  const { data: coesData } = useQuery<CoesData[]>({
     queryKey: ['coes-data'],
     queryFn: async () => {
       const today = new Date();
@@ -30,7 +30,8 @@ export const PowerCharts = ({ energyData, date }: Props) => {
 
       if (error) throw error;
       return data || [];
-    }
+    },
+    initialData: []
   });
 
   const prepareBarChartData = () => {
