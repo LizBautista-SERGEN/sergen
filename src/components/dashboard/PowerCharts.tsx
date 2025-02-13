@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
-import { format, isSameMonth, isSameDay, setHours, setMinutes, addMinutes } from "date-fns";
+import { format, isSameMonth, isSameDay, setHours, setMinutes, addMinutes, parseISO, isAfter, isBefore } from "date-fns";
 import { EnergyData, CoesData } from "@/types/energy";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +46,9 @@ const createTimeSlots = (baseDate: Date): TimeSlot[] => {
 };
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
+  const currentTime = new Date();
+  const currentTimeStr = format(currentTime, 'HH:mm');
+
   const { data: coesData = [] } = useQuery({
     queryKey: ['coes-data'],
     queryFn: async () => {
@@ -77,13 +80,15 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
 
     return timeSlots.map(({ date: slot, key }) => {
       const existingData = dataMap.get(key);
+      const isAfterCurrentTime = key > currentTimeStr;
+      const isBeforeCurrentTime = key < currentTimeStr;
 
       return {
         name: key,
         timestamp: slot,
-        "Pronóstico COES": existingData?.daily_forecast || null,
-        "Ejecutado COES": existingData?.executed_power || null,
-        "Pronóstico Semanal": existingData?.weekly_forecast || null
+        "Pronóstico COES": isBeforeCurrentTime ? null : existingData?.daily_forecast || null,
+        "Ejecutado COES": isAfterCurrentTime ? null : existingData?.executed_power || null,
+        "Pronóstico Semanal": isBeforeCurrentTime ? null : existingData?.weekly_forecast || null
       };
     });
   };
@@ -133,7 +138,12 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     <>
       <Card className="mb-6">
         <CardHeader className="pb-2">
-          <CardTitle>Pronóstico diario de potencia máxima</CardTitle>
+          <CardTitle className="flex justify-between items-center">
+            <span>Pronóstico diario de potencia máxima</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              Hora actual: {currentTimeStr}
+            </span>
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <LineChart 
