@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
-import { format, isSameMonth, isSameDay } from "date-fns";
+import { format, isSameMonth, isSameDay, parseISO } from "date-fns";
 import { EnergyData } from "@/types/energy";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,9 +15,13 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const { data: coesData } = useQuery({
     queryKey: ['coes-data'],
     queryFn: async () => {
+      const today = new Date();
+      const formattedDate = format(today, 'yyyy-MM-dd');
+      
       const { data, error } = await supabase
         .from('coes_demand_data')
         .select('*')
+        .eq('date::date', formattedDate)
         .order('date', { ascending: true });
       
       if (error) throw error;
@@ -30,9 +34,14 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
 
     return coesData.map(data => ({
       name: format(new Date(data.date), 'HH:mm'),
-      "Potencia Pronosticada": data.daily_forecast,
-      "Potencia Ejecutada": data.executed_power
-    }));
+      "Pronóstico COES": data.daily_forecast,
+      "Ejecutado COES": data.executed_power,
+      "Pronóstico Semanal": data.weekly_forecast
+    })).sort((a, b) => {
+      const [aHours, aMinutes] = a.name.split(':').map(Number);
+      const [bHours, bMinutes] = b.name.split(':').map(Number);
+      return (aHours * 60 + aMinutes) - (bHours * 60 + bMinutes);
+    });
   };
 
   const getBarChartData = () => {
@@ -84,7 +93,10 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
         </CardHeader>
         <CardContent className="p-4">
           <LineChart width={650} height={300} data={getChartData()}>
-            <XAxis dataKey="name" />
+            <XAxis 
+              dataKey="name"
+              interval="preserveStartEnd"
+            />
             <YAxis 
               domain={[6000, 9000]}
               tickFormatter={(value) => `${value.toLocaleString()}`}
@@ -94,17 +106,27 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
             />
             <Line 
               type="monotone" 
-              dataKey="Potencia Pronosticada" 
+              dataKey="Pronóstico COES" 
               stroke="#f39200" 
               strokeWidth={2}
               dot={false}
+              connectNulls
             />
             <Line 
               type="monotone" 
-              dataKey="Potencia Ejecutada" 
+              dataKey="Ejecutado COES" 
               stroke="#156082" 
               strokeWidth={2}
               dot={false}
+              connectNulls
+            />
+            <Line 
+              type="monotone" 
+              dataKey="Pronóstico Semanal" 
+              stroke="#C00000" 
+              strokeWidth={2}
+              dot={false}
+              connectNulls
             />
           </LineChart>
         </CardContent>
