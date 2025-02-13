@@ -106,7 +106,7 @@ serve(async (req) => {
     const contentType = exportResponse.headers.get('content-type');
     console.log('Tipo de contenido recibido:', contentType);
 
-    if (!contentType?.includes('spreadsheet')) {
+    if (!contentType?.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
       const text = await exportResponse.text();
       console.log('Contenido recibido (no es Excel):', text.substring(0, 500));
       throw new Error('La respuesta no es un archivo Excel válido');
