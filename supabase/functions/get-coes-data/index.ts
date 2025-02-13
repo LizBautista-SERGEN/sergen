@@ -31,28 +31,46 @@ serve(async (req) => {
   }
 
   try {
-    const pronosticoUrl = 'https://www.coes.org.pe/Portal/portalinformacion/ExportarPronosticoTiempoReal';
+    // Primero, visitamos la página principal para obtener cookies y tokens
+    const mainPageUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
+    console.log('Visitando página principal:', mainPageUrl);
     
-    console.log('Iniciando proceso de descarga desde:', pronosticoUrl);
+    const mainPageResponse = await fetch(mainPageUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+      }
+    });
 
-    const response = await fetch(pronosticoUrl, {
+    if (!mainPageResponse.ok) {
+      throw new Error(`Error accediendo a la página principal: ${mainPageResponse.status}`);
+    }
+
+    const cookies = mainPageResponse.headers.get('set-cookie');
+    console.log('Cookies obtenidas:', cookies);
+
+    // Ahora hacemos la petición al endpoint de exportación
+    const exportUrl = 'https://www.coes.org.pe/Portal/portalinformacion/ExportarPronosticoTiempoReal';
+    console.log('Descargando archivo desde:', exportUrl);
+
+    const exportResponse = await fetch(exportUrl, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
         'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        'Referer': mainPageUrl,
+        'Cookie': cookies || '',
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`Error en la descarga: ${response.status} ${response.statusText}`);
+    if (!exportResponse.ok) {
+      throw new Error(`Error en la descarga: ${exportResponse.status} ${exportResponse.statusText}`);
     }
 
-    const contentType = response.headers.get('content-type');
-    console.log('Tipo de contenido recibido:', contentType);
-
-    // Intentar leer el contenido como ArrayBuffer
-    const arrayBuffer = await response.arrayBuffer();
+    const arrayBuffer = await exportResponse.arrayBuffer();
     console.log('Tamaño del archivo:', arrayBuffer.byteLength);
 
     if (arrayBuffer.byteLength === 0) {
