@@ -3,9 +3,42 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("Sesión cerrada correctamente");
+      navigate("/");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      toast.error("Error al cerrar sesión");
+    }
+  };
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -29,7 +62,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
@@ -39,6 +72,32 @@ const Navbar = () => {
                 {item.text}
               </Link>
             ))}
+            {isLoggedIn ? (
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/dashboard"
+                  className="text-gray-600 hover:text-sergen-500 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="text-sergen-500 hover:text-sergen-600"
+                >
+                  Cerrar Sesión
+                </Button>
+              </div>
+            ) : (
+              <Link to="/login">
+                <Button
+                  variant="default"
+                  className="bg-sergen-500 hover:bg-sergen-600 text-white"
+                >
+                  Iniciar Sesión
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -70,6 +129,34 @@ const Navbar = () => {
                 {item.text}
               </Link>
             ))}
+            {isLoggedIn ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="block text-gray-600 hover:text-sergen-500 transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                  className="block w-full text-left text-gray-600 hover:text-sergen-500 transition-colors"
+                >
+                  Cerrar Sesión
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="block text-gray-600 hover:text-sergen-500 transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Iniciar Sesión
+              </Link>
+            )}
           </div>
         </motion.div>
       )}
