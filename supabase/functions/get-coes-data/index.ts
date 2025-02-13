@@ -51,36 +51,76 @@ serve(async (req) => {
     const contentType = response.headers.get('content-type');
     console.log('Tipo de contenido recibido:', contentType);
 
-    // Verificar si es un archivo Excel
-    if (contentType?.includes('excel') || contentType?.includes('spreadsheet')) {
-      const arrayBuffer = await response.arrayBuffer();
+    // Intentar leer el contenido como ArrayBuffer
+    const arrayBuffer = await response.arrayBuffer();
+    console.log('Tamaño del archivo:', arrayBuffer.byteLength);
+
+    if (arrayBuffer.byteLength === 0) {
+      throw new Error('El archivo descargado está vacío');
+    }
+
+    try {
       const workbook = read(new Uint8Array(arrayBuffer));
+      console.log('Hojas en el Excel:', workbook.SheetNames);
+
+      if (workbook.SheetNames.length === 0) {
+        throw new Error('El archivo Excel no contiene hojas');
+      }
+
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = utils.sheet_to_json(worksheet);
+      console.log('Primera hoja:', workbook.SheetNames[0]);
 
-      console.log('Datos del Excel:', jsonData);
+      const jsonData = utils.sheet_to_json(worksheet, { header: 1 });
+      console.log('Filas encontradas:', jsonData.length);
+      console.log('Muestra de datos:', jsonData.slice(0, 2));
 
-      const processedData = jsonData.map((row: any) => {
-        // Intentar diferentes nombres de columnas posibles
-        const fecha = row['Fecha'] || row['FECHA'] || row['Fecha/Hora'] || row['FECHA/HORA'];
-        const ejecutado = parseNumber(row['Ejecutado'] || row['EJECUTADO'] || row['Demanda'] || row['DEMANDA'] || 0);
-        const progDiaria = parseNumber(row['Prog. Diaria'] || row['PROG. DIARIA'] || row['Programado'] || row['PROGRAMADO'] || 0);
-        const progSemanal = parseNumber(row['Prog. Semanal'] || row['PROG. SEMANAL'] || row['Programado Semanal'] || row['PROGRAMADO SEMANAL'] || 0);
+      // Encontrar el índice de la fila de encabezados
+      let headerRowIndex = -1;
+      for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+        const row = jsonData[i] as any[];
+        if (row && row.some(cell => 
+          typeof cell === 'string' && 
+          (cell.toLowerCase().includes('fecha') || 
+           cell.toLowerCase().includes('ejecutado') ||
+           cell.toLowerCase().includes('prog'))
+        )) {
+          headerRowIndex = i;
+          break;
+        }
+      }
 
-        return {
-          Fecha: fecha,
-          Ejecutado: ejecutado,
-          "Prog. Diaria": progDiaria,
-          "Prog. Semanal": progSemanal
+      if (headerRowIndex === -1) {
+        throw new Error('No se encontró la fila de encabezados en el Excel');
+      }
+
+      // Obtener los nombres de las columnas
+      const headers = jsonData[headerRowIndex] as string[];
+      console.log('Encabezados encontrados:', headers);
+
+      // Procesar los datos desde la siguiente fila después de los encabezados
+      const processedData = [];
+      for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
+        const row = jsonData[i] as any[];
+        if (!row || row.length < 3) continue;
+
+        const data = {
+          Fecha: row[0],
+          Ejecutado: parseNumber(row[1]),
+          "Prog. Diaria": parseNumber(row[2]),
+          "Prog. Semanal": row.length > 3 ? parseNumber(row[3]) : 0
         };
-      }).filter(row => row.Fecha && (row.Ejecutado > 0 || row["Prog. Diaria"] > 0));
+
+        if (data.Fecha && (data.Ejecutado > 0 || data["Prog. Diaria"] > 0)) {
+          processedData.push(data);
+        }
+      }
 
       if (processedData.length === 0) {
         throw new Error('No se encontraron datos válidos en el archivo Excel');
       }
 
       console.log(`Datos procesados: ${processedData.length} registros`);
-      console.log('Muestra de datos:', processedData[0]);
+      console.log('Muestra de datos procesados:', processedData[0]);
 
       // Guardar datos en la base de datos
       for (const item of processedData) {
@@ -103,8 +143,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
-    } else {
-      throw new Error('La respuesta no es un archivo Excel válido');
+
+    } catch (excelError) {
+      console.error('Error procesando Excel:', excelError);
+      throw new Error(`Error procesando archivo Excel: ${excelError.message}`);
     }
 
   } catch (error) {
