@@ -31,7 +31,7 @@ serve(async (req) => {
   }
 
   try {
-    // Primero, visitamos la página principal para obtener cookies y tokens
+    // Primero, simulamos una sesión web completa
     const mainPageUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     console.log('Visitando página principal:', mainPageUrl);
     
@@ -41,7 +41,10 @@ serve(async (req) => {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-      }
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      redirect: 'follow'
     });
 
     if (!mainPageResponse.ok) {
@@ -51,7 +54,10 @@ serve(async (req) => {
     const cookies = mainPageResponse.headers.get('set-cookie');
     console.log('Cookies obtenidas:', cookies);
 
-    // Ahora hacemos la petición al endpoint de exportación
+    // Esperamos un momento antes de hacer la siguiente petición
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Hacemos la petición al endpoint de exportación
     const exportUrl = 'https://www.coes.org.pe/Portal/portalinformacion/ExportarPronosticoTiempoReal';
     console.log('Descargando archivo desde:', exportUrl);
 
@@ -63,22 +69,33 @@ serve(async (req) => {
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Referer': mainPageUrl,
         'Cookie': cookies || '',
-      }
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      redirect: 'follow'
     });
 
     if (!exportResponse.ok) {
       throw new Error(`Error en la descarga: ${exportResponse.status} ${exportResponse.statusText}`);
     }
 
+    const contentType = exportResponse.headers.get('content-type');
+    console.log('Tipo de contenido recibido:', contentType);
+
     const arrayBuffer = await exportResponse.arrayBuffer();
-    console.log('Tamaño del archivo:', arrayBuffer.byteLength);
+    console.log('Tamaño del archivo:', arrayBuffer.byteLength, 'bytes');
 
     if (arrayBuffer.byteLength === 0) {
       throw new Error('El archivo descargado está vacío');
     }
 
     try {
-      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
+        type: 'array',
+        cellDates: true,
+        dateNF: 'yyyy-mm-dd HH:mm:ss'
+      });
+      
       console.log('Hojas en el Excel:', workbook.SheetNames);
 
       if (workbook.SheetNames.length === 0) {
@@ -86,17 +103,27 @@ serve(async (req) => {
       }
 
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      console.log('Primera hoja:', workbook.SheetNames[0]);
+      if (!worksheet) {
+        throw new Error('No se pudo acceder a la primera hoja del Excel');
+      }
 
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      console.log('Primera hoja:', workbook.SheetNames[0]);
+      console.log('Rango de la hoja:', worksheet['!ref']);
+
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+        header: 1,
+        raw: false,
+        dateNF: 'yyyy-mm-dd HH:mm:ss'
+      });
+
       console.log('Filas encontradas:', jsonData.length);
-      console.log('Muestra de datos:', jsonData.slice(0, 2));
+      console.log('Primeras filas:', JSON.stringify(jsonData.slice(0, 3), null, 2));
 
       // Encontrar el índice de la fila de encabezados
       let headerRowIndex = -1;
       for (let i = 0; i < Math.min(10, jsonData.length); i++) {
         const row = jsonData[i] as any[];
-        if (row && row.some(cell => 
+        if (row && Array.isArray(row) && row.some(cell => 
           typeof cell === 'string' && 
           (cell.toLowerCase().includes('fecha') || 
            cell.toLowerCase().includes('ejecutado') ||
@@ -119,7 +146,10 @@ serve(async (req) => {
       const processedData = [];
       for (let i = headerRowIndex + 1; i < jsonData.length; i++) {
         const row = jsonData[i] as any[];
-        if (!row || row.length < 3) continue;
+        if (!row || !Array.isArray(row) || row.length < 3) {
+          console.log('Saltando fila inválida:', row);
+          continue;
+        }
 
         const data = {
           Fecha: row[0],
@@ -138,7 +168,7 @@ serve(async (req) => {
       }
 
       console.log(`Datos procesados: ${processedData.length} registros`);
-      console.log('Muestra de datos procesados:', processedData[0]);
+      console.log('Muestra de datos procesados:', JSON.stringify(processedData[0], null, 2));
 
       // Guardar datos en la base de datos
       for (const item of processedData) {
