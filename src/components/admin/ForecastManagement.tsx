@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 
 interface CoesData {
   Fecha: string;
-  Ejecutado: number;
+  Ejecutado: number | null;
   "Prog. Diaria": number;
   "Prog. Semanal": number;
 }
@@ -41,8 +41,12 @@ export const ForecastManagement = () => {
         setError('No se encontraron datos disponibles');
         toast.warning('No se encontraron datos disponibles');
       } else {
-        setCoesData(response);
-        console.log('Datos de COES:', response);
+        // Ordenar datos por fecha
+        const sortedData = response.sort((a, b) => 
+          new Date(a.Fecha).getTime() - new Date(b.Fecha).getTime()
+        );
+        setCoesData(sortedData);
+        console.log('Datos de COES:', sortedData);
         toast.success('Datos obtenidos exitosamente');
       }
       
@@ -106,7 +110,7 @@ export const ForecastManagement = () => {
                   />
                   <Tooltip 
                     labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
-                    formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
+                    formatter={(value: any) => value ? [`${value.toLocaleString()} MW`, ''] : ['No disponible', '']}
                   />
                   <Line 
                     type="monotone" 
@@ -115,6 +119,7 @@ export const ForecastManagement = () => {
                     strokeWidth={2}
                     dot={false}
                     name="Ejecutado"
+                    connectNulls={false}
                   />
                   <Line 
                     type="monotone" 
@@ -142,7 +147,7 @@ export const ForecastManagement = () => {
                 {coesData.map((data, index) => (
                   <TableRow key={index}>
                     <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-                    <TableCell>{data.Ejecutado.toLocaleString()} MW</TableCell>
+                    <TableCell>{data.Ejecutado ? `${data.Ejecutado.toLocaleString()} MW` : '-'}</TableCell>
                     <TableCell>{data["Prog. Diaria"].toLocaleString()} MW</TableCell>
                     <TableCell>{data["Prog. Semanal"].toLocaleString()} MW</TableCell>
                   </TableRow>
