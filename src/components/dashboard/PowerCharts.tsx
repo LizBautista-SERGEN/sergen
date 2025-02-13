@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
-import { format, isSameMonth, isSameDay, setHours, setMinutes, addMinutes, parseISO, isAfter, isBefore } from "date-fns";
+import { format, isSameMonth, isSameDay, setHours, setMinutes, addMinutes } from "date-fns";
 import { EnergyData, CoesData } from "@/types/energy";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,52 +45,41 @@ const createTimeSlots = (baseDate: Date): TimeSlot[] => {
   return slots;
 };
 
-const fetchCoesData = async (): Promise<CoesData[]> => {
-  const today = new Date();
-  const formattedDate = format(today, 'yyyy-MM-dd');
-  
-  const { data, error } = await supabase
-    .from('coes_demand_data')
-    .select('*')
-    .eq('date::date', formattedDate)
-    .order('date', { ascending: true });
-
-  if (error) throw error;
-  return (data || []) as CoesData[];
-};
-
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const currentTime = new Date();
   const currentTimeStr = format(currentTime, 'HH:mm');
 
   const { data: coesData = [] } = useQuery({
     queryKey: ['coes-data'],
-    queryFn: fetchCoesData
+    queryFn: async () => {
+      const today = new Date();
+      const formattedDate = format(today, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('coes_demand_data')
+        .select('*')
+        .eq('date::date', formattedDate)
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as CoesData[];
+    }
   });
 
   const getChartData = (): DailyChartData[] => {
     const today = new Date();
     const timeSlots = createTimeSlots(today);
     
-    const dataMap = new Map(
-      coesData.map(data => {
-        const date = new Date(data.date);
-        const key = format(date, 'HH:mm');
-        return [key, data];
-      })
-    );
-
     return timeSlots.map(({ date: slot, key }) => {
-      const existingData = dataMap.get(key);
-      const isAfterCurrentTime = key > currentTimeStr;
-      const isBeforeCurrentTime = key < currentTimeStr;
-
+      const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === key);
+      const timeKey = key;
+      
       return {
-        name: key,
+        name: timeKey,
         timestamp: slot,
-        "Pronóstico COES": isBeforeCurrentTime ? null : existingData?.daily_forecast || null,
-        "Ejecutado COES": isAfterCurrentTime ? null : existingData?.executed_power || null,
-        "Pronóstico Semanal": isBeforeCurrentTime ? null : existingData?.weekly_forecast || null
+        "Pronóstico COES": timeKey >= currentTimeStr ? (slotData?.daily_forecast || null) : null,
+        "Ejecutado COES": timeKey <= currentTimeStr ? (slotData?.executed_power || null) : null,
+        "Pronóstico Semanal": timeKey >= currentTimeStr ? (slotData?.weekly_forecast || null) : null
       };
     });
   };
