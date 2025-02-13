@@ -20,9 +20,7 @@ import ServiceDemanda from "./pages/ServiceDemanda";
 import DashboardPage from "./pages/DashboardPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProfilePage from "./pages/ProfilePage";
-import FormativaPage from "./pages/FormativaPage";
 import InformesPage from "./pages/InformesPage";
-import CoursePage from "./pages/CoursePage";
 
 const queryClient = new QueryClient();
 
@@ -48,8 +46,6 @@ const App = () => {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/perfil" element={<ProfilePage />} />
-                <Route path="/formativa" element={<FormativaPage />} />
-                <Route path="/curso/:courseId" element={<CoursePage />} />
                 <Route path="/informes" element={<InformesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
