@@ -11,25 +11,29 @@ interface PowerChartsProps {
   date: Date | undefined;
 }
 
-async function fetchCoesData() {
+type CoesDataResponse = Awaited<ReturnType<typeof fetchCoesData>>;
+
+const fetchCoesData = async (): Promise<CoesData[]> => {
   const today = new Date();
   const formattedDate = format(today, 'yyyy-MM-dd');
   
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('coes_demand_data')
     .select('*')
     .eq('date::date', formattedDate)
-    .order('date', { ascending: true });
+    .order('date', { ascending: true })
+    .throwOnError();
   
-  if (error) throw error;
-  return (data || []) as CoesData[];
-}
+  return data || [];
+};
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const { data: coesData = [] } = useQuery({
+  const query = useQuery({
     queryKey: ['coes-data'],
     queryFn: fetchCoesData
   });
+
+  const coesData = query.data || [];
 
   const getChartData = () => {
     return coesData.map(data => ({
