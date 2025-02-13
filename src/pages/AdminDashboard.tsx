@@ -3,10 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
-import { CourseManagement } from "@/components/admin/CourseManagement";
-import { DailyPowerManagement } from "@/components/admin/DailyPowerManagement";
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -75,25 +72,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
-            <TabsTrigger value="courses">Gestión de Cursos</TabsTrigger>
-            <TabsTrigger value="daily-power">Potencia Diaria</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="users">
-            <UserManagement />
-          </TabsContent>
-
-          <TabsContent value="courses">
-            <CourseManagement />
-          </TabsContent>
-
-          <TabsContent value="daily-power">
-            <DailyPowerManagement />
-          </TabsContent>
-        </Tabs>
+        <UserManagement />
       </div>
     </div>
   );
