@@ -67,9 +67,9 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       
       return {
         name: slot,
-        pronosticoCOES: slot >= currentTimeStr ? slotData?.daily_forecast ?? null : null,
-        ejecutadoCOES: slot <= currentTimeStr ? slotData?.executed_power ?? null : null,
-        pronosticoSemanal: slot >= currentTimeStr ? slotData?.weekly_forecast ?? null : null
+        pronosticoCOES: slotData?.daily_forecast ?? null,
+        ejecutadoCOES: slotData?.executed_power ?? null,
+        pronosticoSemanal: slotData?.weekly_forecast ?? null
       };
     });
   };

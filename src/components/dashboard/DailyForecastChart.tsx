@@ -44,18 +44,18 @@ export const DailyForecastChart = ({ data, currentTime }: DailyForecastChartProp
         />
         <Line 
           type="monotone" 
-          dataKey="pronosticoCOES" 
-          name="Pronóstico COES"
-          stroke={CHART_COLORS.secondary}
+          dataKey="ejecutadoCOES" 
+          name="Ejecutado COES"
+          stroke={CHART_COLORS.primary}
           strokeWidth={2}
           dot={false}
           connectNulls={false}
         />
         <Line 
           type="monotone" 
-          dataKey="ejecutadoCOES"
-          name="Ejecutado COES" 
-          stroke={CHART_COLORS.primary}
+          dataKey="pronosticoCOES"
+          name="Pronóstico Diario" 
+          stroke={CHART_COLORS.secondary}
           strokeWidth={2}
           dot={false}
           connectNulls={false}
