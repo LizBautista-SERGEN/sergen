@@ -12,8 +12,8 @@ import { Loader2 } from "lucide-react";
 interface CoesData {
   Fecha: string;
   Ejecutado: number | null;
-  Programado: number;
-  Pronostico: number;
+  "Prog. Diaria": number | null;
+  "Prog. Semanal": number | null;
 }
 
 export const ForecastManagement = () => {
@@ -41,15 +41,9 @@ export const ForecastManagement = () => {
         setError('No se encontraron datos disponibles');
         toast.warning('No se encontraron datos disponibles');
       } else {
-        // Transformar los datos para usar los nuevos nombres de columnas
-        const transformedData = response.map(item => ({
-          Fecha: item.Fecha,
-          Ejecutado: item.Ejecutado,
-          Programado: item["Prog. Diaria"],
-          Pronostico: item["Prog. Semanal"]
-        }));
-        setCoesData(transformedData);
-        console.log('Datos de COES:', transformedData);
+        // Usar los datos directamente sin transformación
+        setCoesData(response);
+        console.log('Datos de COES:', response);
         toast.success('Datos obtenidos exitosamente');
       }
       
@@ -122,7 +116,7 @@ export const ForecastManagement = () => {
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="Programado"
+                    dataKey="Prog. Diaria"
                     stroke="#C00000"
                     strokeWidth={2}
                     strokeDasharray="5 5"
@@ -131,7 +125,7 @@ export const ForecastManagement = () => {
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="Pronostico"
+                    dataKey="Prog. Semanal"
                     stroke="#F39200"
                     strokeWidth={2}
                     name="Pronóstico"
@@ -155,8 +149,8 @@ export const ForecastManagement = () => {
                   <TableRow key={index}>
                     <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
                     <TableCell>{data.Ejecutado !== null ? `${data.Ejecutado.toLocaleString()} MW` : '-'}</TableCell>
-                    <TableCell>{data.Programado !== null ? `${data.Programado.toLocaleString()} MW` : '-'}</TableCell>
-                    <TableCell>{data.Pronostico !== null ? `${data.Pronostico.toLocaleString()} MW` : '-'}</TableCell>
+                    <TableCell>{data["Prog. Diaria"] !== null ? `${data["Prog. Diaria"].toLocaleString()} MW` : '-'}</TableCell>
+                    <TableCell>{data["Prog. Semanal"] !== null ? `${data["Prog. Semanal"].toLocaleString()} MW` : '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

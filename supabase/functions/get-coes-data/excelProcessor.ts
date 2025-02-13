@@ -4,7 +4,7 @@ import { parseNumber } from './utils.ts';
 
 export interface ProcessedData {
   Fecha: string;
-  Ejecutado: number;
+  Ejecutado: number | null;
   "Prog. Diaria": number;
   "Prog. Semanal": number;
 }
@@ -52,16 +52,17 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
     .filter((row: any[]) => row && row.length >= 3)
     .map((row: any[]) => ({
       Fecha: row[0],
-      Ejecutado: parseNumber(row[1]),
-      "Prog. Diaria": parseNumber(row[2]),
-      "Prog. Semanal": row.length > 3 ? parseNumber(row[3]) : 0
-    }))
-    .filter(data => data.Fecha && (data.Ejecutado > 0 || data["Prog. Diaria"] > 0));
+      Ejecutado: row[1] !== undefined ? parseNumber(row[1]) : null,
+      "Prog. Diaria": row[2] !== undefined ? parseNumber(row[2]) : null,
+      "Prog. Semanal": row[3] !== undefined ? parseNumber(row[3]) : null
+    }));
 
   if (processedData.length === 0) {
     throw new Error('No se encontraron datos válidos en el archivo Excel');
   }
 
+  // Log para verificar la estructura de los datos
+  console.log('Datos procesados del Excel:', processedData.slice(0, 2));
+
   return processedData;
 };
-
