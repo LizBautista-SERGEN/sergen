@@ -38,27 +38,45 @@ export type Database = {
           created_at: string
           daily_forecast: number | null
           date: string
+          demanda_mw: number | null
           executed_power: number | null
           id: string
+          margen_reserva_porcentaje: number | null
           maximum_power: number | null
+          potencia_efectiva_mw: number | null
+          prog_diaria_mw: number | null
+          prog_semanal_mw: number | null
+          reserva_mw: number | null
           weekly_forecast: number | null
         }
         Insert: {
           created_at?: string
           daily_forecast?: number | null
           date: string
+          demanda_mw?: number | null
           executed_power?: number | null
           id?: string
+          margen_reserva_porcentaje?: number | null
           maximum_power?: number | null
+          potencia_efectiva_mw?: number | null
+          prog_diaria_mw?: number | null
+          prog_semanal_mw?: number | null
+          reserva_mw?: number | null
           weekly_forecast?: number | null
         }
         Update: {
           created_at?: string
           daily_forecast?: number | null
           date?: string
+          demanda_mw?: number | null
           executed_power?: number | null
           id?: string
+          margen_reserva_porcentaje?: number | null
           maximum_power?: number | null
+          potencia_efectiva_mw?: number | null
+          prog_diaria_mw?: number | null
+          prog_semanal_mw?: number | null
+          reserva_mw?: number | null
           weekly_forecast?: number | null
         }
         Relationships: []

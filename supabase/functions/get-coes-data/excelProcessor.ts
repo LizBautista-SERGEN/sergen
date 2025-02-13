@@ -4,9 +4,12 @@ import { parseNumber } from './utils.ts';
 
 export interface ProcessedData {
   Fecha: string;
-  Ejecutado: number | null;
+  Demanda: number | null;
+  Reserva: number | null;
+  "Potencia Efectiva": number | null;
   "Prog. Diaria": number | null;
   "Prog. Semanal": number | null;
+  "Margen Reserva": number | null;
 }
 
 export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<ProcessedData[]> => {
@@ -53,13 +56,16 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
 
   // Procesar los datos manteniendo el orden original
   const processedData = dataRows
-    .filter((row: any[]) => row && row.length >= 4) // Asegurar que la fila tenga todas las columnas
+    .filter((row: any[]) => row && row.length >= 7) // Asegurar que la fila tenga todas las columnas
     .map((row: any[]) => {
       const data = {
         Fecha: row[0],
-        Ejecutado: row[1] !== undefined && row[1] !== null ? parseNumber(row[1]) : null,
-        "Prog. Diaria": row[2] !== undefined && row[2] !== null ? parseNumber(row[2]) : null,
-        "Prog. Semanal": row[3] !== undefined && row[3] !== null ? parseNumber(row[3]) : null
+        Demanda: row[1] !== undefined && row[1] !== null ? parseNumber(row[1]) : null,
+        Reserva: row[2] !== undefined && row[2] !== null ? parseNumber(row[2]) : null,
+        "Potencia Efectiva": row[3] !== undefined && row[3] !== null ? parseNumber(row[3]) : null,
+        "Prog. Diaria": row[4] !== undefined && row[4] !== null ? parseNumber(row[4]) : null,
+        "Prog. Semanal": row[5] !== undefined && row[5] !== null ? parseNumber(row[5]) : null,
+        "Margen Reserva": row[6] !== undefined && row[6] !== null ? parseNumber(row[6]) : null
       };
       return data;
     });
