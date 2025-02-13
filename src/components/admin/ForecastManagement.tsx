@@ -41,12 +41,9 @@ export const ForecastManagement = () => {
         setError('No se encontraron datos disponibles');
         toast.warning('No se encontraron datos disponibles');
       } else {
-        // Ordenar datos por fecha
-        const sortedData = response.sort((a, b) => 
-          new Date(a.Fecha).getTime() - new Date(b.Fecha).getTime()
-        );
-        setCoesData(sortedData);
-        console.log('Datos de COES:', sortedData);
+        // Mantener el orden original de los datos
+        setCoesData(response);
+        console.log('Datos de COES:', response);
         toast.success('Datos obtenidos exitosamente');
       }
       
@@ -60,7 +57,6 @@ export const ForecastManagement = () => {
     }
   };
 
-  // Cargar datos automáticamente al montar el componente
   useEffect(() => {
     fetchCoesData();
   }, []);
@@ -104,31 +100,25 @@ export const ForecastManagement = () => {
                     dataKey="Fecha"
                     tickFormatter={(value) => format(new Date(value), 'HH:mm')}
                   />
-                  <YAxis 
-                    domain={[6000, 9000]}
-                    tickCount={7}
-                  />
+                  <YAxis />
                   <Tooltip 
                     labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
-                    formatter={(value: any) => value ? [`${value.toLocaleString()} MW`, ''] : ['No disponible', '']}
+                    formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Ejecutado" 
                     stroke="#156082" 
                     strokeWidth={2}
-                    dot={false}
                     name="Ejecutado"
-                    connectNulls={false}
+                    connectNulls={true}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Prog. Diaria" 
                     stroke="#f39200" 
                     strokeWidth={2}
-                    dot={false}
                     name="Programación Diaria"
-                    strokeDasharray="5 5"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -147,9 +137,9 @@ export const ForecastManagement = () => {
                 {coesData.map((data, index) => (
                   <TableRow key={index}>
                     <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-                    <TableCell>{data.Ejecutado ? `${data.Ejecutado.toLocaleString()} MW` : '-'}</TableCell>
-                    <TableCell>{data["Prog. Diaria"].toLocaleString()} MW</TableCell>
-                    <TableCell>{data["Prog. Semanal"].toLocaleString()} MW</TableCell>
+                    <TableCell>{data.Ejecutado !== null ? `${data.Ejecutado.toLocaleString()} MW` : '-'}</TableCell>
+                    <TableCell>{data["Prog. Diaria"] !== null ? `${data["Prog. Diaria"].toLocaleString()} MW` : '-'}</TableCell>
+                    <TableCell>{data["Prog. Semanal"] !== null ? `${data["Prog. Semanal"].toLocaleString()} MW` : '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
