@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, isSameMonth, isSameDay, setHours, setMinutes, addMinutes } from "date-fns";
@@ -24,22 +25,23 @@ interface CustomBackgroundProps {
   selected: boolean;
 }
 
-const createTimeSlots = (baseDate: Date) => {
-  const slots = [];
-  const startOfDay = setMinutes(setHours(baseDate, 0), 0);
-  
-  for (let i = 0; i < 48; i++) {
-    const date = addMinutes(startOfDay, i * 30);
-    slots.push({
-      date,
-      key: format(date, 'HH:mm')
-    });
-  }
-  
-  return slots;
+type TimeSlot = {
+  date: Date;
+  key: string;
 };
 
-const fetchCoesData = async () => {
+const createTimeSlots = (baseDate: Date): TimeSlot[] => {
+  const startOfDay = setMinutes(setHours(baseDate, 0), 0);
+  return Array.from({ length: 48 }, (_, i) => {
+    const date = addMinutes(startOfDay, i * 30);
+    return {
+      date,
+      key: format(date, 'HH:mm')
+    };
+  });
+};
+
+const fetchCoesData = async (): Promise<CoesData[]> => {
   const today = new Date();
   const formattedDate = format(today, 'yyyy-MM-dd');
   
@@ -61,24 +63,6 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
     queryKey: ['coes-data'],
     queryFn: fetchCoesData
   });
-
-  const getChartData = (): ChartDataPoint[] => {
-    const today = new Date();
-    const timeSlots = createTimeSlots(today);
-    
-    return timeSlots.map(({ date: slot, key }) => {
-      const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === key);
-      const timeKey = key;
-      
-      return {
-        name: timeKey,
-        timestamp: slot,
-        "Pronóstico COES": timeKey >= currentTimeStr ? (slotData?.daily_forecast || null) : null,
-        "Ejecutado COES": timeKey <= currentTimeStr ? (slotData?.executed_power || null) : null,
-        "Pronóstico Semanal": timeKey >= currentTimeStr ? (slotData?.weekly_forecast || null) : null
-      };
-    });
-  };
 
   const getBarChartData = () => {
     if (!date) return [];
@@ -109,7 +93,6 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
 
   const CustomBackground = ({ x, width, selected }: CustomBackgroundProps) => {
     if (!selected) return null;
-    
     return (
       <Rectangle
         x={x - 2}
@@ -119,6 +102,21 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
         fill="rgba(128, 128, 128, 0.1)"
       />
     );
+  };
+
+  const getChartData = (): ChartDataPoint[] => {
+    const timeSlots = createTimeSlots(new Date());
+    return timeSlots.map(({ key }) => {
+      const slotData = coesData.find(data => format(new Date(data.date), 'HH:mm') === key);
+      
+      return {
+        name: key,
+        timestamp: new Date(),
+        "Pronóstico COES": key >= currentTimeStr ? (slotData?.daily_forecast || null) : null,
+        "Ejecutado COES": key <= currentTimeStr ? (slotData?.executed_power || null) : null,
+        "Pronóstico Semanal": key >= currentTimeStr ? (slotData?.weekly_forecast || null) : null
+      };
+    });
   };
 
   return (
