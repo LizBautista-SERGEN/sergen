@@ -20,8 +20,14 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const trimmedEmail = email.trim().toLowerCase(); // Normalizar email
+      const trimmedEmail = email.trim().toLowerCase();
       
+      if (!trimmedEmail || !password) {
+        toast.error("Por favor ingrese su correo y contraseña");
+        setLoading(false);
+        return;
+      }
+
       if (password.length < 6) {
         toast.error("La contraseña debe tener al menos 6 caracteres");
         setLoading(false);
@@ -29,7 +35,6 @@ const LoginPage = () => {
       }
 
       if (isLogin) {
-        // Handle login
         const { data, error } = await supabase.auth.signInWithPassword({
           email: trimmedEmail,
           password,
@@ -42,14 +47,13 @@ const LoginPage = () => {
           } else if (error.message.includes('Email not confirmed')) {
             toast.error("Por favor confirme su correo electrónico antes de iniciar sesión");
           } else {
-            toast.error(error.message);
+            toast.error("Error al iniciar sesión. Por favor intente nuevamente");
           }
           setLoading(false);
           return;
         }
 
         if (data.user) {
-          // Verificar si el usuario existe en la tabla profiles
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role, has_access')
@@ -63,21 +67,19 @@ const LoginPage = () => {
             return;
           }
 
-          // Verificar si el usuario tiene acceso
           if (!profile?.has_access) {
             toast.error("Su cuenta está pendiente de activación");
-            // Cerrar sesión ya que no tiene acceso
             await supabase.auth.signOut();
             setLoading(false);
             return;
           }
 
+          toast.success("Inicio de sesión exitoso");
           if (profile?.role === 'superuser') {
             navigate('/admin/dashboard');
           } else {
             navigate('/dashboard');
           }
-          toast.success("Inicio de sesión exitoso");
         }
       } else {
         // Check if user already exists before signup
@@ -94,7 +96,6 @@ const LoginPage = () => {
           return;
         }
 
-        // Handle signup
         const { data, error } = await supabase.auth.signUp({
           email: trimmedEmail,
           password,
@@ -112,7 +113,7 @@ const LoginPage = () => {
             toast.error("Este correo ya está registrado. Por favor, inicie sesión.");
             setIsLogin(true);
           } else {
-            toast.error(error.message);
+            toast.error("Error al crear la cuenta. Por favor intente nuevamente");
           }
           setLoading(false);
           return;
