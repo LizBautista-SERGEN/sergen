@@ -12,7 +12,7 @@ interface PowerChartsProps {
 }
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const fetchCoesData = async () => {
+  const fetchCoesData = async (): Promise<CoesData[]> => {
     const today = new Date();
     const formattedDate = format(today, 'yyyy-MM-dd');
     
@@ -23,17 +23,16 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       .order('date', { ascending: true });
     
     if (error) throw error;
-    return data as CoesData[];
+    if (!data) return [];
+    return data;
   };
 
-  const { data: coesData } = useQuery({
-    queryKey: ['coes-data'],
+  const { data: coesData = [] } = useQuery({
+    queryKey: ['coes-data'] as const,
     queryFn: fetchCoesData
   });
 
   const getChartData = () => {
-    if (!coesData) return [];
-
     return coesData.map(data => ({
       name: format(new Date(data.date), 'HH:mm'),
       "Pronóstico COES": data.daily_forecast,
