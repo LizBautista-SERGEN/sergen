@@ -12,21 +12,23 @@ interface PowerChartsProps {
 }
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const { data: coesData } = useQuery<CoesData[]>({
+  const fetchCoesData = async () => {
+    const today = new Date();
+    const formattedDate = format(today, 'yyyy-MM-dd');
+    
+    const { data, error } = await supabase
+      .from('coes_demand_data')
+      .select('*')
+      .eq('date::date', formattedDate)
+      .order('date', { ascending: true });
+    
+    if (error) throw error;
+    return data as CoesData[];
+  };
+
+  const { data: coesData } = useQuery({
     queryKey: ['coes-data'],
-    queryFn: async () => {
-      const today = new Date();
-      const formattedDate = format(today, 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('coes_demand_data')
-        .select('*')
-        .eq('date::date', formattedDate)
-        .order('date', { ascending: true });
-      
-      if (error) throw error;
-      return data;
-    }
+    queryFn: fetchCoesData
   });
 
   const getChartData = () => {
