@@ -25,42 +25,48 @@ interface CustomBackgroundProps {
   selected: boolean;
 }
 
-const createTimeSlots = (baseDate: Date): Date[] => {
-  const slots: Date[] = [];
+interface TimeSlot {
+  date: Date;
+  key: string;
+}
+
+const createTimeSlots = (baseDate: Date): TimeSlot[] => {
+  const slots: TimeSlot[] = [];
   const startOfDay = setMinutes(setHours(baseDate, 0), 0);
   
   for (let i = 0; i < 48; i++) {
-    slots.push(addMinutes(startOfDay, i * 30));
+    const date = addMinutes(startOfDay, i * 30);
+    slots.push({
+      date,
+      key: format(date, 'HH:mm')
+    });
   }
   
   return slots;
 };
 
-const fetchCoesData = async () => {
-  const today = new Date();
-  const formattedDate = format(today, 'yyyy-MM-dd');
-  
-  const { data, error } = await supabase
-    .from('coes_demand_data')
-    .select('*')
-    .eq('date::date', formattedDate)
-    .order('date', { ascending: true });
-
-  if (error) throw error;
-  return data as CoesData[];
-};
-
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
   const { data: coesData = [] } = useQuery({
     queryKey: ['coes-data'],
-    queryFn: fetchCoesData
+    queryFn: async () => {
+      const today = new Date();
+      const formattedDate = format(today, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('coes_demand_data')
+        .select('*')
+        .eq('date::date', formattedDate)
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as CoesData[];
+    }
   });
 
   const getChartData = (): DailyChartData[] => {
     const today = new Date();
     const timeSlots = createTimeSlots(today);
     
-    // Crear un mapa de los datos existentes indexados por hora:minuto
     const dataMap = new Map(
       coesData.map(data => {
         const date = new Date(data.date);
@@ -69,13 +75,11 @@ export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
       })
     );
 
-    // Generar datos para cada intervalo de 30 minutos
-    return timeSlots.map(slot => {
-      const timeKey = format(slot, 'HH:mm');
-      const existingData = dataMap.get(timeKey);
+    return timeSlots.map(({ date: slot, key }) => {
+      const existingData = dataMap.get(key);
 
       return {
-        name: timeKey,
+        name: key,
         timestamp: slot,
         "Pronóstico COES": existingData?.daily_forecast || null,
         "Ejecutado COES": existingData?.executed_power || null,
