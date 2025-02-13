@@ -7,10 +7,10 @@ import { TIME_SLOTS, CHART_COLORS, SimpleLineChartData, SimpleBarChartData } fro
 import { DailyForecastChart } from "./DailyForecastChart";
 import { HistoricalPowerChart } from "./HistoricalPowerChart";
 
-interface PowerChartsProps {
+type PowerChartsProps = {
   energyData: EnergyData[];
   date: Date | undefined;
-}
+};
 
 const fetchCoesData = async (): Promise<CoesData[]> => {
   const today = new Date();
