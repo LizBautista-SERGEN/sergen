@@ -1,16 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-
-interface Course {
-  id: string;
-  title: string;
-}
+import type { Course } from "@/types/course";
 
 interface User {
   id: string;
@@ -23,22 +19,46 @@ export const CourseManagement = () => {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
-  const fetchCourses = async () => {
-    const { data, error } = await supabase
-      .from('courses')
-      .select('*');
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email');
 
-    if (error) {
-      toast.error('Error al cargar cursos');
-      return;
-    }
+      if (error) {
+        toast.error('Error al cargar usuarios');
+        return;
+      }
 
-    setCourses(data || []);
-  };
+      setUsers(data || []);
+    };
+
+    const fetchCourses = async () => {
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title, description');
+
+      if (error) {
+        toast.error('Error al cargar cursos');
+        return;
+      }
+
+      setCourses(data || []);
+    };
+
+    fetchUsers();
+    fetchCourses();
+  }, []);
 
   const handleGrantCourseAccess = async () => {
     if (!selectedUser || !selectedCourse) {
       toast.error('Selecciona un usuario y un curso');
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('No se pudo verificar la sesión');
       return;
     }
 
@@ -47,7 +67,7 @@ export const CourseManagement = () => {
       .insert({
         user_id: selectedUser,
         course_id: selectedCourse,
-        granted_by: (await supabase.auth.getUser()).data.user?.id
+        granted_by: user.id
       });
 
     if (error) {

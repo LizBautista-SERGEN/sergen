@@ -10,22 +10,34 @@ export const useCourseData = (courseId: string | undefined) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
       
+      // Verificar acceso al curso
+      const { data: accessData } = await supabase
+        .from('course_access')
+        .select()
+        .eq('user_id', user.id)
+        .eq('course_id', courseId)
+        .single();
+
+      if (!accessData) {
+        throw new Error('No tienes acceso a este curso');
+      }
+
       const { data: courseData, error: courseError } = await supabase
         .from('courses')
         .select(`
           *,
-          course_units!course_units_course_id_fkey (
+          course_units (
             id,
             title,
             order_index,
-            lessons!lessons_unit_id_fkey (
+            lessons (
               id,
               title,
               type,
               duration,
               video_url,
               order_index,
-              user_lesson_progress!user_lesson_progress_lesson_id_fkey (
+              user_lesson_progress!inner (
                 completed
               )
             )
@@ -45,13 +57,7 @@ export const useCourseData = (courseId: string | undefined) => {
         title: courseData.title,
         description: courseData.description,
         video_url: courseData.video_url,
-        explanation_videos: Array.isArray(courseData.explanation_videos) 
-          ? courseData.explanation_videos.map((video: any) => ({
-              title: video.title || '',
-              description: video.description || '',
-              url: video.url || ''
-            }))
-          : [],
+        explanation_videos: courseData.explanation_videos || [],
         course_units: courseData.course_units
           ?.sort((a: any, b: any) => a.order_index - b.order_index)
           .map((unit: any) => ({

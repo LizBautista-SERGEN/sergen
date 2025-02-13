@@ -30,3 +30,28 @@ export interface Course {
   explanation_videos: ExplanationVideo[];
   course_units: CourseUnit[];
 }
+
+export interface Database {
+  courses: Course[];
+  course_units: CourseUnit[];
+  lessons: Lesson[];
+  user_lesson_progress: {
+    id: string;
+    user_id: string;
+    lesson_id: string;
+    completed: boolean;
+  }[];
+  user_video_progress: {
+    id: string;
+    user_id: string;
+    course_id: string;
+    video_index: number;
+    completed: boolean;
+  }[];
+  course_access: {
+    id: string;
+    user_id: string;
+    course_id: string;
+    granted_by: string;
+  }[];
+}
