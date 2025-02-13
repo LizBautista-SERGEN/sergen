@@ -11,9 +11,11 @@ import { Loader2 } from "lucide-react";
 
 interface CoesData {
   Fecha: string;
-  Ejecutado: number | null;
-  "Prog. Diaria": number | null;
-  "Prog. Semanal": number | null;
+  "Reprogramación Diaria": number | null;
+  "Pronóstico": number | null;
+  "Rango Mínimo": number | null;
+  "Rango Máximo": number | null;
+  "Ejecutado": number | null;
 }
 
 export const ForecastManagement = () => {
@@ -124,19 +126,37 @@ export const ForecastManagement = () => {
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="Prog. Diaria"
+                    dataKey="Reprogramación Diaria"
                     stroke="#C00000"
                     strokeWidth={2}
                     strokeDasharray="5 5"
-                    name="Programado"
+                    name="Reprogramación"
                     dot={false}
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="Prog. Semanal"
+                    dataKey="Pronóstico"
                     stroke="#F39200"
                     strokeWidth={2}
                     name="Pronóstico"
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Rango Máximo"
+                    stroke="#90C418"
+                    strokeWidth={1}
+                    strokeDasharray="3 3"
+                    name="Rango Máximo"
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Rango Mínimo"
+                    stroke="#90C418"
+                    strokeWidth={1}
+                    strokeDasharray="3 3"
+                    name="Rango Mínimo"
                     dot={false}
                   />
                 </LineChart>
@@ -147,18 +167,22 @@ export const ForecastManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
-                  <TableHead>Ejecutado</TableHead>
-                  <TableHead>Programado</TableHead>
+                  <TableHead>Reprogramación</TableHead>
                   <TableHead>Pronóstico</TableHead>
+                  <TableHead>Rango Mínimo</TableHead>
+                  <TableHead>Rango Máximo</TableHead>
+                  <TableHead>Ejecutado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {coesData.map((data, index) => (
                   <TableRow key={index}>
                     <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-                    <TableCell>{formatNumber(data.Ejecutado)} MW</TableCell>
-                    <TableCell>{formatNumber(data["Prog. Diaria"])} MW</TableCell>
-                    <TableCell>{formatNumber(data["Prog. Semanal"])} MW</TableCell>
+                    <TableCell>{formatNumber(data["Reprogramación Diaria"])} MW</TableCell>
+                    <TableCell>{formatNumber(data["Pronóstico"])} MW</TableCell>
+                    <TableCell>{formatNumber(data["Rango Mínimo"])} MW</TableCell>
+                    <TableCell>{formatNumber(data["Rango Máximo"])} MW</TableCell>
+                    <TableCell>{formatNumber(data["Ejecutado"])} MW</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

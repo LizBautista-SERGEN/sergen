@@ -4,12 +4,11 @@ import { parseNumber } from './utils.ts';
 
 export interface ProcessedData {
   Fecha: string;
-  Demanda: number | null;
-  Reserva: number | null;
-  "Potencia Efectiva": number | null;
-  "Prog. Diaria": number | null;
-  "Prog. Semanal": number | null;
-  "Margen Reserva": number | null;
+  "Reprogramación Diaria": number | null;
+  "Pronóstico": number | null;
+  "Rango Mínimo": number | null;
+  "Rango Máximo": number | null;
+  "Ejecutado": number | null;
 }
 
 export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<ProcessedData[]> => {
@@ -50,12 +49,11 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
     const processedData = jsonData.map((row: any) => {
       // Intentar encontrar las columnas por diferentes nombres posibles
       const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
-      const demanda = row['Demanda'] || row['demanda'] || row['DEMANDA'];
-      const reserva = row['Reserva'] || row['reserva'] || row['RESERVA'];
-      const potenciaEfectiva = row['Potencia Efectiva'] || row['potencia efectiva'] || row['POTENCIA EFECTIVA'];
-      const progDiaria = row['Prog. Diaria'] || row['prog. diaria'] || row['PROG. DIARIA'];
-      const progSemanal = row['Prog. Semanal'] || row['prog. semanal'] || row['PROG. SEMANAL'];
-      const margenReserva = row['Margen Reserva'] || row['margen reserva'] || row['MARGEN RESERVA'];
+      const reprogramacion = row['Reprogramación Diaria'] || row['REPROGRAMACIÓN DIARIA'];
+      const pronostico = row['Pronóstico'] || row['PRONÓSTICO'];
+      const rangoMin = row['Rango Mínimo'] || row['RANGO MÍNIMO'];
+      const rangoMax = row['Rango Máximo'] || row['RANGO MÁXIMO'];
+      const ejecutado = row['Ejecutado'] || row['EJECUTADO'];
 
       if (!fecha) {
         console.log('Fila sin fecha encontrada:', row);
@@ -64,12 +62,11 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
 
       return {
         Fecha: fecha,
-        Demanda: demanda !== undefined ? parseNumber(demanda) : null,
-        Reserva: reserva !== undefined ? parseNumber(reserva) : null,
-        "Potencia Efectiva": potenciaEfectiva !== undefined ? parseNumber(potenciaEfectiva) : null,
-        "Prog. Diaria": progDiaria !== undefined ? parseNumber(progDiaria) : null,
-        "Prog. Semanal": progSemanal !== undefined ? parseNumber(progSemanal) : null,
-        "Margen Reserva": margenReserva !== undefined ? parseNumber(margenReserva) : null
+        "Reprogramación Diaria": reprogramacion !== undefined ? parseNumber(reprogramacion) : null,
+        "Pronóstico": pronostico !== undefined ? parseNumber(pronostico) : null,
+        "Rango Mínimo": rangoMin !== undefined ? parseNumber(rangoMin) : null,
+        "Rango Máximo": rangoMax !== undefined ? parseNumber(rangoMax) : null,
+        "Ejecutado": ejecutado !== undefined ? parseNumber(ejecutado) : null
       };
     }).filter((item): item is ProcessedData => item !== null);
 
