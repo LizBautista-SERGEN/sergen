@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Cell, Rectangle } from 'recharts';
 import { format, isSameMonth, isSameDay, parseISO } from "date-fns";
 import { EnergyData, CoesData } from "@/types/energy";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, QueryFunction } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PowerChartsProps {
@@ -11,27 +11,34 @@ interface PowerChartsProps {
   date: Date | undefined;
 }
 
+interface ChartData {
+  name: string;
+  "Pronóstico COES": number | null;
+  "Ejecutado COES": number | null;
+  "Pronóstico Semanal": number | null;
+}
+
 const fetchCoesData = async () => {
   const today = new Date();
   const formattedDate = format(today, 'yyyy-MM-dd');
   
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('coes_demand_data')
     .select('*')
     .eq('date::date', formattedDate)
-    .order('date', { ascending: true })
-    .throwOnError();
-  
-  return (data || []) as CoesData[];
+    .order('date', { ascending: true });
+
+  if (error) throw error;
+  return data as CoesData[];
 };
 
 export const PowerCharts = ({ energyData, date }: PowerChartsProps) => {
-  const { data: coesData = [] } = useQuery({
-    queryKey: ['coes-data'] as const,
+  const { data: coesData = [] } = useQuery({ 
+    queryKey: ['coes-data'],
     queryFn: fetchCoesData
   });
 
-  const getChartData = () => {
+  const getChartData = (): ChartData[] => {
     return coesData.map(data => ({
       name: format(new Date(data.date), 'HH:mm'),
       "Pronóstico COES": data.daily_forecast,
