@@ -13,9 +13,15 @@ interface User {
   email: string;
 }
 
+interface SimpleCourse {
+  id: string;
+  title: string;
+  description: string | null;
+}
+
 export const CourseManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<SimpleCourse[]>([]);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 

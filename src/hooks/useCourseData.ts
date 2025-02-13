@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Course } from "@/types/course";
+import type { Course, ExplanationVideo } from "@/types/course";
 
 export const useCourseData = (courseId: string | undefined) => {
   return useQuery<Course>({
@@ -57,7 +57,7 @@ export const useCourseData = (courseId: string | undefined) => {
         title: courseData.title,
         description: courseData.description,
         video_url: courseData.video_url,
-        explanation_videos: courseData.explanation_videos || [],
+        explanation_videos: (courseData.explanation_videos || []) as ExplanationVideo[],
         course_units: courseData.course_units
           ?.sort((a: any, b: any) => a.order_index - b.order_index)
           .map((unit: any) => ({
