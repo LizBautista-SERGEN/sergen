@@ -39,7 +39,27 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       throw new Error('No se encontraron datos en el archivo Excel');
     }
 
-    const currentTime = new Date();
+    // Encontrar el último dato ejecutado
+    let lastExecutedTime: Date | null = null;
+    for (let i = jsonData.length - 1; i >= 0; i--) {
+      const row = jsonData[i];
+      const ejecutado = row['Ejecutado'] || row['EJECUTADO'];
+      const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
+      
+      if (ejecutado && fecha) {
+        lastExecutedTime = new Date(fecha);
+        break;
+      }
+    }
+
+    if (!lastExecutedTime) {
+      console.log('No se encontró último dato ejecutado, usando hora actual');
+      lastExecutedTime = new Date();
+    }
+
+    // Agregar 30 minutos al último dato ejecutado
+    const forecastStartTime = new Date(lastExecutedTime.getTime() + 30 * 60000);
+    console.log('Hora de inicio de pronóstico:', forecastStartTime);
 
     const processedData = jsonData.map((row: any) => {
       const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
@@ -59,7 +79,7 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       }
 
       const rowDate = new Date(fecha);
-      const shouldShowForecast = rowDate >= currentTime;
+      const shouldShowForecast = rowDate >= forecastStartTime;
 
       // Procesar valores numéricos, convertir 0 a null
       const processValue = (value: any, showForecast = false): number | null => {
