@@ -22,14 +22,23 @@ export const ForecastPage = () => {
 
       if (error) throw error;
 
-      setData(forecastData.map(item => ({
+      if (!forecastData || forecastData.length === 0) {
+        toast.info('No hay datos disponibles');
+        setData([]);
+        return;
+      }
+
+      const processedData = forecastData.map(item => ({
         Fecha: item.fecha,
         "Pronóstico": item.pronostico,
         "Reprogramación Diaria": item.reprogramacion_diaria,
         "Rango Mínimo": item.rango_minimo,
         "Rango Máximo": item.rango_maximo,
         "Ejecutado": item.ejecutado
-      })));
+      }));
+
+      setData(processedData);
+      console.log('Datos cargados:', processedData);
 
     } catch (error) {
       console.error('Error fetching forecast data:', error);

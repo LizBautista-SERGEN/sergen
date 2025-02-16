@@ -26,17 +26,29 @@ serve(async (req) => {
     
     // Asumimos que los datos están en la primera hoja
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-    // Procesar los datos del Excel
-    const data = jsonData.map((row: any) => ({
-      fecha: Object.values(row)[0], // Primera columna
-      pronostico: parseFloat(Object.values(row)[1] as string || '0'),
-      reprogramacion_diaria: parseFloat(Object.values(row)[2] as string || '0'),
-      rango_minimo: parseFloat(Object.values(row)[3] as string || '0'),
-      rango_maximo: parseFloat(Object.values(row)[4] as string || '0'),
-      ejecutado: parseFloat(Object.values(row)[5] as string || '0')
-    }));
+    // Eliminamos las filas de encabezado si existen
+    const dataRows = jsonData.slice(1);
+
+    // Procesar los datos del Excel asegurándonos de que cada fila tenga el formato correcto
+    const data = dataRows.map((row: any) => {
+      if (!Array.isArray(row) || row.length < 6) {
+        console.warn('Fila inválida:', row);
+        return null;
+      }
+
+      return {
+        fecha: row[0],
+        pronostico: parseFloat(row[1]) || 0,
+        reprogramacion_diaria: parseFloat(row[2]) || 0,
+        rango_minimo: parseFloat(row[3]) || 0,
+        rango_maximo: parseFloat(row[4]) || 0,
+        ejecutado: parseFloat(row[5]) || 0
+      };
+    }).filter(item => item !== null);
+
+    console.log("Datos procesados:", data);
 
     // Guardar los datos en Supabase
     const supabase = createClient(
