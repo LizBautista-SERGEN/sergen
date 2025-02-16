@@ -2,29 +2,27 @@
 'use client'
 
 import { Suspense, lazy, useState, useEffect } from 'react'
+import type { SplineProps } from '@splinetool/react-spline';
 
-const Spline = lazy(() => {
-  return new Promise((resolve) => {
-    import('@splinetool/react-spline')
-      .then((module) => {
-        resolve(module);
-      })
-      .catch((error) => {
-        console.error('Error loading Spline:', error);
-        // Resolver con un componente de fallback en caso de error
-        resolve({
-          default: () => (
-            <div className="w-full h-full flex items-center justify-center bg-black/[0.96] rounded-lg">
-              <div className="text-center">
-                <p className="text-gray-400">Error al cargar el modelo 3D</p>
-                <p className="text-sm text-gray-500">Por favor, recarga la página</p>
-              </div>
+type SplineComponent = React.ComponentType<SplineProps>;
+
+const Spline = lazy(() => 
+  import('@splinetool/react-spline')
+    .then((module) => ({ default: module.default as SplineComponent }))
+    .catch((error) => {
+      console.error('Error loading Spline:', error);
+      return {
+        default: () => (
+          <div className="w-full h-full flex items-center justify-center bg-black/[0.96] rounded-lg">
+            <div className="text-center">
+              <p className="text-gray-400">Error al cargar el modelo 3D</p>
+              <p className="text-sm text-gray-500">Por favor, recarga la página</p>
             </div>
-          ),
-        });
-      });
-  });
-});
+          </div>
+        )
+      };
+    })
+);
 
 interface SplineSceneProps {
   scene: string
