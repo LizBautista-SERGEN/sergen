@@ -20,16 +20,20 @@ export const ForecastPage = () => {
         .select('*')
         .order('fecha', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error al obtener datos:', error);
+        throw error;
+      }
 
       if (!forecastData || forecastData.length === 0) {
+        console.log('No hay datos disponibles');
         toast.info('No hay datos disponibles');
         setData([]);
         return;
       }
 
+      console.log('Datos obtenidos de Supabase:', forecastData);
       setData(forecastData);
-      console.log('Datos cargados de Supabase:', forecastData);
 
     } catch (error) {
       console.error('Error fetching forecast data:', error);
@@ -44,13 +48,16 @@ export const ForecastPage = () => {
       setLoading(true);
       const response = await supabase.functions.invoke('get-coes-forecast');
       
-      if (!response.data.success) {
+      if (!response.data?.success) {
+        console.error('Error en la respuesta:', response);
         throw new Error('Error actualizando datos del COES');
       }
 
-      console.log('Respuesta de la función get-coes-forecast:', response.data);
+      console.log('Respuesta de get-coes-forecast:', response.data);
+      
+      // Recargar los datos inmediatamente después de la actualización
       await fetchData();
-      toast.success('Datos actualizados correctamente');
+      toast.success(`Datos actualizados correctamente (${response.data.count} registros)`);
     } catch (error) {
       console.error('Error refreshing data:', error);
       toast.error('Error al actualizar los datos');
