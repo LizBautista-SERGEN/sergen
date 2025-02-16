@@ -65,10 +65,17 @@ export const extractCoesData = async () => {
       const rows = Array.from(document.querySelectorAll('#dgDemanda tr'));
       return rows.slice(1).map(row => {
         const cells = Array.from(row.querySelectorAll('td'));
+        const fecha = cells[0]?.innerText?.trim() || '';
+        const programado = cells[1]?.innerText ? parseFloat(cells[1].innerText.replace(',', '.')) : null;
+        const ejecutado = cells[2]?.innerText ? parseFloat(cells[2].innerText.replace(',', '.')) : null;
+
         return {
-          fecha: cells[0]?.innerText?.trim() || '',
-          programado: parseFloat(cells[1]?.innerText?.replace(',', '.') || '0'),
-          ejecutado: parseFloat(cells[2]?.innerText?.replace(',', '.') || '0')
+          Fecha: fecha,
+          "Reprogramación Diaria": programado,
+          "Pronóstico": null,
+          "Rango Mínimo": null,
+          "Rango Máximo": null,
+          "Ejecutado": ejecutado
         };
       });
     });
