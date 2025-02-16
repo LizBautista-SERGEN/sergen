@@ -22,7 +22,7 @@ const ServiceCard = ({ title, description, icon, image, onClick }: ServiceCardPr
             alt={title} 
             className="w-full h-full object-cover opacity-10"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-white via-white/90 to-white/80" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white via-white/95 to-white/90" />
         </div>
       )}
       <div className="relative z-10 flex flex-col h-full">

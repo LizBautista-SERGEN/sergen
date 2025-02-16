@@ -36,16 +36,16 @@ const About = () => {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-6 w-6 text-sergen-600" />
-                  <h4 className="text-2xl font-bold text-sergen-600">+40</h4>
+                  <h4 className="text-2xl font-bold text-sergen-600">+40 Proyectos Completados</h4>
                 </div>
-                <p className="text-gray-600">Proyectos Completados: Soluciones personalizadas para cada cliente.</p>
+                <p className="text-gray-600">Soluciones personalizadas para cada cliente.</p>
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Coins className="h-6 w-6 text-sergen-600" />
-                  <h4 className="text-2xl font-bold text-sergen-600">37%</h4>
+                  <h4 className="text-2xl font-bold text-sergen-600">37% de Ahorro Promedio</h4>
                 </div>
-                <p className="text-gray-600">Ahorro Promedio: Reducción comprobada en costos energéticos.</p>
+                <p className="text-gray-600">Reducción comprobada en costos energéticos.</p>
               </div>
             </div>
           </AnimatedSection>
