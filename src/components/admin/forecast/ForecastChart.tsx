@@ -31,22 +31,24 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
     new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
   );
 
-  // Encontrar el último punto con demanda real
-  const lastRealDemandIndex = sortedData.reduce((lastIndex, item, currentIndex) => {
-    if (item.demanda_real !== null) {
-      return currentIndex;
+  // Encontrar la fecha del último punto con demanda real
+  let lastRealDemandDate = null;
+  for (let i = sortedData.length - 1; i >= 0; i--) {
+    if (sortedData[i].demanda_real !== null) {
+      lastRealDemandDate = new Date(sortedData[i].fecha).getTime();
+      break;
     }
-    return lastIndex;
-  }, -1);
+  }
 
-  console.log('Último índice con demanda real:', lastRealDemandIndex);
+  console.log('Fecha del último dato real:', new Date(lastRealDemandDate || 0).toISOString());
 
-  const chartData = sortedData.map((item, index) => {
+  const chartData = sortedData.map((item) => {
     const currentDate = new Date(item.fecha);
     const hora = currentDate.getUTCHours();
+    const itemTime = currentDate.getTime();
 
-    // Mostrar pronóstico y rangos solo después del último punto de demanda real
-    const showForecast = index > lastRealDemandIndex;
+    // Mostrar pronóstico y rangos solo para fechas posteriores al último punto de demanda real
+    const showForecast = lastRealDemandDate && itemTime > lastRealDemandDate;
 
     return {
       time: formatTime(item.fecha),
