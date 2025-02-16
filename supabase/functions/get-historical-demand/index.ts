@@ -92,11 +92,15 @@ serve(async (req) => {
       throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
+    // Esperar un momento antes de solicitar el Excel
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     // Paso 3: Descargar el archivo Excel
     const excelResponse = await fetch(`${baseUrl}/ExportarPronosticoTiempoReal`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Cookie': cookies,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
       },
     });
 
@@ -131,11 +135,14 @@ serve(async (req) => {
           return null;
         }
 
+        const ejecutado = parseFloat(row['Ejecutado'] || '0');
+        const programado = parseFloat(row['Pronóstico'] || '0');
+
         return {
           fecha: fechaCompleta.toISOString(),
           hora: horaStr,
-          programado: parseFloat(row['Pronóstico'] || '0'),
-          ejecutado: parseFloat(row['Ejecutado'] || '0'),
+          programado: ejecutado > 0 ? null : (isNaN(programado) ? null : programado),
+          ejecutado: isNaN(ejecutado) ? null : (ejecutado > 0 ? ejecutado : null)
         };
       } catch (error) {
         console.warn('Error procesando fila:', error);

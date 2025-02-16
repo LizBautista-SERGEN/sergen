@@ -64,56 +64,25 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
         return processed === 0 ? null : processed;
       };
 
+      const ejecutadoValue = processValue(ejecutado);
+
       return {
         Fecha: fecha,
         "Reprogramación Diaria": processValue(reprogramacion),
-        "Pronóstico": processValue(pronostico),
-        "Rango Mínimo": processValue(rangoMin),
-        "Rango Máximo": processValue(rangoMax),
-        "Ejecutado": processValue(ejecutado)
+        // Si hay valor ejecutado, los demás valores se establecen como null
+        "Pronóstico": ejecutadoValue !== null ? null : processValue(pronostico),
+        "Rango Mínimo": ejecutadoValue !== null ? null : processValue(rangoMin),
+        "Rango Máximo": ejecutadoValue !== null ? null : processValue(rangoMax),
+        "Ejecutado": ejecutadoValue
       };
     }).filter((item): item is ProcessedData => item !== null);
 
-    // Verificar si hay datos ejecutados
-    const hasExecutedData = processedData.some(item => item.Ejecutado !== null);
-    console.log('¿Hay datos ejecutados?:', hasExecutedData);
-
-    let finalData = processedData;
-
-    if (hasExecutedData) {
-      // Encontrar el último dato ejecutado solo si hay datos ejecutados
-      let lastExecutedIndex = processedData.length - 1;
-      for (let i = processedData.length - 1; i >= 0; i--) {
-        if (processedData[i].Ejecutado !== null) {
-          lastExecutedIndex = i;
-          break;
-        }
-      }
-
-      console.log('Índice del último dato ejecutado:', lastExecutedIndex);
-
-      // Aplicar el filtrado solo si hay datos ejecutados
-      finalData = processedData.map((item, index) => {
-        if (index < lastExecutedIndex) {
-          return {
-            ...item,
-            "Pronóstico": null,
-            "Rango Mínimo": null,
-            "Rango Máximo": null
-          };
-        }
-        return item;
-      });
-    } else {
-      console.log('No hay datos ejecutados, mostrando todos los pronósticos');
-    }
-
-    if (finalData.length === 0) {
+    if (processedData.length === 0) {
       throw new Error('No se encontraron datos válidos en el archivo Excel');
     }
 
-    console.log('Datos procesados exitosamente. Total de registros:', finalData.length);
-    return finalData;
+    console.log('Datos procesados exitosamente. Total de registros:', processedData.length);
+    return processedData;
   } catch (error) {
     console.error('Error procesando Excel:', error);
     throw error;
