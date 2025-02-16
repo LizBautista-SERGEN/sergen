@@ -21,6 +21,7 @@ export const searchData = async (date: string, cookies: string) => {
   });
 
   if (!response.ok) {
+    console.error('Error en la búsqueda:', response.status, response.statusText);
     throw new Error(`Error en la búsqueda: ${response.status}`);
   }
 
@@ -42,6 +43,7 @@ export const downloadExcel = async (cookies: string) => {
   });
 
   if (!response.ok) {
+    console.error('Error en la descarga:', response.status, response.statusText);
     throw new Error(`Error en la descarga: ${response.status}`);
   }
 

@@ -8,18 +8,33 @@ import { saveToDatabase } from './database.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: corsHeaders
+      headers: corsHeaders,
+      status: 204,
     });
   }
 
   try {
-    const formattedDate = formatDate(new Date());
+    let formattedDate;
+    
+    // Check if we received specific dates in the request
+    if (req.method === 'POST') {
+      const body = await req.json().catch(() => null);
+      if (body && body.startDate && body.endDate) {
+        formattedDate = formatDate(new Date(body.startDate));
+      } else {
+        formattedDate = formatDate(new Date());
+      }
+    } else {
+      formattedDate = formatDate(new Date());
+    }
+
     console.log('Iniciando proceso para fecha:', formattedDate);
 
     // Obtener cookies de la página principal
@@ -66,10 +81,18 @@ serve(async (req) => {
     const processedData = await processExcelData(arrayBuffer);
     console.log(`Datos procesados: ${processedData.length} registros`);
 
-    // Guardar en la base de datos
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    await saveToDatabase(processedData, supabaseUrl, supabaseKey);
+    // Guardar en la base de datos si hay datos válidos
+    if (processedData.length > 0) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Faltan credenciales de Supabase');
+      }
+
+      await saveToDatabase(processedData, supabaseUrl, supabaseKey);
+      console.log('Datos guardados en la base de datos');
+    }
 
     return new Response(JSON.stringify(processedData), {
       headers: { 
