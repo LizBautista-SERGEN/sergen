@@ -1,4 +1,5 @@
 
+import { StrictMode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,37 +35,39 @@ const queryClient = new QueryClient({
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <TooltipProvider>
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <main className="flex-1">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/nosotros" element={<AboutUs />} />
-                <Route path="/servicios" element={<ServicesPage />} />
-                <Route path="/servicios/diagnostico" element={<ServiceDiagnostico />} />
-                <Route path="/servicios/demanda" element={<ServiceDemanda />} />
-                <Route path="/servicios/control" element={<ServiceControl />} />
-                <Route path="/servicios/contractual" element={<ServiceContractual />} />
-                <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
-                <Route path="/contacto" element={<ContactPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/perfil" element={<ProfilePage />} />
-                <Route path="/informes" element={<InformesPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <TooltipProvider>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/nosotros" element={<AboutUs />} />
+                  <Route path="/servicios" element={<ServicesPage />} />
+                  <Route path="/servicios/diagnostico" element={<ServiceDiagnostico />} />
+                  <Route path="/servicios/demanda" element={<ServiceDemanda />} />
+                  <Route path="/servicios/control" element={<ServiceControl />} />
+                  <Route path="/servicios/contractual" element={<ServiceContractual />} />
+                  <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
+                  <Route path="/contacto" element={<ContactPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/perfil" element={<ProfilePage />} />
+                  <Route path="/informes" element={<InformesPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </TooltipProvider>
             </main>
             <Footer />
             <Toaster />
             <Sonner />
           </div>
-        </TooltipProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </StrictMode>
   );
 };
 

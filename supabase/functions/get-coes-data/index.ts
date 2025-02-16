@@ -9,6 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json',
 };
 
 serve(async (req) => {
@@ -21,31 +22,45 @@ serve(async (req) => {
   }
 
   try {
+    // Validar la petición
+    if (req.method !== 'POST') {
+      throw new Error('Método no permitido');
+    }
+
     let formattedDate;
-    
-    // Check if we received specific dates in the request
-    if (req.method === 'POST') {
-      const body = await req.json().catch(() => null);
-      if (body && body.startDate && body.endDate) {
-        formattedDate = formatDate(new Date(body.startDate));
-      } else {
-        formattedDate = formatDate(new Date());
-      }
-    } else {
+    try {
+      const body = await req.json();
+      formattedDate = body.startDate ? formatDate(new Date(body.startDate)) : formatDate(new Date());
+    } catch (error) {
+      console.error('Error parsing request body:', error);
       formattedDate = formatDate(new Date());
     }
 
     console.log('Iniciando proceso para fecha:', formattedDate);
 
-    // Obtener cookies de la página principal
-    const mainPageResponse = await fetch('https://www.coes.org.pe/portal/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    // Obtener cookies de la página principal con retry
+    let mainPageResponse;
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+      try {
+        mainPageResponse = await fetch('https://www.coes.org.pe/portal/', {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          },
+          redirect: 'follow',
+        });
+        if (mainPageResponse.ok) break;
+      } catch (error) {
+        console.error(`Intento ${retryCount + 1} fallido:`, error);
       }
-    });
-    
-    if (!mainPageResponse.ok) {
-      throw new Error(`Error al obtener página principal: ${mainPageResponse.status}`);
+      retryCount++;
+      await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+    }
+
+    if (!mainPageResponse?.ok) {
+      throw new Error(`Error al obtener página principal después de ${maxRetries} intentos`);
     }
 
     const cookies = mainPageResponse.headers.get('set-cookie') || '';
@@ -56,9 +71,6 @@ serve(async (req) => {
 
     // Realizar búsqueda
     const searchResponse = await searchData(formattedDate, cookies);
-    if (!searchResponse.ok) {
-      throw new Error(`Error en búsqueda: ${searchResponse.status}`);
-    }
     console.log('Búsqueda completada');
 
     // Esperar antes de descargar
@@ -66,10 +78,6 @@ serve(async (req) => {
 
     // Descargar archivo Excel
     const excelResponse = await downloadExcel(cookies);
-    if (!excelResponse.ok) {
-      throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
-    }
-
     const arrayBuffer = await excelResponse.arrayBuffer();
     console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength);
 
@@ -95,10 +103,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify(processedData), {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      },
+      headers: corsHeaders,
       status: 200,
     });
 
@@ -111,11 +116,8 @@ serve(async (req) => {
         timestamp: new Date().toISOString()
       }),
       {
+        headers: corsHeaders,
         status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        },
       }
     );
   }
