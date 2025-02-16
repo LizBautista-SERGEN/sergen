@@ -26,15 +26,20 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
     return `${dia}/${mes}/${año} ${hora}:${minutos}`;
   };
 
+  // Función para validar si un valor es efectivamente nulo o cero
+  const isNullOrZero = (value: any): boolean => {
+    return value === null || value === undefined || value === 0;
+  };
+
   // Ordenamos los datos por fecha
   const sortedData = [...data].sort((a, b) => 
     new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
   );
 
-  // Encontrar la fecha del último punto con demanda real
+  // Encontrar el último índice con demanda real (excluyendo ceros)
   let lastRealDemandIndex = -1;
   for (let i = 0; i < sortedData.length; i++) {
-    if (sortedData[i].demanda_real !== null) {
+    if (!isNullOrZero(sortedData[i].demanda_real)) {
       lastRealDemandIndex = i;
     }
   }
@@ -51,11 +56,11 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
 
     return {
       time: formatTime(item.fecha),
-      "Reprogramación": item.reprogramacion || null,
-      "Pronóstico Diario": showForecast ? item.pronostico_diario : null,
-      "Rango Inferior": showForecast ? item.rango_inferior : null,
-      "Rango Superior": showForecast ? item.rango_superior : null,
-      "Demanda Real": item.demanda_real,
+      "Reprogramación": isNullOrZero(item.reprogramacion) ? null : item.reprogramacion,
+      "Pronóstico Diario": showForecast && !isNullOrZero(item.pronostico_diario) ? item.pronostico_diario : null,
+      "Rango Inferior": showForecast && !isNullOrZero(item.rango_inferior) ? item.rango_inferior : null,
+      "Rango Superior": showForecast && !isNullOrZero(item.rango_superior) ? item.rango_superior : null,
+      "Demanda Real": isNullOrZero(item.demanda_real) ? null : item.demanda_real,
       hora: hora,
       fecha_completa: formatFullDate(item.fecha)
     };

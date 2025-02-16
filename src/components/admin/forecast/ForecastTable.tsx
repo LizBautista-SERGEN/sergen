@@ -7,7 +7,7 @@ interface ForecastTableProps {
 
 export const ForecastTable = ({ data }: ForecastTableProps) => {
   const formatNumber = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return '-';
+    if (value === null || value === undefined || value === 0) return '-';
     return value.toLocaleString();
   };
 
@@ -24,15 +24,20 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
     return `${dia}/${mes}/${año} ${hora}:${minutos}`;
   };
 
+  // Función para validar si un valor es efectivamente nulo o cero
+  const isNullOrZero = (value: any): boolean => {
+    return value === null || value === undefined || value === 0;
+  };
+
   // Ordenamos los datos por fecha
   const sortedData = [...data].sort((a, b) => 
     new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
   );
 
-  // Encontrar el último índice con demanda real
+  // Encontrar el último índice con demanda real (excluyendo ceros)
   let lastRealDemandIndex = -1;
   for (let i = 0; i < sortedData.length; i++) {
-    if (sortedData[i].demanda_real !== null) {
+    if (!isNullOrZero(sortedData[i].demanda_real)) {
       lastRealDemandIndex = i;
     }
   }
@@ -40,9 +45,10 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
   // Procesamos los datos aplicando la misma lógica que en el gráfico
   const processedData = sortedData.map((item, index) => ({
     ...item,
-    pronostico_diario: index > lastRealDemandIndex ? item.pronostico_diario : null,
-    rango_inferior: index > lastRealDemandIndex ? item.rango_inferior : null,
-    rango_superior: index > lastRealDemandIndex ? item.rango_superior : null
+    pronostico_diario: index > lastRealDemandIndex && !isNullOrZero(item.pronostico_diario) ? item.pronostico_diario : null,
+    rango_inferior: index > lastRealDemandIndex && !isNullOrZero(item.rango_inferior) ? item.rango_inferior : null,
+    rango_superior: index > lastRealDemandIndex && !isNullOrZero(item.rango_superior) ? item.rango_superior : null,
+    demanda_real: isNullOrZero(item.demanda_real) ? null : item.demanda_real
   }));
 
   return (
