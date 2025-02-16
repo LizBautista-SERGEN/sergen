@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
 import puppeteer from 'https://deno.land/x/puppeteer@16.2.0/mod.ts'
 
 const corsHeaders = {
