@@ -1,1 +1,4 @@
-project_id = "zbixjkgwperxqrdhvtoy"
+
+[functions]
+[functions.get-coes-data]
+verify_jwt = true

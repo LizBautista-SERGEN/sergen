@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -26,35 +27,37 @@ export const ForecastManagement = () => {
 
       console.log('Iniciando llamada a función Edge...');
       
-      const { data: response, error: functionError } = await supabase.functions.invoke(
-        'get-coes-data',
+      // Llamada directa a la función Edge usando fetch
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-coes-data`,
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
-          body: {} // Enviamos un objeto vacío para asegurar que el cuerpo es válido
+          body: JSON.stringify({}),
         }
       );
 
-      if (functionError) {
-        console.error('Error en respuesta de función:', functionError);
-        throw functionError;
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
       }
 
-      if (!response || !Array.isArray(response)) {
-        console.error('Respuesta inválida:', response);
+      const data = await response.json();
+
+      if (!Array.isArray(data)) {
+        console.error('Respuesta inválida:', data);
         throw new Error('Formato de respuesta inválido');
       }
 
-      if (response.length === 0) {
+      if (data.length === 0) {
         setError('No se encontraron datos disponibles');
         toast.warning('No se encontraron datos disponibles');
       } else {
-        setCoesData(response);
+        setCoesData(data);
         setLastUpdate(new Date());
-        console.log('Datos de COES actualizados:', response);
+        console.log('Datos de COES actualizados:', data);
         toast.success('Datos actualizados correctamente');
       }
       
