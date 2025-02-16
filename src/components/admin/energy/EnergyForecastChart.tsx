@@ -19,12 +19,13 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
 
   const getChartData = (date: string) => {
     // Crear un array con las 24 horas del día
-    const hoursArray = Array.from({ length: 24 }, (_, i) => {
-      const hour = i.toString().padStart(2, '0');
+    const hoursArray = Array.from({ length: 48 }, (_, i) => {
+      const hour = Math.floor(i / 2);
+      const minute = (i % 2) * 30;
       return {
-        time: `${hour}:00`,
-        "Potencia Pronosticada": 0,
-        "Potencia Ejecutada": 0
+        time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+        "Potencia Pronosticada": null,
+        "Potencia Ejecutada": null
       };
     });
 
@@ -32,14 +33,23 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
     const dayData = energyData
       .filter(data => data.date === date)
       .reduce((acc, data) => {
-        const hour = data.time.split(':')[0];
-        const hourIndex = parseInt(hour);
-        if (hourIndex >= 0 && hourIndex < 24) {
-          acc[hourIndex] = {
-            time: `${hour}:00`,
-            "Potencia Pronosticada": data.forecasted_power,
-            "Potencia Ejecutada": data.executed_power
-          };
+        const timeIndex = acc.findIndex(item => item.time === data.time);
+        if (timeIndex >= 0) {
+          // Si hay potencia ejecutada, solo mostrar ese valor
+          if (data.executed_power) {
+            acc[timeIndex] = {
+              ...acc[timeIndex],
+              "Potencia Ejecutada": data.executed_power,
+              "Potencia Pronosticada": null
+            };
+          } else {
+            // Si no hay potencia ejecutada, mostrar el pronóstico
+            acc[timeIndex] = {
+              ...acc[timeIndex],
+              "Potencia Pronosticada": data.forecasted_power,
+              "Potencia Ejecutada": null
+            };
+          }
         }
         return acc;
       }, hoursArray);
@@ -78,7 +88,10 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
                   minTickGap={30}
                 />
                 <YAxis />
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value: any) => value ? [value.toFixed(2), ''] : ['No disponible', '']}
+                  labelFormatter={(label) => `Hora: ${label}`}
+                />
                 <Legend />
                 <Line
                   type="monotone"
@@ -86,6 +99,7 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
                   stroke="#f39200"
                   strokeWidth={2}
                   dot={false}
+                  connectNulls={true}
                 />
                 <Line
                   type="monotone"
@@ -93,6 +107,7 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
                   stroke="#156082"
                   strokeWidth={2}
                   dot={false}
+                  connectNulls={true}
                 />
               </LineChart>
             </ResponsiveContainer>
