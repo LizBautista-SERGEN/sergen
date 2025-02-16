@@ -1,10 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { format, subDays } from "date-fns";
+import { format, subDays, parse } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Loader2, Calendar } from "lucide-react";
@@ -17,6 +17,23 @@ export const DemandHistoryView = () => {
   const [endDate, setEndDate] = useState(format(subDays(new Date(), 1), 'yyyy-MM-dd'));
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [rawResponse, setRawResponse] = useState<any>(null);
+
+  const formatHourValue = (hora: string) => {
+    try {
+      // Asegurarse de que la hora tenga el formato correcto (HH:mm)
+      if (!hora) return '';
+      
+      // Si la hora ya está en formato HH:mm, devolverla como está
+      if (hora.match(/^\d{2}:\d{2}$/)) return hora;
+      
+      // Si la hora está en otro formato, intentar parsearlo
+      const parsedDate = parse(hora, 'HH:mm:ss', new Date());
+      return format(parsedDate, 'HH:mm');
+    } catch (error) {
+      console.error('Error formateando hora:', hora, error);
+      return hora; // Devolver el valor original si hay error
+    }
+  };
 
   const fetchHistoricalData = async () => {
     setLoading(true);
@@ -32,7 +49,12 @@ export const DemandHistoryView = () => {
       console.log('Respuesta completa:', data);
 
       if (Array.isArray(data)) {
-        setHistoricalData(data);
+        // Procesar los datos para asegurar que las horas estén en formato correcto
+        const processedData = data.map(item => ({
+          ...item,
+          hora: formatHourValue(item.hora)
+        }));
+        setHistoricalData(processedData);
       } else {
         console.error('Datos recibidos no son un array:', data);
         toast.error('Formato de datos incorrecto');
@@ -107,13 +129,13 @@ export const DemandHistoryView = () => {
                   >
                     <XAxis 
                       dataKey="hora"
-                      tickFormatter={(value) => format(new Date(`2000-01-01T${value}`), 'HH:mm')}
+                      // No necesitamos formatear aquí ya que las horas ya están en formato correcto
                     />
                     <YAxis 
                       tickFormatter={(value) => `${value.toLocaleString()}`}
                     />
                     <Tooltip 
-                      labelFormatter={(label) => `Hora: ${format(new Date(`2000-01-01T${label}`), 'HH:mm')}`}
+                      labelFormatter={(label) => `Hora: ${label}`}
                       formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
                     />
                     <Legend />
