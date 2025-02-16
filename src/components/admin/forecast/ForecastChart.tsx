@@ -1,6 +1,6 @@
 
 import { format } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart, ReferenceArea } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, Area, ComposedChart, ReferenceArea } from 'recharts';
 
 interface ForecastChartProps {
   data: any[];
@@ -17,8 +17,8 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
 
   return (
     <ComposedChart
-      width={800}
-      height={400}
+      width={forPDF ? 800 : undefined}
+      height={forPDF ? 400 : undefined}
       data={data}
       margin={forPDF ? { top: 60, right: 30, left: 50, bottom: 30 } : { top: 30, right: 30, left: 50, bottom: 30 }}
     >
