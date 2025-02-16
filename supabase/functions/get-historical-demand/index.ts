@@ -60,7 +60,7 @@ serve(async (req) => {
     const endDateStr = formatDateForForm(endDate);
     console.log('Consultando datos para el rango:', startDateStr, 'hasta', endDateStr);
 
-    // Paso 1: Obtener la página inicial para conseguir el token CSRF y cookies
+    // Paso 1: Obtener la página inicial y el token CSRF
     const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     const initialResponse = await fetch(baseUrl, {
       method: 'GET',
@@ -76,17 +76,23 @@ serve(async (req) => {
     }
 
     const initialHtml = await initialResponse.text();
-    console.log('HTML inicial obtenido:', initialHtml.substring(0, 500)); // Log primeros 500 caracteres
-
-    // Extraer el token CSRF y cookies
     const cookies = initialResponse.headers.get('set-cookie') || '';
     const tokenMatch = initialHtml.match(/<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]*)"[^>]*>/);
     const csrfToken = tokenMatch ? tokenMatch[1] : '';
-    
-    console.log('Cookies obtenidas:', cookies);
-    console.log('Token CSRF obtenido:', csrfToken);
 
-    // Paso 2: Simular clic en botón Consultar (btnConsulta)
+    if (!csrfToken) {
+      throw new Error('No se pudo obtener el token CSRF');
+    }
+
+    console.log('Token CSRF obtenido:', csrfToken);
+    
+    // Paso 2: Enviar el formulario (simular clic en btnConsulta)
+    const formData = new URLSearchParams({
+      'txtFechaInicial': startDateStr,
+      'txtFechaFinal': endDateStr,
+      '__RequestVerificationToken': csrfToken
+    });
+
     const consultaResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
       method: 'POST',
       headers: {
@@ -97,72 +103,70 @@ serve(async (req) => {
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Origin': 'https://www.coes.org.pe',
         'Referer': baseUrl,
-        'X-Requested-With': 'XMLHttpRequest',
+        'X-Requested-With': 'XMLHttpRequest'
       },
-      body: new URLSearchParams({
-        'txtFechaInicial': startDateStr,
-        'txtFechaFinal': endDateStr,
-        '__RequestVerificationToken': csrfToken,
-      }).toString(),
+      body: formData.toString()
     });
 
     if (!consultaResponse.ok) {
       throw new Error(`Error en la consulta: ${consultaResponse.status}`);
     }
 
-    console.log('Respuesta de consulta:', await consultaResponse.text());
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Esperar a que la página procese la consulta
 
-    // Paso 3: Simular clic en botón Exportar (btnExportar)
+    // Paso 3: Descargar el Excel (simular clic en btnExportar)
     const excelResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/vnd.ms-excel',
         'Cookie': cookies,
-        'Referer': baseUrl,
-      },
+        'Referer': baseUrl
+      }
     });
 
     if (!excelResponse.ok) {
-      console.error('Error status:', excelResponse.status);
-      console.error('Error headers:', Object.fromEntries(excelResponse.headers.entries()));
       throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
     }
 
-    const contentType = excelResponse.headers.get('content-type');
-    console.log('Tipo de contenido del Excel:', contentType);
-
     const arrayBuffer = await excelResponse.arrayBuffer();
-    console.log('Tamaño del archivo descargado:', arrayBuffer.byteLength, 'bytes');
-
-    if (arrayBuffer.byteLength === 0) {
-      throw new Error('Archivo Excel vacío');
-    }
+    console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength, 'bytes');
 
     // Procesar el Excel
     const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
-    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-      throw new Error('Excel sin hojas');
-    }
+    const firstSheet = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheet];
 
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = utils.sheet_to_json(worksheet, { 
+    // Obtener todas las filas del Excel
+    const rawData = utils.sheet_to_json(worksheet, { 
       header: 1,
       raw: false,
-      dateNF: 'dd/mm/yyyy'
+      blankrows: false
     });
 
-    console.log('Estructura del Excel:', jsonData.slice(0, 3));
+    console.log('Datos crudos del Excel:', rawData.slice(0, 5));
 
-    // Transformar los datos al formato esperado
-    const transformedData = jsonData.slice(1).map((row: any) => ({
-      fecha: row[0],
-      hora: row[1],
-      programado: parseFloat(row[2]) || null,
-      ejecutado: parseFloat(row[3]) || null
-    })).filter(item => item.fecha && item.hora);
+    // Encontrar el índice donde comienzan los datos reales
+    let dataStartIndex = 0;
+    for (let i = 0; i < rawData.length; i++) {
+      const row = rawData[i] as any[];
+      if (row && row.length >= 4 && row[0] === 'Fecha' && row[1] === 'Hora') {
+        dataStartIndex = i;
+        break;
+      }
+    }
 
-    console.log('Datos transformados:', transformedData.slice(0, 3));
+    // Transformar solo las filas con datos reales
+    const transformedData = rawData.slice(dataStartIndex + 1)
+      .filter((row: any[]) => row && row.length >= 4 && row[0] && row[1])
+      .map((row: any[]) => ({
+        fecha: row[0],
+        hora: row[1],
+        programado: parseFloat(row[2]?.toString().replace(',', '.')) || null,
+        ejecutado: parseFloat(row[3]?.toString().replace(',', '.')) || null
+      }));
+
+    console.log('Datos procesados:', transformedData.slice(0, 3));
 
     return new Response(JSON.stringify(transformedData), {
       headers: { ...corsHeaders },
