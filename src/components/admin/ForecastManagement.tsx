@@ -106,26 +106,34 @@ export const ForecastManagement = () => {
                   width={800} 
                   height={400} 
                   data={coesData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  margin={{ top: 30, right: 30, left: 50, bottom: 30 }}
                 >
                   <XAxis 
                     dataKey="Fecha"
                     tickFormatter={(value) => format(new Date(value), 'HH:mm')}
                   />
-                  <YAxis domain={[6000, 9000]} />
-                  <Tooltip />
+                  <YAxis 
+                    domain={[6000, 9000]}
+                    tickFormatter={(value) => `${value.toLocaleString()}`}
+                  />
+                  <Tooltip 
+                    labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
+                    formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
+                  />
                   <Legend />
                   <Area
                     type="monotone"
                     dataKey="Rango Máximo"
-                    stroke="none"
+                    stroke="#90C418"
                     fill="#90C41833"
+                    fillOpacity={0.3}
                   />
                   <Area
                     type="monotone"
                     dataKey="Rango Mínimo"
-                    stroke="none"
+                    stroke="#90C418"
                     fill="#90C41833"
+                    fillOpacity={0.3}
                   />
                   <Line 
                     type="monotone" 
@@ -169,7 +177,7 @@ export const ForecastManagement = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart 
                   data={coesData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  margin={{ top: 30, right: 30, left: 50, bottom: 30 }}
                 >
                   <XAxis 
                     dataKey="Fecha"
@@ -187,16 +195,16 @@ export const ForecastManagement = () => {
                   <Area
                     type="monotone"
                     dataKey="Rango Máximo"
-                    stroke="none"
+                    stroke="#90C418"
                     fill="#90C41833"
-                    hide={true}
+                    fillOpacity={0.3}
                   />
                   <Area
                     type="monotone"
                     dataKey="Rango Mínimo"
-                    stroke="none"
+                    stroke="#90C418"
                     fill="#90C41833"
-                    hide={true}
+                    fillOpacity={0.3}
                   />
                   <Line 
                     type="monotone" 
@@ -205,7 +213,6 @@ export const ForecastManagement = () => {
                     stroke="#156082" 
                     strokeWidth={2}
                     dot={false}
-                    connectNulls={true}
                   />
                   <Line 
                     type="monotone" 
