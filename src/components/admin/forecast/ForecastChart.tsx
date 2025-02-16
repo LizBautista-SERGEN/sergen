@@ -82,7 +82,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           height={60}
         />
         <YAxis
-          domain={[6000, 9000]}
+          domain={[5500, 8500]}
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
