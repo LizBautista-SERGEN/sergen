@@ -9,20 +9,36 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: corsHeaders,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+      },
       status: 204,
     });
   }
 
+  // Early auth check
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'No autorizado' }),
+      {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  }
+
   try {
-    // Validar la petición
     if (req.method !== 'POST') {
       throw new Error('Método no permitido');
     }
@@ -31,12 +47,11 @@ serve(async (req) => {
     try {
       const body = await req.json();
       formattedDate = body.startDate ? formatDate(new Date(body.startDate)) : formatDate(new Date());
+      console.log('Fecha formateada:', formattedDate);
     } catch (error) {
       console.error('Error parsing request body:', error);
       formattedDate = formatDate(new Date());
     }
-
-    console.log('Iniciando proceso para fecha:', formattedDate);
 
     // Obtener cookies de la página principal con retry
     let mainPageResponse;
@@ -51,7 +66,13 @@ serve(async (req) => {
           },
           redirect: 'follow',
         });
-        if (mainPageResponse.ok) break;
+        
+        if (mainPageResponse.ok) {
+          console.log('Página principal obtenida correctamente');
+          break;
+        }
+        
+        console.log(`Intento ${retryCount + 1}: Status ${mainPageResponse.status}`);
       } catch (error) {
         console.error(`Intento ${retryCount + 1} fallido:`, error);
       }
@@ -89,23 +110,16 @@ serve(async (req) => {
     const processedData = await processExcelData(arrayBuffer);
     console.log(`Datos procesados: ${processedData.length} registros`);
 
-    // Guardar en la base de datos si hay datos válidos
-    if (processedData.length > 0) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL');
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      
-      if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Faltan credenciales de Supabase');
+    return new Response(
+      JSON.stringify(processedData),
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+        status: 200,
       }
-
-      await saveToDatabase(processedData, supabaseUrl, supabaseKey);
-      console.log('Datos guardados en la base de datos');
-    }
-
-    return new Response(JSON.stringify(processedData), {
-      headers: corsHeaders,
-      status: 200,
-    });
+    );
 
   } catch (error) {
     console.error('Error en el proceso:', error);
@@ -116,7 +130,10 @@ serve(async (req) => {
         timestamp: new Date().toISOString()
       }),
       {
-        headers: corsHeaders,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
         status: 500,
       }
     );
