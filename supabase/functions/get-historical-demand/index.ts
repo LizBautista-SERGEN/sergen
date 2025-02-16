@@ -37,8 +37,8 @@ serve(async (req) => {
     let endDate: Date;
 
     try {
-      startDate = new Date(body.startDate + 'T00:00:00');
-      endDate = new Date(body.endDate + 'T23:59:59');
+      startDate = new Date(body.startDate);
+      endDate = new Date(body.endDate);
 
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         throw new Error('Fechas inválidas proporcionadas');
@@ -49,21 +49,22 @@ serve(async (req) => {
     }
 
     const formatDateForForm = (date: Date) => {
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
+      return [
+        date.getDate().toString().padStart(2, '0'),
+        (date.getMonth() + 1).toString().padStart(2, '0'),
+        date.getFullYear()
+      ].join('/');
     };
 
-    console.log('Consultando datos para el rango:', formatDateForForm(startDate), 'hasta', formatDateForForm(endDate));
+    const startDateStr = formatDateForForm(startDate);
+    const endDateStr = formatDateForForm(endDate);
+    console.log('Consultando datos para el rango:', startDateStr, 'hasta', endDateStr);
 
-    // Paso 1: Obtener cookies de la sesión inicial y el token CSRF
+    // Paso 1: Obtener la página inicial para obtener cookies y token
     const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     const initialResponse = await fetch(baseUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
       },
     });
 
@@ -71,68 +72,74 @@ serve(async (req) => {
       throw new Error(`Error en la conexión inicial: ${initialResponse.status}`);
     }
 
+    const initialHtml = await initialResponse.text();
     const cookies = initialResponse.headers.get('set-cookie') || '';
-    console.log('Cookies obtenidas:', cookies ? 'Sí' : 'No');
     
+    // Extraer el token CSRF del HTML
+    const tokenMatch = initialHtml.match(/<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]*)"[^>]*>/);
+    const csrfToken = tokenMatch ? tokenMatch[1] : '';
+    
+    console.log('Cookies obtenidas:', cookies ? 'Sí' : 'No');
+    console.log('Token CSRF obtenido:', csrfToken ? 'Sí' : 'No');
+
     // Esperar antes de la siguiente petición
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Paso 2: Realizar la búsqueda con las fechas
-    const searchFormData = new URLSearchParams();
-    searchFormData.append('txtFechaInicio', formatDateForForm(startDate));
-    searchFormData.append('txtFechaFin', formatDateForForm(endDate));
-    searchFormData.append('__RequestVerificationToken', ''); // Token CSRF si es necesario
+    const formData = new URLSearchParams();
+    formData.append('txtFechaInicio', startDateStr);
+    formData.append('txtFechaFin', endDateStr);
+    if (csrfToken) {
+      formData.append('__RequestVerificationToken', csrfToken);
+    }
 
-    console.log('Enviando búsqueda con fechas:', searchFormData.toString());
+    console.log('Enviando formulario con datos:', formData.toString());
 
-    const searchUrl = `${baseUrl}/Buscar`;
-    console.log('URL de búsqueda:', searchUrl);
-
-    const searchResponse = await fetch(searchUrl, {
+    const searchResponse = await fetch(`${baseUrl}/Buscar`, {
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Cookie': cookies,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Origin': 'https://www.coes.org.pe',
         'Referer': baseUrl,
       },
-      body: searchFormData.toString(),
+      body: formData.toString(),
+      redirect: 'follow',
     });
 
     if (!searchResponse.ok) {
       throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
-    const searchResponseText = await searchResponse.text();
-    console.log('Respuesta de búsqueda recibida, longitud:', searchResponseText.length);
+    const searchHtml = await searchResponse.text();
+    console.log('Longitud de la respuesta de búsqueda:', searchHtml.length);
 
-    // Esperar antes de descargar el Excel
+    // Esperar antes de la siguiente petición
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Paso 3: Descargar el archivo Excel
-    const exportUrl = `${baseUrl}/Exportar`;
-    console.log('URL de exportación:', exportUrl);
-
-    const excelResponse = await fetch(exportUrl, {
+    // Paso 3: Descargar el Excel
+    const exportResponse = await fetch(`${baseUrl}/Exportar`, {
+      method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Cookie': cookies,
-        'Accept': 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
         'Referer': baseUrl,
       },
+      redirect: 'follow',
     });
 
-    if (!excelResponse.ok) {
-      const responseText = await excelResponse.text();
-      console.error('Respuesta de error al descargar Excel:', responseText);
-      throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
+    if (!exportResponse.ok) {
+      const errorText = await exportResponse.text();
+      console.error('Error response from export:', errorText);
+      throw new Error(`Error al exportar: ${exportResponse.status}`);
     }
 
-    const arrayBuffer = await excelResponse.arrayBuffer();
+    const arrayBuffer = await exportResponse.arrayBuffer();
     console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength, 'bytes');
 
     if (arrayBuffer.byteLength === 0) {
@@ -142,29 +149,29 @@ serve(async (req) => {
     // Paso 4: Procesar el archivo Excel
     const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
     
-    console.log('Nombres de hojas disponibles:', workbook.SheetNames);
-    
-    if (workbook.SheetNames.length === 0) {
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
       throw new Error('El archivo Excel no contiene hojas');
     }
 
+    console.log('Hojas encontradas:', workbook.SheetNames);
+
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = utils.sheet_to_json(worksheet, { 
+    const jsonData = utils.sheet_to_json(worksheet, {
       raw: false,
       defval: null,
-      header: 1 
+      header: 1,
     });
 
     console.log('Primeras filas del Excel:', JSON.stringify(jsonData.slice(0, 3)));
 
-    // Encontrar la fila del encabezado
+    // Encontrar la fila de encabezados
     const headerRowIndex = jsonData.findIndex((row: any[]) => 
-      row.some((cell: any) => 
-        cell && (
-          String(cell).includes('Fecha') || 
-          String(cell).includes('Hora') ||
-          String(cell).includes('Pronóstico') ||
-          String(cell).includes('Ejecutado')
+      Array.isArray(row) && row.some(cell => 
+        cell && typeof cell === 'string' && (
+          cell.includes('Fecha') || 
+          cell.includes('Hora') ||
+          cell.includes('Pronóstico') ||
+          cell.includes('Ejecutado')
         )
       )
     );
@@ -173,22 +180,14 @@ serve(async (req) => {
       throw new Error('No se encontró la fila de encabezados en el Excel');
     }
 
-    console.log('Índice de fila de encabezados:', headerRowIndex);
-
-    // Convertir a formato de objetos usando los encabezados encontrados
     const headers = jsonData[headerRowIndex];
     const data = jsonData.slice(headerRowIndex + 1);
 
     console.log('Encabezados encontrados:', headers);
 
-    const processedData = data.map((row: any[], index: number) => {
-      try {
-        if (!Array.isArray(row) || row.length < 2) {
-          console.warn('Fila inválida:', index + headerRowIndex + 1, row);
-          return null;
-        }
-
-        // Mapear columnas basado en los encabezados
+    const processedData = data
+      .filter((row: any[]) => Array.isArray(row) && row.length >= 2)
+      .map((row: any[]) => {
         const fechaIndex = headers.findIndex((h: string) => h && h.includes('Fecha'));
         const horaIndex = headers.findIndex((h: string) => h && h.includes('Hora'));
         const programadoIndex = headers.findIndex((h: string) => h && (
@@ -198,20 +197,11 @@ serve(async (req) => {
         ));
         const ejecutadoIndex = headers.findIndex((h: string) => h && h.includes('Ejecutado'));
 
-        if (fechaIndex === -1 || horaIndex === -1) {
-          console.warn('No se encontraron columnas requeridas en fila:', index + headerRowIndex + 1);
-          return null;
-        }
-
         const fecha = row[fechaIndex];
         const hora = row[horaIndex];
 
-        if (!fecha || !hora) {
-          console.warn('Fila sin fecha u hora:', index + headerRowIndex + 1, row);
-          return null;
-        }
+        if (!fecha || !hora) return null;
 
-        // Parsear números
         const parsearNumero = (valor: any) => {
           if (!valor) return null;
           const strVal = String(valor).replace(/\s/g, '').replace(',', '.');
@@ -219,25 +209,19 @@ serve(async (req) => {
           return !isNaN(num) ? num : null;
         };
 
-        const programado = programadoIndex !== -1 ? parsearNumero(row[programadoIndex]) : null;
-        const ejecutado = ejecutadoIndex !== -1 ? parsearNumero(row[ejecutadoIndex]) : null;
-
         return {
           fecha,
           hora,
-          programado,
-          ejecutado
+          programado: programadoIndex !== -1 ? parsearNumero(row[programadoIndex]) : null,
+          ejecutado: ejecutadoIndex !== -1 ? parsearNumero(row[ejecutadoIndex]) : null,
         };
-      } catch (error) {
-        console.warn('Error procesando fila:', index + headerRowIndex + 1, error);
-        return null;
-      }
-    }).filter(item => item !== null);
+      })
+      .filter(item => item !== null);
 
     console.log(`Datos procesados: ${processedData.length} registros`);
 
     if (processedData.length === 0) {
-      throw new Error('No se encontraron datos válidos en el archivo Excel');
+      throw new Error('No se encontraron datos válidos en el Excel');
     }
 
     return new Response(JSON.stringify(processedData), {
