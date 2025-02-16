@@ -8,8 +8,62 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function parseExcelDate(date: any): string {
+  if (!date) return '';
+  
+  // Si es un objeto Date, lo convertimos directamente
+  if (date instanceof Date) {
+    // Ajustamos a UTC-5 (América Latina)
+    const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
+    return utcDate.toISOString();
+  }
+  
+  // Si es un número (fecha en formato Excel), lo convertimos a fecha
+  if (typeof date === 'number') {
+    const excelEpoch = new Date(1899, 11, 30);
+    const utcDate = new Date(excelEpoch.getTime() + (date * 24 * 60 * 60 * 1000));
+    // Ajustamos a UTC-5
+    return new Date(utcDate.getTime() + (utcDate.getTimezoneOffset() * 60000)).toISOString();
+  }
+  
+  // Si es string, intentamos parsearlo
+  try {
+    const parsedDate = new Date(date);
+    if (!isNaN(parsedDate.getTime())) {
+      // Ajustamos a UTC-5
+      return new Date(parsedDate.getTime() + (parsedDate.getTimezoneOffset() * 60000)).toISOString();
+    }
+  } catch (error) {
+    console.error('Error parsing date:', error);
+  }
+  
+  return '';
+}
+
+function parseNumber(value: any): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  
+  // Si ya es un número, lo retornamos
+  if (typeof value === 'number') return value;
+  
+  // Si es string, intentamos convertirlo
+  if (typeof value === 'string') {
+    // Removemos espacios y reemplazamos comas por puntos
+    const cleanValue = value.trim().replace(',', '.');
+    const number = parseFloat(cleanValue);
+    return isNaN(number) ? null : number;
+  }
+  
+  return null;
+}
+
 async function processExcelData(arrayBuffer: ArrayBuffer) {
-  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
+  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { 
+    type: 'array',
+    cellDates: true,
+    dateNF: 'yyyy-mm-dd HH:mm:ss'
+  });
+  
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
   
   const rawData = XLSX.utils.sheet_to_json(worksheet, { 
@@ -22,30 +76,51 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
 
   const headerRow = rawData[0];
   const columnIndexes = {
-    fecha: headerRow.findIndex((col: string) => col === 'Fecha'),
-    reprogramacion: headerRow.findIndex((col: string) => col === 'Reprogramación Diaria'),
-    pronostico_diario: headerRow.findIndex((col: string) => col === 'Pronóstico'),
-    rango_inferior: headerRow.findIndex((col: string) => col === 'Rango Minimo'),
-    rango_superior: headerRow.findIndex((col: string) => col === 'Rango Máximo'),
-    demanda_real: headerRow.findIndex((col: string) => col === 'Ejecutado')
+    fecha: headerRow.findIndex((col: string) => 
+      typeof col === 'string' && col.toLowerCase().includes('fecha')),
+    reprogramacion: headerRow.findIndex((col: string) => 
+      typeof col === 'string' && col.toLowerCase().includes('reprogramación')),
+    pronostico_diario: headerRow.findIndex((col: string) => 
+      typeof col === 'string' && (
+        col.toLowerCase().includes('pronóstico') || 
+        col.toLowerCase().includes('pronostico')
+      )),
+    rango_inferior: headerRow.findIndex((col: string) => 
+      typeof col === 'string' && col.toLowerCase().includes('mínimo')),
+    rango_superior: headerRow.findIndex((col: string) => 
+      typeof col === 'string' && col.toLowerCase().includes('máximo')),
+    demanda_real: headerRow.findIndex((col: string) => 
+      typeof col === 'string' && col.toLowerCase().includes('ejecutado'))
   };
+
+  console.log('Índices de columnas encontrados:', columnIndexes);
 
   const now = new Date().toISOString();
 
   const processedData = rawData.slice(1)
     .filter((row: any[]) => Array.isArray(row) && row.length >= 6)
     .map((row: any[]) => {
-      return {
-        fecha: row[columnIndexes.fecha],
-        reprogramacion: row[columnIndexes.reprogramacion],
-        pronostico_diario: row[columnIndexes.pronostico_diario],
-        rango_inferior: row[columnIndexes.rango_inferior],
-        rango_superior: row[columnIndexes.rango_superior],
-        demanda_real: row[columnIndexes.demanda_real],
+      const fecha = parseExcelDate(row[columnIndexes.fecha]);
+      if (!fecha) {
+        console.log('Fila ignorada por fecha inválida:', row);
+        return null;
+      }
+
+      const data = {
+        fecha,
+        reprogramacion: parseNumber(row[columnIndexes.reprogramacion]),
+        pronostico_diario: parseNumber(row[columnIndexes.pronostico_diario]),
+        rango_inferior: parseNumber(row[columnIndexes.rango_inferior]),
+        rango_superior: parseNumber(row[columnIndexes.rango_superior]),
+        demanda_real: parseNumber(row[columnIndexes.demanda_real]),
         created_at: now,
         updated_at: now
       };
-    });
+
+      console.log('Fila procesada:', data);
+      return data;
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 
   console.log('Datos procesados:', processedData);
   return processedData;
@@ -76,7 +151,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Usar upsert en lugar de insert
     const { error } = await supabase
       .from('coes_forecast')
       .upsert(processedData, {
