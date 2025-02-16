@@ -13,14 +13,14 @@ const Services = () => {
       description: "Realizamos un análisis exhaustivo de tus sistemas energéticos para detectar los principales focos de consumo. Nuestro equipo identifica áreas de mejora y te ofrece un plan personalizado con medidas concretas para reducir tu consumo energético y optimizar costos.",
       icon: <Search className="h-6 w-6" />,
       path: "/servicios/diagnostico",
-      image: "/lovable-uploads/46924861-677a-4a17-b6fe-666de8979766.png"
+      image: "/lovable-uploads/c6e04f82-2e00-4e2f-8add-0e2bd586449b.png"
     },
     {
       title: "Control de Demanda: Reduce tu Factura Eléctrica",
       description: "Implementamos estrategias avanzadas de gestión de demanda energética para optimizar tu consumo y reducir costos. Nuestras soluciones te permiten alcanzar ahorros significativos en tu factura eléctrica, mejorando la eficiencia operativa de tu empresa.",
       icon: <Gauge className="h-6 w-6" />,
       path: "/servicios/demanda",
-      image: "/placeholder.svg"
+      image: "/lovable-uploads/65c0f958-3c27-4e19-9a03-62c16c1c3e7b.png"
     },
     {
       title: "Gestión Contractual: Optimiza tus Contratos de Suministros",
@@ -34,7 +34,7 @@ const Services = () => {
       description: "Desarrollamos proyectos integrales de eficiencia energética, desde el diseño hasta la implementación. Utilizamos tecnologías innovadoras y sostenibles para optimizar el consumo de energía, reducir costos operativos y minimizar el impacto ambiental.",
       icon: <Lightbulb className="h-6 w-6" />,
       path: "/servicios/efficiency",
-      image: "/lovable-uploads/3c26af1d-33a0-4496-bb07-534d6f16f370.png"
+      image: "/lovable-uploads/83c2fa60-245f-494f-9474-15cadb818eb1.png"
     },
   ];
 

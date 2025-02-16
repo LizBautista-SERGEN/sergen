@@ -33,6 +33,9 @@ const WhyChooseUs = () => {
           <h2 className="mb-6 text-4xl font-bold text-white">
             Por qué elegirnos
           </h2>
+          <p className="text-lg text-white/80 max-w-3xl mx-auto">
+            Nuestra experiencia y compromiso nos distinguen en el mercado de eficiencia energética
+          </p>
         </AnimatedSection>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">

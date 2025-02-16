@@ -1,5 +1,5 @@
 
-import { MapPin, Facebook, Linkedin } from "lucide-react";
+import { MapPin, Facebook, Linkedin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -16,10 +16,14 @@ const Footer = () => {
             <p className="text-gray-400">
               Transformando la gestión energética empresarial con soluciones innovadoras y sostenibles.
             </p>
-            <div className="mt-4">
+            <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-[#f39200]" />
-                <p className="text-gray-400">Mz B Lt 11 Las Palmeras – Ate Vetarte – Lima</p>
+                <p className="text-gray-400">Mz B Lt 11 Las Palmeras – Ate Vitarte – Lima</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="h-5 w-5 text-[#f39200]" />
+                <p className="text-gray-400">+51 985 138 443</p>
               </div>
             </div>
           </div>
