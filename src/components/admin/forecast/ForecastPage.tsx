@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { ExportDataDialog } from "../ExportDataDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
+  const { session } = useAuth();
 
   const fetchData = async () => {
     try {
@@ -55,7 +57,6 @@ export const ForecastPage = () => {
 
       console.log('Respuesta de get-coes-forecast:', response.data);
       
-      // Recargar los datos inmediatamente después de la actualización
       await fetchData();
       toast.success(`Datos actualizados correctamente (${response.data.count} registros)`);
     } catch (error) {
@@ -66,8 +67,22 @@ export const ForecastPage = () => {
     }
   };
 
+  // Actualizar datos cuando el usuario inicia sesión
+  useEffect(() => {
+    if (session) {
+      refreshData();
+    }
+  }, [session]);
+
+  // Actualizar datos cada 15 minutos
   useEffect(() => {
     fetchData();
+    
+    const interval = setInterval(() => {
+      refreshData();
+    }, 15 * 60 * 1000); // 15 minutos en milisegundos
+
+    return () => clearInterval(interval);
   }, []);
 
   return (

@@ -1,5 +1,5 @@
 
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 
 interface ForecastChartProps {
@@ -8,38 +8,18 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
-  // Encontrar la última fecha con dato ejecutado
-  const lastExecutedIndex = [...data].reverse().findIndex(item => item.ejecutado !== null && item.ejecutado !== 0);
-  const lastExecutedDate = lastExecutedIndex !== -1 
-    ? data[data.length - 1 - lastExecutedIndex].fecha 
-    : null;
-
   // Preparar los datos para el gráfico
   const chartData = data.map(item => {
     const itemDate = new Date(item.fecha);
-    const itemTime = format(itemDate, 'HH:mm');
-    const isAfterLastExecuted = lastExecutedDate && new Date(item.fecha) > new Date(lastExecutedDate);
-
     return {
-      time: itemTime,
-      Pronóstico: isAfterLastExecuted ? (item.pronostico || null) : null,
-      "Rango Mínimo": isAfterLastExecuted ? (item.rango_minimo || null) : null,
-      "Rango Máximo": isAfterLastExecuted ? (item.rango_maximo || null) : null,
-      Ejecutado: item.ejecutado || null,
+      time: format(itemDate, 'HH:mm'),
       "Reprogramación Diaria": item.reprogramacion_diaria || null,
+      "Pronóstico": item.pronostico || null,
+      "Rango Mínimo": item.rango_minimo || null,
+      "Rango Máximo": item.rango_maximo || null,
+      "Ejecutado": item.ejecutado || null,
       hora: parseInt(format(itemDate, 'H')),
     };
-  });
-
-  // Crear áreas de referencia para las horas pico (18:00 - 23:00)
-  const referenceAreas = [];
-  const uniqueDates = [...new Set(data.map(item => format(new Date(item.fecha), 'yyyy-MM-dd')))];
-  
-  uniqueDates.forEach(date => {
-    referenceAreas.push({
-      start: `${date} 18:00`,
-      end: `${date} 23:00`
-    });
   });
 
   return (
@@ -83,6 +63,14 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         
         <Line
           type="monotone"
+          dataKey="Reprogramación Diaria"
+          stroke="#C00000"
+          strokeWidth={2}
+          dot={false}
+          connectNulls={true}
+        />
+        <Line
+          type="monotone"
           dataKey="Pronóstico"
           stroke="#f39200"
           strokeWidth={2}
@@ -111,14 +99,6 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           type="monotone"
           dataKey="Ejecutado"
           stroke="#156082"
-          strokeWidth={2}
-          dot={false}
-          connectNulls={true}
-        />
-        <Line
-          type="monotone"
-          dataKey="Reprogramación Diaria"
-          stroke="#C00000"
           strokeWidth={2}
           dot={false}
           connectNulls={true}
