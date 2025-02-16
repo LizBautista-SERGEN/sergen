@@ -89,7 +89,7 @@ export const ForecastPage = () => {
     <div>
       <Tabs defaultValue="forecast" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
+          <TabsTrigger value="forecast">Diario</TabsTrigger>
           <TabsTrigger value="historical">Histórico</TabsTrigger>
         </TabsList>
         
