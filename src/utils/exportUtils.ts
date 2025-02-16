@@ -10,12 +10,12 @@ import ReactDOMServer from 'react-dom/server';
 
 export const exportToExcel = (data: any[], filename: string) => {
   const ws = utils.json_to_sheet(data.map(item => ({
-    Fecha: format(new Date(item.Fecha), 'dd/MM/yyyy HH:mm'),
-    Programado: item['Reprogramación Diaria'],
-    Pronóstico: item['Pronóstico'],
-    'Rango Mínimo': item['Rango Mínimo'],
-    'Rango Máximo': item['Rango Máximo'],
-    Ejecutado: item['Ejecutado']
+    Fecha: format(new Date(item.fecha), 'dd/MM/yyyy HH:mm'),
+    'Reprogramación Diaria': item.reprogramacion_diaria,
+    'Pronóstico': item.pronostico,
+    'Rango Mínimo': item.rango_minimo,
+    'Rango Máximo': item.rango_maximo,
+    'Ejecutado': item.ejecutado
   })));
 
   const wb = utils.book_new();
@@ -70,12 +70,12 @@ export const exportToPDF = async (data: any[], filename: string, chartComponent?
 
   const tableColumn = ["Fecha", "Programado", "Pronóstico", "Rango Mínimo", "Rango Máximo", "Ejecutado"];
   const tableRows = data.map(item => [
-    format(new Date(item.Fecha), 'dd/MM/yyyy HH:mm'),
-    item['Reprogramación Diaria']?.toLocaleString() || '-',
-    item['Pronóstico']?.toLocaleString() || '-',
-    item['Rango Mínimo']?.toLocaleString() || '-',
-    item['Rango Máximo']?.toLocaleString() || '-',
-    item['Ejecutado']?.toLocaleString() || '-'
+    format(new Date(item.fecha), 'dd/MM/yyyy HH:mm'),
+    item.reprogramacion_diaria?.toLocaleString() || '-',
+    item.pronostico?.toLocaleString() || '-',
+    item.rango_minimo?.toLocaleString() || '-',
+    item.rango_maximo?.toLocaleString() || '-',
+    item.ejecutado?.toLocaleString() || '-'
   ]);
 
   autoTable(doc, {
