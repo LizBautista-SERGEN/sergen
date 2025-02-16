@@ -81,6 +81,39 @@ export type Database = {
         }
         Relationships: []
       }
+      coes_forecast: {
+        Row: {
+          created_at: string
+          ejecutado: number | null
+          fecha: string
+          id: string
+          pronostico: number | null
+          rango_maximo: number | null
+          rango_minimo: number | null
+          reprogramacion_diaria: number | null
+        }
+        Insert: {
+          created_at?: string
+          ejecutado?: number | null
+          fecha: string
+          id?: string
+          pronostico?: number | null
+          rango_maximo?: number | null
+          rango_minimo?: number | null
+          reprogramacion_diaria?: number | null
+        }
+        Update: {
+          created_at?: string
+          ejecutado?: number | null
+          fecha?: string
+          id?: string
+          pronostico?: number | null
+          rango_maximo?: number | null
+          rango_minimo?: number | null
+          reprogramacion_diaria?: number | null
+        }
+        Relationships: []
+      }
       daily_power_data: {
         Row: {
           created_at: string
