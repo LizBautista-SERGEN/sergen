@@ -32,12 +32,25 @@ serve(async (req) => {
     const defaultStartDate = new Date(today);
     defaultStartDate.setDate(today.getDate() - 2);
     const defaultEndDate = new Date(today);
-    defaultEndDate.setDate(today.getDate() - 1); // Siempre un día antes que hoy
+    defaultEndDate.setDate(today.getDate() - 1);
 
-    const startDate = body.startDate ? new Date(body.startDate) : defaultStartDate;
-    const endDate = body.endDate ? new Date(body.endDate) : defaultEndDate;
+    // Validación y parsing de fechas
+    let startDate: Date;
+    let endDate: Date;
 
-    // Formatear fechas para la URL y logging
+    try {
+      startDate = body.startDate ? new Date(body.startDate + 'T00:00:00') : defaultStartDate;
+      endDate = body.endDate ? new Date(body.endDate + 'T23:59:59') : defaultEndDate;
+
+      // Verificar si las fechas son válidas
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        throw new Error('Fechas inválidas proporcionadas');
+      }
+    } catch (error) {
+      console.error('Error parsing dates:', error);
+      throw new Error('Error al procesar las fechas: ' + error.message);
+    }
+
     const formatDateForDisplay = (date: Date) => {
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -75,31 +88,49 @@ serve(async (req) => {
 
     const rows = Array.from(table.querySelectorAll("tr"));
     const data = rows.slice(1).map(row => {
-      const cells = Array.from(row.querySelectorAll("td"));
-      const fechaStr = cells[0]?.textContent?.trim() || '';
-      const horaStr = cells[1]?.textContent?.trim() || '';
-      
-      // Parsear la fecha
-      const [dia, mes, anio] = fechaStr.split('/').map(n => parseInt(n));
-      const [hora, minuto] = horaStr.split(':').map(n => parseInt(n));
-      const fechaCompleta = new Date(anio, mes - 1, dia, hora, minuto);
-      
-      return {
-        fecha: fechaCompleta.toISOString(),
-        hora: horaStr,
-        programado: parseFloat(cells[2]?.textContent?.trim().replace(",", ".") || "0"),
-        ejecutado: parseFloat(cells[3]?.textContent?.trim().replace(",", ".") || "0"),
-      };
-    });
+      try {
+        const cells = Array.from(row.querySelectorAll("td"));
+        const fechaStr = cells[0]?.textContent?.trim() || '';
+        const horaStr = cells[1]?.textContent?.trim() || '';
+        
+        if (!fechaStr || !horaStr) {
+          console.warn('Fila sin fecha u hora:', { fechaStr, horaStr });
+          return null;
+        }
+
+        // Parsear la fecha con validación
+        const [dia, mes, anio] = fechaStr.split('/').map(n => parseInt(n));
+        const [hora, minuto] = horaStr.split(':').map(n => parseInt(n));
+
+        if (isNaN(dia) || isNaN(mes) || isNaN(anio) || isNaN(hora) || isNaN(minuto)) {
+          console.warn('Valores de fecha/hora inválidos:', { dia, mes, anio, hora, minuto });
+          return null;
+        }
+
+        const fechaCompleta = new Date(anio, mes - 1, dia, hora, minuto);
+
+        if (isNaN(fechaCompleta.getTime())) {
+          console.warn('Fecha completa inválida:', fechaCompleta);
+          return null;
+        }
+
+        return {
+          fecha: fechaCompleta.toISOString(),
+          hora: horaStr,
+          programado: parseFloat(cells[2]?.textContent?.trim().replace(",", ".") || "0"),
+          ejecutado: parseFloat(cells[3]?.textContent?.trim().replace(",", ".") || "0"),
+        };
+      } catch (error) {
+        console.warn('Error procesando fila:', error);
+        return null;
+      }
+    }).filter(item => item !== null);
 
     // Filtrar por rango de fechas
     const filteredData = data.filter(item => {
+      if (!item) return false;
       const itemDate = new Date(item.fecha);
-      const startOfDay = new Date(startDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(endDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      return itemDate >= startOfDay && itemDate <= endOfDay;
+      return itemDate >= startDate && itemDate <= endDate;
     });
 
     console.log(`Datos filtrados: ${filteredData.length} registros`);
