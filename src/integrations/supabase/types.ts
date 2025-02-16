@@ -91,6 +91,7 @@ export type Database = {
           rango_maximo: number | null
           rango_minimo: number | null
           reprogramacion_diaria: number | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
@@ -101,6 +102,7 @@ export type Database = {
           rango_maximo?: number | null
           rango_minimo?: number | null
           reprogramacion_diaria?: number | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
@@ -111,6 +113,7 @@ export type Database = {
           rango_maximo?: number | null
           rango_minimo?: number | null
           reprogramacion_diaria?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
