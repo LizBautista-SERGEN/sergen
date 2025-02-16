@@ -17,22 +17,22 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
       <TableHeader>
         <TableRow>
           <TableHead>Fecha</TableHead>
-          <TableHead>Reprog. Diaria (MW)</TableHead>
-          <TableHead>Pronóstico (MW)</TableHead>
-          <TableHead>Rango Mínimo (MW)</TableHead>
-          <TableHead>Rango Máximo (MW)</TableHead>
-          <TableHead>Ejecutado (MW)</TableHead>
+          <TableHead>Reprogramación (MW)</TableHead>
+          <TableHead>Pronóstico Diario (MW)</TableHead>
+          <TableHead>Rango Inferior (MW)</TableHead>
+          <TableHead>Rango Superior (MW)</TableHead>
+          <TableHead>Demanda Real (MW)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.map((item, index) => (
           <TableRow key={index}>
             <TableCell>{format(new Date(item.fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-            <TableCell>{formatNumber(item.reprogramacion_diaria)}</TableCell>
-            <TableCell>{formatNumber(item.pronostico)}</TableCell>
-            <TableCell>{formatNumber(item.rango_minimo)}</TableCell>
-            <TableCell>{formatNumber(item.rango_maximo)}</TableCell>
-            <TableCell>{formatNumber(item.ejecutado)}</TableCell>
+            <TableCell>{formatNumber(item.reprogramacion)}</TableCell>
+            <TableCell>{formatNumber(item.pronostico_diario)}</TableCell>
+            <TableCell>{formatNumber(item.rango_inferior)}</TableCell>
+            <TableCell>{formatNumber(item.rango_superior)}</TableCell>
+            <TableCell>{formatNumber(item.demanda_real)}</TableCell>
           </TableRow>
         ))}
       </TableBody>

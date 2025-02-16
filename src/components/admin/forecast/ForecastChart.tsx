@@ -8,16 +8,15 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
-  // Preparar los datos para el gráfico
   const chartData = data.map(item => {
     const itemDate = new Date(item.fecha);
     return {
       time: format(itemDate, 'HH:mm'),
-      "Reprogramación Diaria": item.reprogramacion_diaria || null,
-      "Pronóstico": item.pronostico || null,
-      "Rango Mínimo": item.rango_minimo || null,
-      "Rango Máximo": item.rango_maximo || null,
-      "Ejecutado": item.ejecutado || null,
+      "Reprogramación": item.reprogramacion || null,
+      "Pronóstico Diario": item.pronostico_diario || null,
+      "Rango Inferior": item.rango_inferior || null,
+      "Rango Superior": item.rango_superior || null,
+      "Demanda Real": item.demanda_real || null,
       hora: parseInt(format(itemDate, 'H')),
     };
   });
@@ -63,7 +62,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         
         <Line
           type="monotone"
-          dataKey="Reprogramación Diaria"
+          dataKey="Reprogramación"
           stroke="#C00000"
           strokeWidth={2}
           dot={false}
@@ -71,7 +70,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         />
         <Line
           type="monotone"
-          dataKey="Pronóstico"
+          dataKey="Pronóstico Diario"
           stroke="#f39200"
           strokeWidth={2}
           dot={false}
@@ -79,7 +78,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         />
         <Line
           type="monotone"
-          dataKey="Rango Mínimo"
+          dataKey="Rango Inferior"
           stroke="#90C418"
           strokeWidth={1}
           strokeDasharray="5 5"
@@ -88,7 +87,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         />
         <Line
           type="monotone"
-          dataKey="Rango Máximo"
+          dataKey="Rango Superior"
           stroke="#90C418"
           strokeWidth={1}
           strokeDasharray="5 5"
@@ -97,7 +96,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         />
         <Line
           type="monotone"
-          dataKey="Ejecutado"
+          dataKey="Demanda Real"
           stroke="#156082"
           strokeWidth={2}
           dot={false}
