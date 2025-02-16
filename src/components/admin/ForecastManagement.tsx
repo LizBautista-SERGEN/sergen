@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart } from 'recharts';
-import { format } from 'date-fns';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart, ReferenceArea } from 'recharts';
+import { format, isWithinInterval, set } from 'date-fns';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { ExportDataDialog } from "./ExportDataDialog";
@@ -69,63 +69,96 @@ export const ForecastManagement = () => {
     return value.toLocaleString();
   };
 
-  const renderChart = () => (
-    <ComposedChart
-      width={800}
-      height={400}
-      data={coesData}
-      margin={{ top: 30, right: 30, left: 50, bottom: 30 }}
-    >
-      <XAxis
-        dataKey="Fecha"
-        tickFormatter={(value) => format(new Date(value), 'HH:mm')}
-      />
-      <YAxis
-        domain={[6000, 9000]}
-        tickFormatter={(value) => `${value.toLocaleString()}`}
-      />
-      <Tooltip
-        labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
-        formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
-      />
-      <Legend />
-      <Area
-        type="monotone"
-        dataKey="Rango Máximo"
-        fill="#90C41833"
-        stroke="#90C418"
-        strokeWidth={2}
-      />
-      <Area
-        type="monotone"
-        dataKey="Rango Mínimo"
-        fill="#90C41833"
-        stroke="#90C418"
-        strokeWidth={2}
-      />
-      <Line
-        type="monotone"
-        dataKey="Ejecutado"
-        stroke="#156082"
-        strokeWidth={2}
-        dot={false}
-      />
-      <Line
-        type="monotone"
-        dataKey="Reprogramación Diaria"
-        stroke="#C00000"
-        strokeWidth={2}
-        dot={false}
-      />
-      <Line
-        type="monotone"
-        dataKey="Pronóstico"
-        stroke="#F39200"
-        strokeWidth={2}
-        dot={false}
-      />
-    </ComposedChart>
-  );
+  const isPeakHour = (time: string) => {
+    const hour = new Date(time).getHours();
+    return hour >= 18 && hour <= 23;
+  };
+
+  const renderChart = () => {
+    // Identificar todas las fechas únicas para las áreas sombreadas de horas punta
+    const uniqueDates = [...new Set(coesData.map(data => format(new Date(data.Fecha), 'yyyy-MM-dd')))];
+    const peakHourRanges = uniqueDates.map(date => {
+      return {
+        start: `${date}T18:00:00`,
+        end: `${date}T23:00:00`
+      };
+    });
+
+    return (
+      <ComposedChart
+        width={800}
+        height={400}
+        data={coesData}
+        margin={{ top: 30, right: 30, left: 50, bottom: 30 }}
+      >
+        {/* Áreas sombreadas para horas punta */}
+        {peakHourRanges.map((range, index) => (
+          <ReferenceArea
+            key={index}
+            x1={range.start}
+            x2={range.end}
+            fill="#00000010"
+            fillOpacity={0.3}
+          />
+        ))}
+        <XAxis
+          dataKey="Fecha"
+          tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+        />
+        <YAxis
+          domain={[6000, 9000]}
+          tickFormatter={(value) => `${value.toLocaleString()}`}
+        />
+        <Tooltip
+          labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
+          formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
+        />
+        <Legend />
+        <Area
+          type="monotone"
+          dataKey="Rango Máximo"
+          fill="#90C41833"
+          fillOpacity={0.3}
+          stroke="#90C418"
+          strokeWidth={1}
+          strokeDasharray="5 5"
+          activeDot={false}
+        />
+        <Area
+          type="monotone"
+          dataKey="Rango Mínimo"
+          stroke="#90C418"
+          strokeWidth={1}
+          strokeDasharray="5 5"
+          fill="#90C41833"
+          fillOpacity={0.3}
+          activeDot={false}
+          baseValue="dataMin"
+        />
+        <Line
+          type="monotone"
+          dataKey="Ejecutado"
+          stroke="#156082"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="Reprogramación Diaria"
+          stroke="#C00000"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="Pronóstico"
+          stroke="#F39200"
+          strokeWidth={2}
+          dot={false}
+        />
+      </ComposedChart>
+    );
+  };
 
   return (
     <div className="space-y-6 p-6">

@@ -20,13 +20,15 @@ export const DemandHistoryView = () => {
   const fetchHistoricalData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-coes-data', {
+      const { data, error } = await supabase.functions.invoke('get-historical-demand', {
         body: { startDate, endDate }
       });
 
       if (error) throw error;
 
-      setHistoricalData(data || []);
+      if (data && Array.isArray(data)) {
+        setHistoricalData(data);
+      }
     } catch (error) {
       console.error('Error fetching historical data:', error);
       toast.error('Error al obtener datos históricos');
@@ -90,27 +92,27 @@ export const DemandHistoryView = () => {
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <XAxis 
-                      dataKey="Fecha"
-                      tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                      dataKey="hora"
+                      tickFormatter={(value) => format(new Date(`2000-01-01T${value}`), 'HH:mm')}
                     />
                     <YAxis 
                       tickFormatter={(value) => `${value.toLocaleString()}`}
                     />
                     <Tooltip 
-                      labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
+                      labelFormatter={(label) => `Hora: ${format(new Date(`2000-01-01T${label}`), 'HH:mm')}`}
                       formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
                     />
                     <Legend />
                     <Line 
                       type="monotone" 
-                      dataKey="Ejecutado"
+                      dataKey="ejecutado"
                       name="Ejecutado"
                       stroke="#156082" 
                       dot={false}
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="Reprogramación Diaria"
+                      dataKey="programado"
                       name="Programado"
                       stroke="#C00000"
                       strokeDasharray="5 5"
@@ -124,6 +126,7 @@ export const DemandHistoryView = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Fecha</TableHead>
+                    <TableHead>Hora</TableHead>
                     <TableHead>Programado (MW)</TableHead>
                     <TableHead>Ejecutado (MW)</TableHead>
                   </TableRow>
@@ -132,13 +135,14 @@ export const DemandHistoryView = () => {
                   {historicalData.map((data, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        {format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}
+                        {format(new Date(data.fecha), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell>{data.hora}</TableCell>
+                      <TableCell>
+                        {data.programado?.toLocaleString() || '-'}
                       </TableCell>
                       <TableCell>
-                        {data['Reprogramación Diaria']?.toLocaleString() || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {data['Ejecutado']?.toLocaleString() || '-'}
+                        {data.ejecutado?.toLocaleString() || '-'}
                       </TableCell>
                     </TableRow>
                   ))}
