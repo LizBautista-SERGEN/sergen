@@ -1,5 +1,4 @@
 
-import { format, parseISO } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 
 interface ForecastChartProps {
@@ -8,23 +7,41 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
+  // Función para formatear la fecha manualmente sin conversiones
+  const formatTime = (isoString: string): string => {
+    const fecha = new Date(isoString);
+    const hora = fecha.getUTCHours().toString().padStart(2, '0');
+    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    return `${hora}:${minutos}`;
+  };
+
+  const formatFullDate = (isoString: string): string => {
+    const fecha = new Date(isoString);
+    const dia = fecha.getUTCDate().toString().padStart(2, '0');
+    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+    const año = fecha.getUTCFullYear();
+    const hora = fecha.getUTCHours().toString().padStart(2, '0');
+    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    
+    return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+  };
+
   // Ordenamos los datos por fecha
   const sortedData = [...data].sort((a, b) => 
     new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
   );
 
   const chartData = sortedData.map(item => {
-    // Usamos solo el campo fecha, ignorando created_at y updated_at
-    const fechaOriginal = parseISO(item.fecha);
+    const hora = new Date(item.fecha).getUTCHours();
     return {
-      time: format(fechaOriginal, 'HH:mm'),
+      time: formatTime(item.fecha),
       "Reprogramación": item.reprogramacion || null,
       "Pronóstico Diario": item.pronostico_diario || null,
       "Rango Inferior": item.rango_inferior || null,
       "Rango Superior": item.rango_superior || null,
       "Demanda Real": item.demanda_real || null,
-      hora: parseInt(format(fechaOriginal, 'H')),
-      fecha_completa: format(fechaOriginal, 'dd/MM/yyyy HH:mm')
+      hora: hora,
+      fecha_completa: formatFullDate(item.fecha)
     };
   });
 

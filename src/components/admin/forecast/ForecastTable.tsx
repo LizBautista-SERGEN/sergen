@@ -1,5 +1,4 @@
 
-import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ForecastTableProps {
@@ -10,6 +9,19 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
   const formatNumber = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return '-';
     return value.toLocaleString();
+  };
+
+  // Función para formatear la fecha manualmente sin conversiones
+  const formatDate = (isoString: string): string => {
+    // La fecha viene en formato ISO, ejemplo: "2024-02-16T05:30:00+00:00"
+    const fecha = new Date(isoString);
+    const dia = fecha.getUTCDate().toString().padStart(2, '0');
+    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+    const año = fecha.getUTCFullYear();
+    const hora = fecha.getUTCHours().toString().padStart(2, '0');
+    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    
+    return `${dia}/${mes}/${año} ${hora}:${minutos}`;
   };
 
   // Ordenamos los datos por fecha
@@ -30,22 +42,16 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {sortedData.map((item, index) => {
-          // Extraemos solo la fecha y hora del campo fecha, ignorando created_at y updated_at
-          const fechaOriginal = parseISO(item.fecha);
-          return (
-            <TableRow key={index}>
-              <TableCell>
-                {format(fechaOriginal, 'dd/MM/yyyy HH:mm')}
-              </TableCell>
-              <TableCell>{formatNumber(item.reprogramacion)}</TableCell>
-              <TableCell>{formatNumber(item.pronostico_diario)}</TableCell>
-              <TableCell>{formatNumber(item.rango_inferior)}</TableCell>
-              <TableCell>{formatNumber(item.rango_superior)}</TableCell>
-              <TableCell>{formatNumber(item.demanda_real)}</TableCell>
-            </TableRow>
-          );
-        })}
+        {sortedData.map((item, index) => (
+          <TableRow key={index}>
+            <TableCell>{formatDate(item.fecha)}</TableCell>
+            <TableCell>{formatNumber(item.reprogramacion)}</TableCell>
+            <TableCell>{formatNumber(item.pronostico_diario)}</TableCell>
+            <TableCell>{formatNumber(item.rango_inferior)}</TableCell>
+            <TableCell>{formatNumber(item.rango_superior)}</TableCell>
+            <TableCell>{formatNumber(item.demanda_real)}</TableCell>
+          </TableRow>
+        ))}
       </TableBody>
     </Table>
   );
