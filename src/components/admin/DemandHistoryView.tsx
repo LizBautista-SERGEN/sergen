@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { format, parse } from "date-fns";
+import { format, parse, subDays } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Loader2, Calendar } from "lucide-react";
@@ -12,9 +12,10 @@ import { toast } from "sonner";
 import { ExportDataDialog } from "./ExportDataDialog";
 
 export const DemandHistoryView = () => {
+  const today = new Date();
   const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState(format(subDays(today, 3), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(subDays(today, 1), 'yyyy-MM-dd'));
   const [historicalData, setHistoricalData] = useState<any[]>([]);
 
   const parseDateTime = (dateTimeStr: string) => {
@@ -84,6 +85,7 @@ export const DemandHistoryView = () => {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="pl-9"
+                max={endDate}
               />
             </div>
             <div className="relative">
@@ -94,6 +96,8 @@ export const DemandHistoryView = () => {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="pl-9"
+                min={startDate}
+                max={format(subDays(today, 1), 'yyyy-MM-dd')}
               />
             </div>
             <Button 

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { ResponsiveContainer } from 'recharts';
 import { ExportDataDialog } from "./ExportDataDialog";
 import { ForecastChart } from "./forecast/ForecastChart";
 import { ForecastTable } from "./forecast/ForecastTable";
@@ -20,7 +19,6 @@ export const ForecastManagement = () => {
     setLoadingCoes(true);
     setError(null);
     try {
-      // Check session before making the request
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -62,7 +60,6 @@ export const ForecastManagement = () => {
       setError(`Error al obtener datos de COES: ${errorMessage}`);
       toast.error(`Error al obtener datos de COES: ${errorMessage}`);
       
-      // Si el error es de sesión, redirigir al login
       if (errorMessage.includes('sesión')) {
         supabase.auth.signOut();
         window.location.href = '/login';
@@ -115,10 +112,8 @@ export const ForecastManagement = () => {
 
         {coesData.length > 0 && (
           <div className="mt-4 space-y-6">
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ForecastChart data={coesData} />
-              </ResponsiveContainer>
+            <div className="h-[400px] w-full bg-white rounded-lg p-4 shadow">
+              <ForecastChart data={coesData} />
             </div>
 
             <ForecastTable data={coesData} />
