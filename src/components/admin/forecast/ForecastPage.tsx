@@ -86,51 +86,51 @@ export const ForecastPage = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="forecast">
-        <TabsList>
+    <div>
+      <Tabs defaultValue="forecast" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
           <TabsTrigger value="historical">Histórico</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="forecast">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Pronóstico de Demanda</h2>
-              <div className="flex gap-4">
-                <Button 
-                  variant="outline" 
-                  onClick={refreshData} 
-                  disabled={loading}
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  Actualizar
-                </Button>
-                <ExportDataDialog 
-                  data={data} 
-                  filename="pronostico-demanda" 
-                  chartComponent={<ForecastChart data={data} forPDF={true} />}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-              {data.length > 0 ? (
-                <>
-                  <div className="bg-white p-4 rounded-lg shadow h-[400px]">
-                    <ForecastChart data={data} />
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
-                    <ForecastTable data={data} />
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No hay datos disponibles. Haz clic en "Actualizar" para cargar los datos.</p>
-                </div>
-              )}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Pronóstico de Demanda</h2>
+            <div className="flex gap-4">
+              <Button 
+                variant="outline" 
+                onClick={refreshData} 
+                disabled={loading}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Actualizar
+              </Button>
+              <ExportDataDialog 
+                data={data} 
+                filename="pronostico-demanda" 
+                chartComponent={<ForecastChart data={data} forPDF={true} />}
+              />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            {data.length > 0 ? (
+              <>
+                <div className="bg-white p-4 rounded-lg shadow h-[400px]">
+                  <ForecastChart data={data} />
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
+                  <ForecastTable data={data} />
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No hay datos disponibles. Haz clic en "Actualizar" para cargar los datos.</p>
+              </div>
+            )}
+          </div>
         </TabsContent>
+        
         <TabsContent value="historical">
           <HistoricalTab />
         </TabsContent>
