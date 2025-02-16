@@ -1,6 +1,6 @@
 
 import AnimatedSection from "./AnimatedSection";
-import { FileText, DollarSign } from "lucide-react";
+import { FileText, Coins } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -42,7 +42,7 @@ const About = () => {
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="h-6 w-6 text-sergen-600" />
+                  <Coins className="h-6 w-6 text-sergen-600" />
                   <h4 className="text-2xl font-bold text-sergen-600">37%</h4>
                 </div>
                 <p className="text-gray-600">Ahorro Promedio: Reducción comprobada en costos energéticos.</p>

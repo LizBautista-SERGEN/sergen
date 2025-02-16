@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-gray-900 text-white relative">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
@@ -16,24 +16,11 @@ const Footer = () => {
             <p className="text-gray-400">
               Transformando la gestión energética empresarial con soluciones innovadoras y sostenibles.
             </p>
-            <div className="mt-4 space-y-2">
+            <div className="mt-4">
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-[#f39200]" />
                 <p className="text-gray-400">Mz B Lt 11 Las Palmeras – Ate Vetarte – Lima</p>
               </div>
-              <a 
-                href="https://wa.me/51985138443" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-full text-white transition-colors"
-              >
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/767px-WhatsApp.svg.png" 
-                  alt="WhatsApp" 
-                  className="h-5 w-5"
-                />
-                Contáctanos
-              </a>
             </div>
           </div>
           <div>
@@ -61,7 +48,7 @@ const Footer = () => {
             <h3 className="text-xl font-semibold mb-4">Síguenos</h3>
             <div className="flex space-x-4">
               <a 
-                href="[tu-url-de-facebook]" 
+                href="https://www.facebook.com/profile.php?id=61552420273055" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-sergen-500 transition-colors"
@@ -69,7 +56,7 @@ const Footer = () => {
                 <Facebook className="h-6 w-6" />
               </a>
               <a 
-                href="[tu-url-de-linkedin]" 
+                href="https://www.linkedin.com/company/104569008" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-sergen-500 transition-colors"
@@ -83,6 +70,18 @@ const Footer = () => {
           <p>&copy; {new Date().getFullYear()} SERGEN. Todos los derechos reservados.</p>
         </div>
       </div>
+      <a 
+        href="https://wa.me/51985138443" 
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 bg-green-600 p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
+      >
+        <img 
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/767px-WhatsApp.svg.png" 
+          alt="WhatsApp" 
+          className="h-8 w-8"
+        />
+      </a>
     </footer>
   );
 };

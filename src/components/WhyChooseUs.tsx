@@ -7,7 +7,7 @@ const WhyChooseUs = () => {
     {
       icon: <ChartBar className="h-8 w-8 text-white" />,
       title: "Trayectoria",
-      description: "Tenemos 5 años de trayectoria en el mercado, esta experiencia nos permite brindarle soluciones integrales que satisfagan las expectivas de los clientes."
+      description: "Tenemos diversos casos de éxito en el mercado, esta experiencia nos permite brindarle soluciones integrales que satisfagan las expectativas de los clientes."
     },
     {
       icon: <LayoutGrid className="h-8 w-8 text-white" />,
@@ -42,8 +42,8 @@ const WhyChooseUs = () => {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sergen-500">
                   {reason.icon}
                 </div>
-                <h3 className="mb-4 text-2xl font-bold text-white">{reason.title}</h3>
-                <p className="text-white/80">{reason.description}</p>
+                <h3 className="mb-4 text-2xl font-bold text-[#f39200]">{reason.title}</h3>
+                <p className="text-black">{reason.description}</p>
               </div>
             </AnimatedSection>
           ))}
