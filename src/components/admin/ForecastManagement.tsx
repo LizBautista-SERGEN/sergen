@@ -20,7 +20,9 @@ export const ForecastManagement = () => {
     setLoadingCoes(true);
     setError(null);
     try {
-      const { data: response, error: functionError } = await supabase.functions.invoke('get-coes-data');
+      const { data: response, error: functionError } = await supabase.functions.invoke('get-coes-data', {
+        body: { startDate: format(new Date(), 'yyyy-MM-dd') }
+      });
 
       if (functionError) {
         console.error('Error en respuesta de función:', functionError);
