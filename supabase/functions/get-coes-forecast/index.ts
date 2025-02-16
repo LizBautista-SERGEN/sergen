@@ -26,27 +26,24 @@ serve(async (req) => {
     
     // Asumimos que los datos están en la primera hoja
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    
+    // Configuramos para obtener los datos con encabezados
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    console.log("Datos del Excel:", jsonData);
 
-    // Eliminamos las filas de encabezado si existen
-    const dataRows = jsonData.slice(1);
-
-    // Procesar los datos del Excel asegurándonos de que cada fila tenga el formato correcto
-    const data = dataRows.map((row: any) => {
-      if (!Array.isArray(row) || row.length < 6) {
-        console.warn('Fila inválida:', row);
-        return null;
-      }
-
+    // Procesamos los datos exactamente como vienen en el Excel
+    const data = jsonData.map((row: any) => {
+      const entries = Object.entries(row);
+      // Asumiendo que las columnas están en el orden: Fecha, Pronóstico, Reprogramación, Mínimo, Máximo, Ejecutado
       return {
-        fecha: row[0],
-        pronostico: parseFloat(row[1]) || 0,
-        reprogramacion_diaria: parseFloat(row[2]) || 0,
-        rango_minimo: parseFloat(row[3]) || 0,
-        rango_maximo: parseFloat(row[4]) || 0,
-        ejecutado: parseFloat(row[5]) || 0
+        fecha: entries[0][1],  // Primera columna (fecha)
+        pronostico: typeof entries[1]?.[1] === 'number' ? entries[1][1] : null,
+        reprogramacion_diaria: typeof entries[2]?.[1] === 'number' ? entries[2][1] : null,
+        rango_minimo: typeof entries[3]?.[1] === 'number' ? entries[3][1] : null,
+        rango_maximo: typeof entries[4]?.[1] === 'number' ? entries[4][1] : null,
+        ejecutado: typeof entries[5]?.[1] === 'number' ? entries[5][1] : null
       };
-    }).filter(item => item !== null);
+    });
 
     console.log("Datos procesados:", data);
 

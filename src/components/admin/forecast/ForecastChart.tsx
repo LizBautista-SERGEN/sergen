@@ -10,15 +10,13 @@ interface ForecastChartProps {
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   // Preparar los datos para el gráfico
   const chartData = data.map(item => ({
-    time: format(new Date(item.Fecha), 'HH:mm'),
-    Pronóstico: item.Pronóstico || null,
-    "Rango Mínimo": item["Rango Mínimo"] || null,
-    "Rango Máximo": item["Rango Máximo"] || null,
-    Ejecutado: item.Ejecutado || null,
-    "Reprogramación Diaria": item["Reprogramación Diaria"] || null
+    time: format(new Date(item.fecha), 'HH:mm'),
+    Pronóstico: item.pronostico,
+    "Rango Mínimo": item.rango_minimo,
+    "Rango Máximo": item.rango_maximo,
+    Ejecutado: item.ejecutado,
+    "Reprogramación Diaria": item.reprogramacion_diaria
   }));
-
-  console.log('Datos para el gráfico:', chartData);
 
   return (
     <ResponsiveContainer width="100%" height="100%">

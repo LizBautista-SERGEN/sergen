@@ -17,22 +17,22 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
       <TableHeader>
         <TableRow>
           <TableHead>Fecha</TableHead>
-          <TableHead>Programado</TableHead>
-          <TableHead>Pronóstico</TableHead>
-          <TableHead>Rango Mínimo</TableHead>
-          <TableHead>Rango Máximo</TableHead>
-          <TableHead>Ejecutado</TableHead>
+          <TableHead>Reprog. Diaria (MW)</TableHead>
+          <TableHead>Pronóstico (MW)</TableHead>
+          <TableHead>Rango Mínimo (MW)</TableHead>
+          <TableHead>Rango Máximo (MW)</TableHead>
+          <TableHead>Ejecutado (MW)</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.map((item, index) => (
           <TableRow key={index}>
-            <TableCell>{format(new Date(item.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-            <TableCell>{item["Reprogramación Diaria"] ? `${formatNumber(item["Reprogramación Diaria"])} MW` : '-'}</TableCell>
-            <TableCell>{item["Pronóstico"] ? `${formatNumber(item["Pronóstico"])} MW` : '-'}</TableCell>
-            <TableCell>{item["Rango Mínimo"] ? `${formatNumber(item["Rango Mínimo"])} MW` : '-'}</TableCell>
-            <TableCell>{item["Rango Máximo"] ? `${formatNumber(item["Rango Máximo"])} MW` : '-'}</TableCell>
-            <TableCell>{item["Ejecutado"] ? `${formatNumber(item["Ejecutado"])} MW` : '-'}</TableCell>
+            <TableCell>{format(new Date(item.fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
+            <TableCell>{formatNumber(item.reprogramacion_diaria)}</TableCell>
+            <TableCell>{formatNumber(item.pronostico)}</TableCell>
+            <TableCell>{formatNumber(item.rango_minimo)}</TableCell>
+            <TableCell>{formatNumber(item.rango_maximo)}</TableCell>
+            <TableCell>{formatNumber(item.ejecutado)}</TableCell>
           </TableRow>
         ))}
       </TableBody>
