@@ -85,9 +85,9 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
 
     console.log('Índice del último dato ejecutado:', lastExecutedIndex);
 
-    // Limpiar datos de pronóstico antes del último dato ejecutado
+    // Limpiar datos de pronóstico antes del último dato ejecutado (excluyendo el punto)
     const finalData = processedData.map((item, index) => {
-      if (index < lastExecutedIndex) {
+      if (index <= lastExecutedIndex) {
         return {
           ...item,
           "Pronóstico": null,

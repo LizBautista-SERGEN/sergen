@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Area } from 'recharts';
 import { format } from 'date-fns';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -115,7 +115,10 @@ export const ForecastManagement = () => {
           <div className="mt-4 space-y-6">
             <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={coesData}>
+                <LineChart 
+                  data={coesData}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
                   <XAxis 
                     dataKey="Fecha"
                     tickFormatter={(value) => format(new Date(value), 'HH:mm')}
@@ -128,48 +131,64 @@ export const ForecastManagement = () => {
                     labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
                     formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
                   />
+                  <Legend />
+                  {/* Área sombreada entre rangos */}
+                  <Area
+                    type="monotone"
+                    dataKey="Rango Máximo"
+                    stroke="none"
+                    fill="#90C41833"
+                    activeDot={false}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="Rango Mínimo"
+                    stroke="none"
+                    fill="#90C41833"
+                    activeDot={false}
+                  />
                   <Line 
                     type="monotone" 
                     dataKey="Ejecutado"
+                    name="Ejecutado"
                     stroke="#156082" 
                     strokeWidth={2}
-                    name="Ejecutado"
                     dot={false}
                     connectNulls={true}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Reprogramación Diaria"
+                    name="Programado"
                     stroke="#C00000"
                     strokeWidth={2}
                     strokeDasharray="5 5"
-                    name="Reprogramación"
                     dot={false}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Pronóstico"
+                    name="Pronóstico"
                     stroke="#F39200"
                     strokeWidth={2}
-                    name="Pronóstico"
                     dot={false}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Rango Máximo"
+                    name="Rango Máximo"
                     stroke="#90C418"
                     strokeWidth={1}
                     strokeDasharray="3 3"
-                    name="Rango Máximo"
                     dot={false}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="Rango Mínimo"
+                    name="Rango Mínimo"
                     stroke="#90C418"
                     strokeWidth={1}
                     strokeDasharray="3 3"
-                    name="Rango Mínimo"
                     dot={false}
                   />
                 </LineChart>
