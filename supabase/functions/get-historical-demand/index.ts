@@ -87,8 +87,8 @@ serve(async (req) => {
     console.log('Cookies obtenidas:', cookies ? 'Sí' : 'No');
     console.log('Token CSRF obtenido:', csrfToken ? 'Sí' : 'No');
 
-    // Esperar antes de la siguiente petición
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Esperar 5 segundos antes de la siguiente petición
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
     // Paso 2: Realizar la búsqueda con las fechas
     const formData = new URLSearchParams();
@@ -124,8 +124,8 @@ serve(async (req) => {
     const searchHtml = await searchResponse.text();
     console.log('Longitud de la respuesta de búsqueda:', searchHtml.length);
 
-    // Esperar antes de la siguiente petición
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Esperar 10 segundos antes de la siguiente petición
+    await new Promise(resolve => setTimeout(resolve, 10000));
 
     // Paso 3: Descargar el Excel
     const exportResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
@@ -171,6 +171,9 @@ serve(async (req) => {
       header: 1,
     });
 
+    // Esperar que los datos se procesen completamente
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     console.log('Primeras filas del Excel:', JSON.stringify(jsonData.slice(0, 3)));
 
     // Encontrar la fila de encabezados
@@ -197,32 +200,49 @@ serve(async (req) => {
     const processedData = data
       .filter((row: any[]) => Array.isArray(row) && row.length >= 2)
       .map((row: any[]) => {
-        const fechaIndex = headers.findIndex((h: string) => h && h.includes('Fecha'));
-        const ejecutadoIndex = headers.findIndex((h: string) => h && h.includes('Ejecutado'));
-        const progDiariaIndex = headers.findIndex((h: string) => h && h.includes('Prog. Diaria'));
-        const progSemanalIndex = headers.findIndex((h: string) => h && h.includes('Prog. Semanal'));
+        try {
+          const fechaIndex = headers.findIndex((h: string) => h && h.includes('Fecha'));
+          const ejecutadoIndex = headers.findIndex((h: string) => h && h.includes('Ejecutado'));
+          const progDiariaIndex = headers.findIndex((h: string) => h && h.includes('Prog. Diaria'));
+          const progSemanalIndex = headers.findIndex((h: string) => h && h.includes('Prog. Semanal'));
 
-        const fecha = row[fechaIndex];
+          const fecha = row[fechaIndex];
 
-        if (!fecha) return null;
+          if (!fecha) return null;
 
-        const parsearNumero = (valor: any) => {
-          if (!valor) return null;
-          const strVal = String(valor).replace(/\s/g, '').replace(',', '.');
-          const num = parseFloat(strVal);
-          return !isNaN(num) ? num : null;
-        };
+          const parsearNumero = (valor: any) => {
+            if (!valor) return null;
+            const strVal = String(valor).replace(/\s/g, '').replace(',', '.');
+            const num = parseFloat(strVal);
+            return !isNaN(num) ? num : null;
+          };
 
-        return {
-          fecha,
-          ejecutado: ejecutadoIndex !== -1 ? parsearNumero(row[ejecutadoIndex]) : null,
-          programado: progDiariaIndex !== -1 ? parsearNumero(row[progDiariaIndex]) : null,
-          progsemanal: progSemanalIndex !== -1 ? parsearNumero(row[progSemanalIndex]) : null,
-        };
+          const ejecutado = ejecutadoIndex !== -1 ? parsearNumero(row[ejecutadoIndex]) : null;
+          const programado = progDiariaIndex !== -1 ? parsearNumero(row[progDiariaIndex]) : null;
+          const progsemanal = progSemanalIndex !== -1 ? parsearNumero(row[progSemanalIndex]) : null;
+
+          console.log('Procesando fila:', {
+            fecha,
+            ejecutado,
+            programado,
+            progsemanal
+          });
+
+          return {
+            fecha,
+            ejecutado,
+            programado,
+            progsemanal,
+          };
+        } catch (error) {
+          console.error('Error procesando fila:', error);
+          return null;
+        }
       })
       .filter(item => item !== null);
 
     console.log(`Datos procesados: ${processedData.length} registros`);
+    console.log('Muestra de datos procesados:', processedData.slice(0, 3));
 
     if (processedData.length === 0) {
       throw new Error('No se encontraron datos válidos en el Excel');
