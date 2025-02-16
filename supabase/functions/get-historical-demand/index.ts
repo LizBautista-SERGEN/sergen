@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
+import { format, subDays } from "https://deno.land/x/date_fns@v2.22.1/index.js";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,18 +30,18 @@ serve(async (req) => {
     }
 
     const today = new Date();
-    const defaultStartDate = new Date(today);
-    defaultStartDate.setDate(today.getDate() - 2);
-    const defaultEndDate = new Date(today);
-    defaultEndDate.setDate(today.getDate() - 1);
+    const defaultStartDate = subDays(today, 2);
+    const defaultEndDate = subDays(today, 1); // Siempre un día antes que hoy
 
     const startDate = body.startDate ? new Date(body.startDate) : defaultStartDate;
     const endDate = body.endDate ? new Date(body.endDate) : defaultEndDate;
 
     // Formatear fechas para la URL
     const formatDateForUrl = (date: Date) => {
-      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+      return format(date, 'dd/MM/yyyy');
     };
+
+    console.log('Consultando datos para el rango:', formatDateForUrl(startDate), 'hasta', formatDateForUrl(endDate));
 
     const url = `https://www.coes.org.pe/Portal/portalinformacion/demanda`;
     
@@ -71,9 +72,15 @@ serve(async (req) => {
     const rows = Array.from(table.querySelectorAll("tr"));
     const data = rows.slice(1).map(row => {
       const cells = Array.from(row.querySelectorAll("td"));
+      const fechaStr = cells[0]?.textContent?.trim() || '';
+      const horaStr = cells[1]?.textContent?.trim() || '';
+      
+      // Combinar fecha y hora
+      const fechaCompleta = new Date(`${fechaStr} ${horaStr}`);
+      
       return {
-        fecha: cells[0]?.textContent?.trim(),
-        hora: cells[1]?.textContent?.trim(),
+        fecha: fechaCompleta.toISOString(),
+        hora: horaStr,
         programado: parseFloat(cells[2]?.textContent?.trim().replace(",", ".") || "0"),
         ejecutado: parseFloat(cells[3]?.textContent?.trim().replace(",", ".") || "0"),
       };
@@ -82,8 +89,14 @@ serve(async (req) => {
     // Filtrar por rango de fechas
     const filteredData = data.filter(item => {
       const itemDate = new Date(item.fecha);
-      return itemDate >= startDate && itemDate <= endDate;
+      const startOfDay = new Date(startDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      return itemDate >= startOfDay && itemDate <= endOfDay;
     });
+
+    console.log(`Datos filtrados: ${filteredData.length} registros`);
 
     return new Response(JSON.stringify(filteredData), {
       headers: corsHeaders,
