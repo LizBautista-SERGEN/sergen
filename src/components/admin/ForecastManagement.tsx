@@ -20,9 +20,22 @@ export const ForecastManagement = () => {
     setLoadingCoes(true);
     setError(null);
     try {
-      const { data: response, error: functionError } = await supabase.functions.invoke('get-coes-data', {
-        body: { startDate: format(new Date(), 'yyyy-MM-dd') }
-      });
+      // Check session before making the request
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No hay sesión activa');
+      }
+
+      const { data: response, error: functionError } = await supabase.functions.invoke(
+        'get-coes-data',
+        {
+          body: { startDate: format(new Date(), 'yyyy-MM-dd') },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
       if (functionError) {
         console.error('Error en respuesta de función:', functionError);
@@ -43,11 +56,17 @@ export const ForecastManagement = () => {
         console.log('Datos de COES actualizados:', response);
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al consultar COES:', error);
       const errorMessage = error.message || 'Error desconocido';
       setError(`Error al obtener datos de COES: ${errorMessage}`);
       toast.error(`Error al obtener datos de COES: ${errorMessage}`);
+      
+      // Si el error es de sesión, redirigir al login
+      if (errorMessage.includes('sesión')) {
+        supabase.auth.signOut();
+        window.location.href = '/login';
+      }
     } finally {
       setLoadingCoes(false);
     }
