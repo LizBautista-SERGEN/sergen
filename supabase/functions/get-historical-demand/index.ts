@@ -61,7 +61,7 @@ serve(async (req) => {
     console.log('Consultando datos para el rango:', startDateStr, 'hasta', endDateStr);
 
     // Paso 1: Obtener la página inicial para obtener cookies y token
-    const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/Demanda';
+    const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     const initialResponse = await fetch(baseUrl, {
       method: 'GET',
       headers: {
@@ -87,59 +87,53 @@ serve(async (req) => {
     console.log('Cookies obtenidas:', cookies ? 'Sí' : 'No');
     console.log('Token CSRF obtenido:', csrfToken ? 'Sí' : 'No');
 
-    // Esperar 5 segundos antes de la siguiente petición
+    // Esperar 5 segundos antes de la siguiente petición (similar al time.sleep(5) en Python)
     await new Promise(resolve => setTimeout(resolve, 5000));
 
     // Paso 2: Realizar la búsqueda con las fechas
     const formData = new URLSearchParams();
-    formData.append('txtFechaInicio', startDateStr);
-    formData.append('txtFechaFin', endDateStr);
+    formData.append('txtFechaInicial', startDateStr); // Cambio de nombre del campo a txtFechaInicial
+    formData.append('txtFechaFinal', endDateStr);     // Cambio de nombre del campo a txtFechaFinal
     if (csrfToken) {
       formData.append('__RequestVerificationToken', csrfToken);
     }
 
     console.log('Enviando formulario con datos:', formData.toString());
 
-    const searchResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
+    const searchUrl = `${baseUrl}/Consultar`; // Cambio a la URL correcta del botón Consultar
+    const searchResponse = await fetch(searchUrl, {
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Cookie': cookies,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept': '*/*', // Cambiado para aceptar cualquier tipo de respuesta
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Origin': 'https://www.coes.org.pe',
         'Referer': baseUrl,
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
+        'X-Requested-With': 'XMLHttpRequest', // Añadido para indicar que es una petición AJAX
       },
       body: formData.toString(),
-      redirect: 'follow',
     });
 
     if (!searchResponse.ok) {
       throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
-    const searchHtml = await searchResponse.text();
-    console.log('Longitud de la respuesta de búsqueda:', searchHtml.length);
-
-    // Esperar 10 segundos antes de la siguiente petición
+    // Esperar 10 segundos antes de exportar (similar al time.sleep(5) en Python)
     await new Promise(resolve => setTimeout(resolve, 10000));
 
-    // Paso 3: Descargar el Excel
-    const exportResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
+    // Paso 3: Descargar el Excel usando la URL correcta del botón Exportar
+    const exportUrl = `${baseUrl}/Exportar`;
+    const exportResponse = await fetch(exportUrl, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Accept': 'application/vnd.ms-excel',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Cookie': cookies,
         'Referer': baseUrl,
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
       },
-      redirect: 'follow',
     });
 
     if (!exportResponse.ok) {
@@ -170,9 +164,6 @@ serve(async (req) => {
       defval: null,
       header: 1,
     });
-
-    // Esperar que los datos se procesen completamente
-    await new Promise(resolve => setTimeout(resolve, 2000));
 
     console.log('Primeras filas del Excel:', JSON.stringify(jsonData.slice(0, 3)));
 
