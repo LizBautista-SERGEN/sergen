@@ -36,6 +36,8 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
     throw new Error(`Columnas faltantes en el Excel: ${missingColumns.join(', ')}`);
   }
 
+  const now = new Date().toISOString();
+
   // Procesar los datos, eliminando la primera fila (encabezados)
   return rawData.slice(1)
     .filter((row: any[]) => Array.isArray(row) && row.length >= 6)
@@ -64,7 +66,9 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
         pronostico: parseNumber(row[columnIndexes.pronostico]),
         rango_minimo: parseNumber(row[columnIndexes.rangoMinimo]),
         rango_maximo: parseNumber(row[columnIndexes.rangoMaximo]),
-        ejecutado: parseNumber(row[columnIndexes.ejecutado])
+        ejecutado: parseNumber(row[columnIndexes.ejecutado]),
+        created_at: now,
+        updated_at: now
       };
     })
     .filter(row => row !== null); // Eliminar filas con fechas inválidas
