@@ -1,6 +1,6 @@
 
-import { format } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { format, parse } from 'date-fns';
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 
 interface ForecastChartProps {
   data: any[];
@@ -8,15 +8,39 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
+  // Encontrar la última fecha con dato ejecutado
+  const lastExecutedIndex = [...data].reverse().findIndex(item => item.ejecutado !== null && item.ejecutado !== 0);
+  const lastExecutedDate = lastExecutedIndex !== -1 
+    ? data[data.length - 1 - lastExecutedIndex].fecha 
+    : null;
+
   // Preparar los datos para el gráfico
-  const chartData = data.map(item => ({
-    time: format(new Date(item.fecha), 'HH:mm'),
-    Pronóstico: item.pronostico,
-    "Rango Mínimo": item.rango_minimo,
-    "Rango Máximo": item.rango_maximo,
-    Ejecutado: item.ejecutado,
-    "Reprogramación Diaria": item.reprogramacion_diaria
-  }));
+  const chartData = data.map(item => {
+    const itemDate = new Date(item.fecha);
+    const itemTime = format(itemDate, 'HH:mm');
+    const isAfterLastExecuted = lastExecutedDate && new Date(item.fecha) > new Date(lastExecutedDate);
+
+    return {
+      time: itemTime,
+      Pronóstico: isAfterLastExecuted ? (item.pronostico || null) : null,
+      "Rango Mínimo": isAfterLastExecuted ? (item.rango_minimo || null) : null,
+      "Rango Máximo": isAfterLastExecuted ? (item.rango_maximo || null) : null,
+      Ejecutado: item.ejecutado || null,
+      "Reprogramación Diaria": item.reprogramacion_diaria || null,
+      hora: parseInt(format(itemDate, 'H')),
+    };
+  });
+
+  // Crear áreas de referencia para las horas pico (18:00 - 23:00)
+  const referenceAreas = [];
+  const uniqueDates = [...new Set(data.map(item => format(new Date(item.fecha), 'yyyy-MM-dd')))];
+  
+  uniqueDates.forEach(date => {
+    referenceAreas.push({
+      start: `${date} 18:00`,
+      end: `${date} 23:00`
+    });
+  });
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -33,12 +57,6 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         />
         <YAxis
           domain={[6000, 9000]}
-          label={{
-            value: 'Potencia (MW)',
-            angle: -90,
-            position: 'insideLeft',
-            style: { textAnchor: 'middle' }
-          }}
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
@@ -46,6 +64,22 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           labelFormatter={(label) => `Hora: ${label}`}
         />
         <Legend verticalAlign="top" height={36} />
+
+        {/* Áreas grises para horas pico */}
+        {chartData.map((entry, index) => {
+          if (entry.hora >= 18 && entry.hora <= 23 && index < chartData.length - 1) {
+            return (
+              <ReferenceArea
+                key={`area-${index}`}
+                x1={entry.time}
+                x2={chartData[index + 1].time}
+                fill="#gray"
+                fillOpacity={0.1}
+              />
+            );
+          }
+          return null;
+        })}
         
         <Line
           type="monotone"
