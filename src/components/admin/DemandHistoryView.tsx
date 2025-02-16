@@ -31,8 +31,11 @@ export const DemandHistoryView = () => {
       setRawResponse(data);
       console.log('Respuesta completa:', data);
 
-      if (data && Array.isArray(data)) {
+      if (Array.isArray(data)) {
         setHistoricalData(data);
+      } else {
+        console.error('Datos recibidos no son un array:', data);
+        toast.error('Formato de datos incorrecto');
       }
     } catch (error) {
       console.error('Error fetching historical data:', error);
@@ -41,10 +44,6 @@ export const DemandHistoryView = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchHistoricalData();
-  }, []);
 
   return (
     <div className="space-y-6 p-6">
@@ -149,16 +148,10 @@ export const DemandHistoryView = () => {
                 <TableBody>
                   {historicalData.map((data, index) => (
                     <TableRow key={index}>
-                      <TableCell>
-                        {format(new Date(data.fecha), 'dd/MM/yyyy')}
-                      </TableCell>
+                      <TableCell>{data.fecha}</TableCell>
                       <TableCell>{data.hora}</TableCell>
-                      <TableCell>
-                        {data.programado?.toLocaleString() || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {data.ejecutado?.toLocaleString() || '-'}
-                      </TableCell>
+                      <TableCell>{data.programado?.toLocaleString() || '-'}</TableCell>
+                      <TableCell>{data.ejecutado?.toLocaleString() || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

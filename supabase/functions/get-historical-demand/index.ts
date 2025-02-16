@@ -60,7 +60,7 @@ serve(async (req) => {
     const endDateStr = formatDateForForm(endDate);
     console.log('Consultando datos para el rango:', startDateStr, 'hasta', endDateStr);
 
-    // Paso 1: Obtener la página inicial para obtener cookies y token
+    // Paso 1: Simular una sesión de navegador web
     const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     const initialResponse = await fetch(baseUrl, {
       method: 'GET',
@@ -68,8 +68,6 @@ serve(async (req) => {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
       },
     });
 
@@ -84,21 +82,16 @@ serve(async (req) => {
     const tokenMatch = initialHtml.match(/<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]*)"[^>]*>/);
     const csrfToken = tokenMatch ? tokenMatch[1] : '';
     
-    console.log('Cookies obtenidas:', cookies ? 'Sí' : 'No');
-    console.log('Token CSRF obtenido:', csrfToken ? 'Sí' : 'No');
+    console.log('Cookies obtenidas:', cookies);
+    console.log('Token CSRF obtenido:', csrfToken);
 
-    // Esperar 5 segundos antes de la siguiente petición
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    // Paso 2: Simular el clic en el botón Consultar
-    const searchFormData = new URLSearchParams();
-    searchFormData.append('txtFechaInicial', startDateStr);
-    searchFormData.append('txtFechaFinal', endDateStr);
+    // Paso 2: Realizar la búsqueda
+    const formData = new URLSearchParams();
+    formData.append('txtFechaInicial', startDateStr);
+    formData.append('txtFechaFinal', endDateStr);
     if (csrfToken) {
-      searchFormData.append('__RequestVerificationToken', csrfToken);
+      formData.append('__RequestVerificationToken', csrfToken);
     }
-
-    console.log('Enviando formulario con datos:', searchFormData.toString());
 
     const searchResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
       method: 'POST',
@@ -110,94 +103,60 @@ serve(async (req) => {
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Origin': 'https://www.coes.org.pe',
         'Referer': baseUrl,
-        'X-Requested-With': 'XMLHttpRequest',
       },
-      body: searchFormData.toString(),
+      body: formData.toString(),
     });
 
     if (!searchResponse.ok) {
-      const searchErrorText = await searchResponse.text();
-      console.error('Error response from search:', searchErrorText);
-      throw new Error(`Error en la búsqueda: ${searchResponse.status} - ${searchErrorText}`);
+      throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
-    const searchResponseText = await searchResponse.text();
-    console.log('Respuesta de búsqueda:', searchResponseText);
-
-    // Esperar 10 segundos antes de simular el clic en Exportar
-    await new Promise(resolve => setTimeout(resolve, 10000));
-
-    // Paso 3: Simular el clic en el botón Exportar
-    const exportResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
+    // Paso 3: Descargar el Excel
+    const excelResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/vnd.ms-excel',
-        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Cookie': cookies,
         'Referer': baseUrl,
       },
     });
 
-    if (!exportResponse.ok) {
-      const errorText = await exportResponse.text();
-      console.error('Error response from export:', errorText);
-      throw new Error(`Error al exportar: ${exportResponse.status} - ${errorText}`);
+    if (!excelResponse.ok) {
+      throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
     }
 
-    // Verificar el tipo de contenido de la respuesta
-    const contentType = exportResponse.headers.get('content-type');
-    console.log('Tipo de contenido de la respuesta:', contentType);
+    const contentType = excelResponse.headers.get('content-type');
+    console.log('Tipo de contenido del Excel:', contentType);
 
-    const arrayBuffer = await exportResponse.arrayBuffer();
-    console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength, 'bytes');
+    const arrayBuffer = await excelResponse.arrayBuffer();
+    console.log('Tamaño del archivo descargado:', arrayBuffer.byteLength, 'bytes');
 
     if (arrayBuffer.byteLength === 0) {
-      throw new Error('El archivo Excel descargado está vacío');
+      throw new Error('Archivo Excel vacío');
     }
 
-    // Intentar leer el Excel y mostrar información sobre su estructura
+    // Procesar el Excel
     const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
-    
-    console.log('Información del Excel:', {
-      numeroHojas: workbook.SheetNames?.length,
-      nombresHojas: workbook.SheetNames,
-      primerHoja: workbook.SheetNames?.[0],
-    });
-
     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-      throw new Error('El archivo Excel no contiene hojas');
+      throw new Error('Excel sin hojas');
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    
-    // Mostrar las primeras celdas del Excel para diagnóstico
-    console.log('Muestra de celdas del Excel:', {
-      A1: worksheet?.['A1']?.v,
-      B1: worksheet?.['B1']?.v,
-      A2: worksheet?.['A2']?.v,
-      B2: worksheet?.['B2']?.v,
-    });
+    const jsonData = utils.sheet_to_json(worksheet, { header: 1 });
 
-    const jsonData = utils.sheet_to_json(worksheet, {
-      raw: false,
-      defval: null,
-      header: 1,
-    });
+    console.log('Primeras filas del Excel:', jsonData.slice(0, 3));
 
-    console.log('Primeras 3 filas del Excel:', JSON.stringify(jsonData.slice(0, 3)));
+    // Transformar los datos al formato esperado
+    const transformedData = jsonData.slice(1).map((row: any) => ({
+      fecha: row[0],
+      hora: row[1],
+      programado: parseFloat(row[2]) || null,
+      ejecutado: parseFloat(row[3]) || null
+    })).filter(item => item.fecha && item.hora);
 
-    // Si llegamos hasta aquí, devolvemos los datos crudos para diagnóstico
-    return new Response(JSON.stringify({
-      message: 'Excel descargado y procesado correctamente',
-      excelInfo: {
-        size: arrayBuffer.byteLength,
-        contentType,
-        sheets: workbook.SheetNames,
-        firstRows: jsonData.slice(0, 3)
-      }
-    }), {
-      headers: corsHeaders,
+    return new Response(JSON.stringify(transformedData), {
+      headers: { ...corsHeaders },
       status: 200,
     });
 
@@ -205,8 +164,7 @@ serve(async (req) => {
     console.error('Error:', error);
     return new Response(JSON.stringify({
       error: error.message,
-      timestamp: new Date().toISOString(),
-      details: error.stack
+      timestamp: new Date().toISOString()
     }), {
       headers: corsHeaders,
       status: 500,
