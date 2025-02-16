@@ -1,14 +1,14 @@
 
 import About from "@/components/About";
 import AnimatedSection from "@/components/AnimatedSection";
-import { Gear, Leaf, Heart, Trophy } from "lucide-react";
+import { Settings, Leaf, Heart, Trophy } from "lucide-react";
 
 const AboutUs = () => {
   const values = [
     {
       title: "Innovación",
       description: "Buscamos constantemente nuevas formas de optimizar el consumo energético, utilizando tecnología de vanguardia y soluciones creativas.",
-      icon: <Gear className="h-8 w-8 text-sergen-600" />,
+      icon: <Settings className="h-8 w-8 text-sergen-600" />,
     },
     {
       title: "Sostenibilidad",
