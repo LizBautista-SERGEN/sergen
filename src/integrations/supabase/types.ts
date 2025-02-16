@@ -117,6 +117,33 @@ export type Database = {
         }
         Relationships: []
       }
+      coes_historical: {
+        Row: {
+          created_at: string | null
+          ejecutado: number | null
+          fecha: string
+          id: string
+          reprogramacion_diaria: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ejecutado?: number | null
+          fecha: string
+          id?: string
+          reprogramacion_diaria?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ejecutado?: number | null
+          fecha?: string
+          id?: string
+          reprogramacion_diaria?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       daily_power_data: {
         Row: {
           created_at: string

@@ -1,4 +1,5 @@
 
-[functions]
-[functions.get-coes-forecast]
+project_id = "zbixjkgwperxqrdhvtoy"
+
+[functions.get-coes-historical]
 verify_jwt = false
