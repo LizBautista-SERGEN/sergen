@@ -34,6 +34,7 @@ const Navbar = () => {
       
       if (!session) {
         // Si no hay sesión, simplemente actualizamos el estado y redirigimos
+        console.log('No hay sesión activa para cerrar');
         setIsLoggedIn(false);
         navigate("/");
         return;
@@ -42,7 +43,8 @@ const Navbar = () => {
       // Si hay sesión, intentamos cerrarla
       const { error } = await supabase.auth.signOut();
       
-      if (error && error.message !== "session_not_found") {
+      // Ignoramos el error específico de 'session_not_found'
+      if (error && error.message !== "Session not found" && !error.message.includes('session_not_found')) {
         console.error("Error al cerrar sesión:", error);
         toast.error("Error al cerrar sesión");
         return;
@@ -55,6 +57,7 @@ const Navbar = () => {
       
     } catch (error: any) {
       console.error("Error inesperado al cerrar sesión:", error);
+      // En caso de error, aseguramos que el usuario sea desconectado de todas formas
       setIsLoggedIn(false);
       toast.error("Error al cerrar sesión");
       navigate("/");
