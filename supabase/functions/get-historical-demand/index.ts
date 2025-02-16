@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 
@@ -115,8 +116,13 @@ serve(async (req) => {
     });
 
     if (!searchResponse.ok) {
-      throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
+      const searchErrorText = await searchResponse.text();
+      console.error('Error response from search:', searchErrorText);
+      throw new Error(`Error en la búsqueda: ${searchResponse.status} - ${searchErrorText}`);
     }
+
+    const searchResponseText = await searchResponse.text();
+    console.log('Respuesta de búsqueda:', searchResponseText);
 
     // Esperar 10 segundos antes de simular el clic en Exportar
     await new Promise(resolve => setTimeout(resolve, 10000));
@@ -136,8 +142,12 @@ serve(async (req) => {
     if (!exportResponse.ok) {
       const errorText = await exportResponse.text();
       console.error('Error response from export:', errorText);
-      throw new Error(`Error al exportar: ${exportResponse.status}`);
+      throw new Error(`Error al exportar: ${exportResponse.status} - ${errorText}`);
     }
+
+    // Verificar el tipo de contenido de la respuesta
+    const contentType = exportResponse.headers.get('content-type');
+    console.log('Tipo de contenido de la respuesta:', contentType);
 
     const arrayBuffer = await exportResponse.arrayBuffer();
     console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength, 'bytes');
@@ -146,115 +156,47 @@ serve(async (req) => {
       throw new Error('El archivo Excel descargado está vacío');
     }
 
-    // Paso 4: Procesar el archivo Excel
-    const workbook = read(new Uint8Array(arrayBuffer), { 
-      type: 'array',
-      cellDates: true,
-      dateNF: 'yyyy-mm-dd HH:mm:ss'
-    });
+    // Intentar leer el Excel y mostrar información sobre su estructura
+    const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
     
+    console.log('Información del Excel:', {
+      numeroHojas: workbook.SheetNames?.length,
+      nombresHojas: workbook.SheetNames,
+      primerHoja: workbook.SheetNames?.[0],
+    });
+
     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
       throw new Error('El archivo Excel no contiene hojas');
     }
 
-    console.log('Hojas encontradas:', workbook.SheetNames);
-
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    
+    // Mostrar las primeras celdas del Excel para diagnóstico
+    console.log('Muestra de celdas del Excel:', {
+      A1: worksheet?.['A1']?.v,
+      B1: worksheet?.['B1']?.v,
+      A2: worksheet?.['A2']?.v,
+      B2: worksheet?.['B2']?.v,
+    });
+
     const jsonData = utils.sheet_to_json(worksheet, {
       raw: false,
       defval: null,
-      dateNF: 'yyyy-mm-dd HH:mm:ss',
       header: 1,
     });
 
-    console.log('Primeras filas del Excel:', JSON.stringify(jsonData.slice(0, 3)));
+    console.log('Primeras 3 filas del Excel:', JSON.stringify(jsonData.slice(0, 3)));
 
-    // Encontrar la fila de encabezados
-    const headerRowIndex = jsonData.findIndex((row: any[]) => 
-      Array.isArray(row) && row.some(cell => 
-        cell && typeof cell === 'string' && (
-          cell.includes('Fecha') || 
-          cell.includes('Ejecutado') ||
-          cell.includes('Prog. Diaria') ||
-          cell.includes('Prog. Semanal')
-        )
-      )
-    );
-
-    if (headerRowIndex === -1) {
-      throw new Error('No se encontró la fila de encabezados en el Excel');
-    }
-
-    const headers = jsonData[headerRowIndex];
-    const data = jsonData.slice(headerRowIndex + 1);
-
-    console.log('Encabezados encontrados:', headers);
-
-    const processedData = data
-      .filter((row: any[]) => Array.isArray(row) && row.length >= 2)
-      .map((row: any[]) => {
-        try {
-          const fechaIndex = headers.findIndex((h: string) => h && h.includes('Fecha'));
-          const ejecutadoIndex = headers.findIndex((h: string) => h && h.includes('Ejecutado'));
-          const progDiariaIndex = headers.findIndex((h: string) => h && h.includes('Prog. Diaria'));
-          const progSemanalIndex = headers.findIndex((h: string) => h && h.includes('Prog. Semanal'));
-
-          const fechaRaw = row[fechaIndex];
-          
-          // Extraer fecha y hora del valor
-          let fecha = fechaRaw;
-          let hora = '';
-          
-          if (typeof fechaRaw === 'string' && fechaRaw.includes(' ')) {
-            [fecha, hora] = fechaRaw.split(' ');
-            if (hora.length > 5) {
-              hora = hora.substring(0, 5);
-            }
-          }
-
-          if (!fecha) return null;
-
-          const parsearNumero = (valor: any) => {
-            if (!valor) return null;
-            const strVal = String(valor).replace(/\s/g, '').replace(',', '.');
-            const num = parseFloat(strVal);
-            return !isNaN(num) ? num : null;
-          };
-
-          const ejecutado = ejecutadoIndex !== -1 ? parsearNumero(row[ejecutadoIndex]) : null;
-          const programado = progDiariaIndex !== -1 ? parsearNumero(row[progDiariaIndex]) : null;
-          const progsemanal = progSemanalIndex !== -1 ? parsearNumero(row[progSemanalIndex]) : null;
-
-          console.log('Procesando fila:', {
-            fecha,
-            hora,
-            ejecutado,
-            programado,
-            progsemanal
-          });
-
-          return {
-            fecha,
-            hora,
-            ejecutado,
-            programado,
-            progsemanal,
-          };
-        } catch (error) {
-          console.error('Error procesando fila:', error);
-          return null;
-        }
-      })
-      .filter(item => item !== null);
-
-    console.log(`Datos procesados: ${processedData.length} registros`);
-    console.log('Muestra de datos procesados:', processedData.slice(0, 3));
-
-    if (processedData.length === 0) {
-      throw new Error('No se encontraron datos válidos en el Excel');
-    }
-
-    return new Response(JSON.stringify(processedData), {
+    // Si llegamos hasta aquí, devolvemos los datos crudos para diagnóstico
+    return new Response(JSON.stringify({
+      message: 'Excel descargado y procesado correctamente',
+      excelInfo: {
+        size: arrayBuffer.byteLength,
+        contentType,
+        sheets: workbook.SheetNames,
+        firstRows: jsonData.slice(0, 3)
+      }
+    }), {
       headers: corsHeaders,
       status: 200,
     });
