@@ -17,47 +17,17 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
   const uniqueDates = [...new Set(energyData.map(data => data.date))]
     .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
-  const getChartData = (date: string) => {
-    // Crear un array con las 24 horas del día
-    const hoursArray = Array.from({ length: 48 }, (_, i) => {
-      const hour = Math.floor(i / 2);
-      const minute = (i % 2) * 30;
-      return {
-        time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
-        "Potencia Pronosticada": null,
-        "Potencia Ejecutada": null
-      };
-    });
+  // Filtrar y preparar los datos para el gráfico
+  const chartData = energyData
+    .filter(data => data.date === selectedDate)
+    .map(data => ({
+      time: data.time,
+      "Potencia Pronosticada": data.executed_power ? null : data.forecasted_power,
+      "Potencia Ejecutada": data.executed_power || null
+    }))
+    .sort((a, b) => a.time.localeCompare(b.time));
 
-    // Llenar los datos reales
-    const dayData = energyData
-      .filter(data => data.date === date)
-      .reduce((acc, data) => {
-        const timeIndex = acc.findIndex(item => item.time === data.time);
-        if (timeIndex >= 0) {
-          // Si hay potencia ejecutada, solo mostrar ese valor
-          if (data.executed_power) {
-            acc[timeIndex] = {
-              ...acc[timeIndex],
-              "Potencia Ejecutada": data.executed_power,
-              "Potencia Pronosticada": null
-            };
-          } else {
-            // Si no hay potencia ejecutada, mostrar el pronóstico
-            acc[timeIndex] = {
-              ...acc[timeIndex],
-              "Potencia Pronosticada": data.forecasted_power,
-              "Potencia Ejecutada": null
-            };
-          }
-        }
-        return acc;
-      }, hoursArray);
-
-    return dayData;
-  };
-
-  const chartData = getChartData(selectedDate);
+  console.log('Datos del gráfico:', chartData);
 
   return (
     <Card>
@@ -84,15 +54,24 @@ export const EnergyForecastChart = ({ energyData, selectedDate, onDateChange }: 
               <LineChart data={chartData}>
                 <XAxis 
                   dataKey="time"
-                  interval="preserveStartEnd"
-                  minTickGap={30}
+                  interval={5}
+                  angle={-45}
+                  textAnchor="end"
+                  height={50}
                 />
-                <YAxis />
+                <YAxis 
+                  label={{ 
+                    value: 'Potencia (MW)', 
+                    angle: -90, 
+                    position: 'insideLeft',
+                    style: { textAnchor: 'middle' }
+                  }}
+                />
                 <Tooltip 
-                  formatter={(value: any) => value ? [value.toFixed(2), ''] : ['No disponible', '']}
+                  formatter={(value: any) => value ? [`${value.toFixed(2)} MW`, ''] : ['No disponible', '']}
                   labelFormatter={(label) => `Hora: ${label}`}
                 />
-                <Legend />
+                <Legend verticalAlign="top" height={36}/>
                 <Line
                   type="monotone"
                   dataKey="Potencia Pronosticada"
