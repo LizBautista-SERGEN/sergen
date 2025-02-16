@@ -57,7 +57,7 @@ serve(async (req) => {
 
     console.log('Consultando datos para el rango:', formatDateForForm(startDate), 'hasta', formatDateForForm(endDate));
 
-    // Paso 1: Obtener cookies de la sesión inicial
+    // Paso 1: Obtener cookies de la sesión inicial y el token CSRF
     const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     const initialResponse = await fetch(baseUrl, {
       headers: {
@@ -73,7 +73,7 @@ serve(async (req) => {
 
     const cookies = initialResponse.headers.get('set-cookie') || '';
     console.log('Cookies obtenidas:', cookies ? 'Sí' : 'No');
-
+    
     // Esperar antes de la siguiente petición
     await new Promise(resolve => setTimeout(resolve, 2000));
 
