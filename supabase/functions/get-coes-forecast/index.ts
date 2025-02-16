@@ -28,9 +28,9 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
   const columnIndexes = {
     fecha: headerRow.findIndex((col: string) => col === 'Fecha'),
     reprogramacion: headerRow.findIndex((col: string) => col === 'Reprogramación Diaria'),
-    pronostico: headerRow.findIndex((col: string) => col === 'Pronóstico de Demanda Automático de Tiempo Real'),
-    rangoMinimo: headerRow.findIndex((col: string) => col === 'Rango Mínimo del Pronóstico de Demanda Automático de Tiempo Real'),
-    rangoMaximo: headerRow.findIndex((col: string) => col === 'Rango Máximo del Pronóstico de Demanda Automático de Tiempo Real'),
+    pronostico: headerRow.findIndex((col: string) => col === 'Pronóstico'),
+    rangoMinimo: headerRow.findIndex((col: string) => col === 'Rango Minimo'),
+    rangoMaximo: headerRow.findIndex((col: string) => col === 'Rango Máximo'),
     ejecutado: headerRow.findIndex((col: string) => col === 'Ejecutado')
   };
 
@@ -78,8 +78,12 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
           if (value === undefined || value === null || value === '') {
             return null;
           }
+          if (typeof value === 'string') {
+            // Remover cualquier carácter que no sea número, punto o signo negativo
+            value = value.replace(/[^\d.-]/g, '');
+          }
           const num = parseFloat(value);
-          return isNaN(num) ? null : num;
+          return isNaN(num) ? null : Number(num.toFixed(2)); // Redondear a 2 decimales
         };
 
         const data = {
@@ -92,6 +96,11 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
           created_at: now,
           updated_at: now
         };
+
+        // Convertir ejecutado = 0 a null para mantener consistencia
+        if (data.ejecutado === 0) {
+          data.ejecutado = null;
+        }
 
         console.log(`Datos procesados fila ${index + 2}:`, data);
         return data;
