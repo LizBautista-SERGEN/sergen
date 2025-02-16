@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { read, utils } from "https://esm.sh/xlsx@0.18.5";
+import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -68,6 +69,8 @@ serve(async (req) => {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
     });
 
@@ -76,16 +79,37 @@ serve(async (req) => {
     }
 
     const initialHtml = await initialResponse.text();
-    const cookies = initialResponse.headers.get('set-cookie') || '';
-    const tokenMatch = initialHtml.match(/<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]*)"[^>]*>/);
-    const csrfToken = tokenMatch ? tokenMatch[1] : '';
+    console.log('Longitud del HTML recibido:', initialHtml.length);
 
-    if (!csrfToken) {
-      throw new Error('No se pudo obtener el token CSRF');
+    // Usar DOMParser para analizar el HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(initialHtml, 'text/html');
+    
+    if (!doc) {
+      throw new Error('No se pudo parsear el HTML');
     }
 
-    console.log('Token CSRF obtenido:', csrfToken);
-    
+    // Buscar el token CSRF usando el DOM
+    const csrfInput = doc.querySelector('input[name="__RequestVerificationToken"]');
+    if (!csrfInput) {
+      console.error('HTML recibido:', initialHtml.substring(0, 1000));
+      throw new Error('No se encontró el input del token CSRF en el DOM');
+    }
+
+    const csrfToken = csrfInput.getAttribute('value');
+    if (!csrfToken) {
+      throw new Error('El input del token CSRF no tiene valor');
+    }
+
+    console.log('Token CSRF encontrado:', csrfToken);
+
+    // Obtener cookies
+    const cookies = initialResponse.headers.get('set-cookie');
+    if (!cookies) {
+      console.warn('No se encontraron cookies en la respuesta');
+    }
+    console.log('Cookies recibidas:', cookies);
+
     // Paso 2: Enviar el formulario (simular clic en btnConsulta)
     const formData = new URLSearchParams({
       'txtFechaInicial': startDateStr,
@@ -93,17 +117,21 @@ serve(async (req) => {
       '__RequestVerificationToken': csrfToken
     });
 
+    console.log('Enviando formulario con datos:', formData.toString());
+
     const consultaResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Cookie': cookies,
+        'Cookie': cookies || '',
         'Accept': '*/*',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Origin': 'https://www.coes.org.pe',
         'Referer': baseUrl,
-        'X-Requested-With': 'XMLHttpRequest'
+        'X-Requested-With': 'XMLHttpRequest',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
       body: formData.toString()
     });
@@ -112,7 +140,11 @@ serve(async (req) => {
       throw new Error(`Error en la consulta: ${consultaResponse.status}`);
     }
 
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Esperar a que la página procese la consulta
+    const consultaData = await consultaResponse.text();
+    console.log('Respuesta de la consulta:', consultaData);
+
+    // Esperar a que se procese la consulta
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     // Paso 3: Descargar el Excel (simular clic en btnExportar)
     const excelResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
@@ -120,8 +152,10 @@ serve(async (req) => {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/vnd.ms-excel',
-        'Cookie': cookies,
-        'Referer': baseUrl
+        'Cookie': cookies || '',
+        'Referer': baseUrl,
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       }
     });
 
@@ -144,7 +178,7 @@ serve(async (req) => {
       blankrows: false
     });
 
-    console.log('Datos crudos del Excel:', rawData.slice(0, 5));
+    console.log('Primeras filas del Excel:', rawData.slice(0, 5));
 
     // Encontrar el índice donde comienzan los datos reales
     let dataStartIndex = 0;
@@ -174,7 +208,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error detallado:', error);
     return new Response(JSON.stringify({
       error: error.message,
       timestamp: new Date().toISOString()
