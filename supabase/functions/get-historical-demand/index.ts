@@ -28,19 +28,17 @@ serve(async (req) => {
       body = await req.json();
     }
 
-    const today = new Date();
-    const defaultStartDate = new Date(today);
-    defaultStartDate.setDate(today.getDate() - 2);
-    const defaultEndDate = new Date(today);
-    defaultEndDate.setDate(today.getDate() - 1);
+    if (!body.startDate || !body.endDate) {
+      throw new Error('Se requieren las fechas de inicio y fin');
+    }
 
     // Validación y parsing de fechas
     let startDate: Date;
     let endDate: Date;
 
     try {
-      startDate = body.startDate ? new Date(body.startDate + 'T00:00:00') : defaultStartDate;
-      endDate = body.endDate ? new Date(body.endDate + 'T23:59:59') : defaultEndDate;
+      startDate = new Date(body.startDate + 'T00:00:00');
+      endDate = new Date(body.endDate + 'T23:59:59');
 
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         throw new Error('Fechas inválidas proporcionadas');
@@ -73,6 +71,9 @@ serve(async (req) => {
 
     const cookies = initialResponse.headers.get('set-cookie') || '';
 
+    // Esperar antes de la siguiente petición
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     // Paso 2: Realizar la búsqueda con las fechas
     const searchFormData = new URLSearchParams();
     searchFormData.append('txtFechaInicio', formatDateForForm(startDate));
@@ -92,15 +93,14 @@ serve(async (req) => {
       throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
-    // Esperar un momento antes de solicitar el Excel
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Esperar antes de descargar el Excel
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Paso 3: Descargar el archivo Excel
     const excelResponse = await fetch(`${baseUrl}/ExportarPronosticoTiempoReal`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Cookie': cookies,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
       },
     });
 
@@ -108,8 +108,14 @@ serve(async (req) => {
       throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
     }
 
-    // Paso 4: Procesar el archivo Excel
     const arrayBuffer = await excelResponse.arrayBuffer();
+    console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength);
+
+    if (arrayBuffer.byteLength === 0) {
+      throw new Error('El archivo Excel descargado está vacío');
+    }
+
+    // Paso 4: Procesar el archivo Excel
     const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = utils.sheet_to_json(worksheet, { raw: false });
@@ -117,32 +123,22 @@ serve(async (req) => {
     // Procesar los datos del Excel
     const processedData = jsonData.map((row: any) => {
       try {
-        const fechaStr = row['Fecha'] || '';
-        const horaStr = row['Hora'] || '';
-
-        if (!fechaStr || !horaStr) return null;
-
-        const [dia, mes, anio] = fechaStr.split('/').map(n => parseInt(n));
-        const [hora, minuto] = horaStr.split(':').map(n => parseInt(n));
-
-        if (isNaN(dia) || isNaN(mes) || isNaN(anio) || isNaN(hora) || isNaN(minuto)) {
+        // Verificar si tenemos las columnas necesarias
+        if (!row['Fecha'] || !row['Hora']) {
+          console.warn('Fila sin fecha u hora:', row);
           return null;
         }
 
-        const fechaCompleta = new Date(anio, mes - 1, dia, hora, minuto);
-
-        if (isNaN(fechaCompleta.getTime())) {
-          return null;
-        }
-
-        const ejecutado = parseFloat(row['Ejecutado'] || '0');
-        const programado = parseFloat(row['Pronóstico'] || '0');
+        const fecha = row['Fecha'];
+        const hora = row['Hora'];
+        const ejecutado = row['Ejecutado'] ? parseFloat(row['Ejecutado'].replace(',', '')) : null;
+        const programado = row['Pronóstico'] ? parseFloat(row['Pronóstico'].replace(',', '')) : null;
 
         return {
-          fecha: fechaCompleta.toISOString(),
-          hora: horaStr,
-          programado: ejecutado > 0 ? null : (isNaN(programado) ? null : programado),
-          ejecutado: isNaN(ejecutado) ? null : (ejecutado > 0 ? ejecutado : null)
+          fecha: fecha,
+          hora: hora,
+          programado: programado,
+          ejecutado: ejecutado
         };
       } catch (error) {
         console.warn('Error procesando fila:', error);
@@ -151,6 +147,10 @@ serve(async (req) => {
     }).filter(item => item !== null);
 
     console.log(`Datos procesados: ${processedData.length} registros`);
+
+    if (processedData.length === 0) {
+      throw new Error('No se encontraron datos válidos en el archivo Excel');
+    }
 
     return new Response(JSON.stringify(processedData), {
       headers: corsHeaders,
