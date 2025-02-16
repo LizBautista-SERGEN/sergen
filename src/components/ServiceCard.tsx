@@ -3,13 +3,14 @@ import { Card } from "@/components/ui/card";
 
 interface ServiceCardProps {
   title: string;
+  subtitle: string;
   description: string;
   icon: React.ReactNode;
   image?: string;
   onClick?: () => void;
 }
 
-const ServiceCard = ({ title, description, icon, image, onClick }: ServiceCardProps) => {
+const ServiceCard = ({ title, subtitle, description, icon, image, onClick }: ServiceCardProps) => {
   return (
     <Card 
       className={`group relative overflow-hidden p-6 h-full flex flex-col transition-all duration-300 hover:shadow-lg ${onClick ? 'cursor-pointer' : ''}`}
@@ -29,7 +30,10 @@ const ServiceCard = ({ title, description, icon, image, onClick }: ServiceCardPr
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-sergen-100 text-sergen-700">
           {icon}
         </div>
-        <h3 className="mb-2 text-xl font-semibold text-[#f39200]">{title}</h3>
+        <div className="mb-2">
+          <h3 className="text-xl font-semibold text-[#f39200]">{title}</h3>
+          <p className="text-lg font-medium text-gray-900">{subtitle}</p>
+        </div>
         <p className="text-gray-600 flex-grow">{description}</p>
       </div>
     </Card>

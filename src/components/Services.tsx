@@ -9,28 +9,32 @@ const Services = () => {
   
   const services = [
     {
-      title: "Diagnóstico Energético: Maximiza tu Eficiencia y Reduce Costos",
+      title: "Diagnóstico Energético",
+      subtitle: "Maximiza tu Eficiencia y Reduce Costos",
       description: "Realizamos un análisis exhaustivo de tus sistemas energéticos para detectar los principales focos de consumo. Nuestro equipo identifica áreas de mejora y te ofrece un plan personalizado con medidas concretas para reducir tu consumo energético y optimizar costos.",
       icon: <Search className="h-6 w-6" />,
       path: "/servicios/diagnostico",
       image: "/lovable-uploads/c6e04f82-2e00-4e2f-8add-0e2bd586449b.png"
     },
     {
-      title: "Control de Demanda: Reduce tu Factura Eléctrica",
+      title: "Control de Demanda",
+      subtitle: "Reduce tu Factura Eléctrica",
       description: "Implementamos estrategias avanzadas de gestión de demanda energética para optimizar tu consumo y reducir costos. Nuestras soluciones te permiten alcanzar ahorros significativos en tu factura eléctrica, mejorando la eficiencia operativa de tu empresa.",
       icon: <Gauge className="h-6 w-6" />,
       path: "/servicios/demanda",
       image: "/lovable-uploads/65c0f958-3c27-4e19-9a03-62c16c1c3e7b.png"
     },
     {
-      title: "Gestión Contractual: Optimiza tus Contratos de Suministros",
+      title: "Gestión Contractual",
+      subtitle: "Optimiza tus Contratos de Suministros",
       description: "Nuestro equipo se encarga de revisar, analizar y negociar los términos y condiciones de tus contratos de suministros. Aseguramos que cada cláusula se ajuste a tus necesidades y proteja tus intereses, garantizando tarifas competitivas y condiciones favorables.",
       icon: <FileSpreadsheet className="h-6 w-6" />,
       path: "/servicios/contractual",
       image: "/lovable-uploads/823922c8-88ef-4fb4-903c-59bcdadcb1ab.png"
     },
     {
-      title: "Proyectos de Eficiencia Energética: Soluciones a Medida",
+      title: "Proyectos de Eficiencia Energética",
+      subtitle: "Soluciones a Medida",
       description: "Desarrollamos proyectos integrales de eficiencia energética, desde el diseño hasta la implementación. Utilizamos tecnologías innovadoras y sostenibles para optimizar el consumo de energía, reducir costos operativos y minimizar el impacto ambiental.",
       icon: <Lightbulb className="h-6 w-6" />,
       path: "/servicios/efficiency",
