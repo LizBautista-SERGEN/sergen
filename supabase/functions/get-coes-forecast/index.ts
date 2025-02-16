@@ -37,6 +37,8 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
   }
 
   const now = new Date().toISOString();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   // Procesar los datos, eliminando la primera fila (encabezados)
   return rawData.slice(1)
@@ -49,6 +51,14 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
         fecha = new Date(fechaStr);
         if (isNaN(fecha.getTime())) {
           throw new Error('Fecha inválida');
+        }
+
+        // Verificar si la fecha es del día actual
+        const rowDate = new Date(fecha);
+        rowDate.setHours(0, 0, 0, 0);
+        if (rowDate.getTime() !== today.getTime()) {
+          console.log('Ignorando fecha no actual:', fechaStr);
+          return null;
         }
       } catch (error) {
         console.error('Error procesando fecha:', fechaStr);
@@ -71,7 +81,7 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
         updated_at: now
       };
     })
-    .filter(row => row !== null); // Eliminar filas con fechas inválidas
+    .filter(row => row !== null); // Eliminar filas con fechas inválidas o de otros días
 }
 
 serve(async (req) => {
@@ -92,18 +102,33 @@ serve(async (req) => {
 
     console.log("Datos procesados:", processedData);
 
+    // Verificar que tengamos datos para procesar
+    if (!processedData.length) {
+      throw new Error('No se encontraron datos para el día actual en el Excel');
+    }
+
     // Guardar los datos en Supabase
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Insertar datos en lotes
+    // Primero, eliminar los datos antiguos del día actual
+    const { error: deleteError } = await supabase
+      .from('coes_forecast')
+      .delete()
+      .gte('fecha', today.toISOString())
+      .lt(new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString());
+
+    if (deleteError) {
+      console.error('Error eliminando datos antiguos:', deleteError);
+      throw deleteError;
+    }
+
+    // Insertar los nuevos datos
     const { error } = await supabase
       .from('coes_forecast')
-      .upsert(processedData, {
-        onConflict: 'fecha'
-      });
+      .insert(processedData);
 
     if (error) {
       console.error('Error insertando datos:', error);
