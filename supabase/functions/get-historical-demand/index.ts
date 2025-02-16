@@ -60,7 +60,7 @@ serve(async (req) => {
     const endDateStr = formatDateForForm(endDate);
     console.log('Consultando datos para el rango:', startDateStr, 'hasta', endDateStr);
 
-    // Paso 1: Simular una sesión de navegador web
+    // Paso 1: Obtener la página inicial para conseguir el token CSRF y cookies
     const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
     const initialResponse = await fetch(baseUrl, {
       method: 'GET',
@@ -76,24 +76,18 @@ serve(async (req) => {
     }
 
     const initialHtml = await initialResponse.text();
+    console.log('HTML inicial obtenido:', initialHtml.substring(0, 500)); // Log primeros 500 caracteres
+
+    // Extraer el token CSRF y cookies
     const cookies = initialResponse.headers.get('set-cookie') || '';
-    
-    // Extraer el token CSRF del HTML
     const tokenMatch = initialHtml.match(/<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]*)"[^>]*>/);
     const csrfToken = tokenMatch ? tokenMatch[1] : '';
     
     console.log('Cookies obtenidas:', cookies);
     console.log('Token CSRF obtenido:', csrfToken);
 
-    // Paso 2: Realizar la búsqueda
-    const formData = new URLSearchParams();
-    formData.append('txtFechaInicial', startDateStr);
-    formData.append('txtFechaFinal', endDateStr);
-    if (csrfToken) {
-      formData.append('__RequestVerificationToken', csrfToken);
-    }
-
-    const searchResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
+    // Paso 2: Simular clic en botón Consultar (btnConsulta)
+    const consultaResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -103,15 +97,22 @@ serve(async (req) => {
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Origin': 'https://www.coes.org.pe',
         'Referer': baseUrl,
+        'X-Requested-With': 'XMLHttpRequest',
       },
-      body: formData.toString(),
+      body: new URLSearchParams({
+        'txtFechaInicial': startDateStr,
+        'txtFechaFinal': endDateStr,
+        '__RequestVerificationToken': csrfToken,
+      }).toString(),
     });
 
-    if (!searchResponse.ok) {
-      throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
+    if (!consultaResponse.ok) {
+      throw new Error(`Error en la consulta: ${consultaResponse.status}`);
     }
 
-    // Paso 3: Descargar el Excel
+    console.log('Respuesta de consulta:', await consultaResponse.text());
+
+    // Paso 3: Simular clic en botón Exportar (btnExportar)
     const excelResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
       method: 'GET',
       headers: {
@@ -123,6 +124,8 @@ serve(async (req) => {
     });
 
     if (!excelResponse.ok) {
+      console.error('Error status:', excelResponse.status);
+      console.error('Error headers:', Object.fromEntries(excelResponse.headers.entries()));
       throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
     }
 
@@ -143,9 +146,13 @@ serve(async (req) => {
     }
 
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = utils.sheet_to_json(worksheet, { header: 1 });
+    const jsonData = utils.sheet_to_json(worksheet, { 
+      header: 1,
+      raw: false,
+      dateNF: 'dd/mm/yyyy'
+    });
 
-    console.log('Primeras filas del Excel:', jsonData.slice(0, 3));
+    console.log('Estructura del Excel:', jsonData.slice(0, 3));
 
     // Transformar los datos al formato esperado
     const transformedData = jsonData.slice(1).map((row: any) => ({
@@ -154,6 +161,8 @@ serve(async (req) => {
       programado: parseFloat(row[2]) || null,
       ejecutado: parseFloat(row[3]) || null
     })).filter(item => item.fecha && item.hora);
+
+    console.log('Datos transformados:', transformedData.slice(0, 3));
 
     return new Response(JSON.stringify(transformedData), {
       headers: { ...corsHeaders },
