@@ -28,9 +28,10 @@ export const ForecastManagement = () => {
       const { data: response, error: functionError } = await supabase.functions.invoke(
         'get-coes-data',
         {
-          body: { startDate: format(new Date(), 'yyyy-MM-dd') },
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -52,6 +53,7 @@ export const ForecastManagement = () => {
         setCoesData(response);
         setLastUpdate(new Date());
         console.log('Datos de COES actualizados:', response);
+        toast.success('Datos actualizados correctamente');
       }
       
     } catch (error: any) {
