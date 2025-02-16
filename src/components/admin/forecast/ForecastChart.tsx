@@ -31,14 +31,25 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
     new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
   );
 
-  const chartData = sortedData.map(item => {
-    const hora = new Date(item.fecha).getUTCHours();
+  // Encontrar el último punto con demanda real
+  const lastRealDemandIndex = sortedData.findIndex((item, index) => {
+    const nextItem = sortedData[index + 1];
+    return item.demanda_real !== null && (!nextItem || nextItem.demanda_real === null);
+  });
+
+  const chartData = sortedData.map((item, index) => {
+    const currentDate = new Date(item.fecha);
+    const hora = currentDate.getUTCHours();
+
+    // Solo mostrar pronóstico y rangos después del último punto de demanda real
+    const showForecast = index > lastRealDemandIndex;
+
     return {
       time: formatTime(item.fecha),
       "Reprogramación": item.reprogramacion || null,
-      "Pronóstico Diario": item.pronostico_diario || null,
-      "Rango Inferior": item.rango_inferior || null,
-      "Rango Superior": item.rango_superior || null,
+      "Pronóstico Diario": showForecast ? item.pronostico_diario : null,
+      "Rango Inferior": showForecast ? item.rango_inferior : null,
+      "Rango Superior": showForecast ? item.rango_superior : null,
       "Demanda Real": item.demanda_real || null,
       hora: hora,
       fecha_completa: formatFullDate(item.fecha)
@@ -75,14 +86,14 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
 
         {/* Áreas grises para horas pico */}
         {chartData.map((entry, index) => {
-          if (entry.hora >= 18 && entry.hora <= 23 && index < chartData.length - 1) {
+          if (entry.hora >= 18 && entry.hora < 23 && index < chartData.length - 1) {
             return (
               <ReferenceArea
                 key={`area-${index}`}
                 x1={entry.time}
                 x2={chartData[index + 1].time}
-                fill="#gray"
-                fillOpacity={0.1}
+                fill="#E8E8E8"
+                fillOpacity={0.8}
               />
             );
           }
