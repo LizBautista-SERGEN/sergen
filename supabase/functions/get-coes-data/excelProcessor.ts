@@ -39,31 +39,8 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       throw new Error('No se encontraron datos en el archivo Excel');
     }
 
-    // Encontrar el último dato ejecutado
-    let lastExecutedTime: Date | null = null;
-    let lastExecutedIndex = -1;
-
-    for (let i = jsonData.length - 1; i >= 0; i--) {
-      const row = jsonData[i];
-      const ejecutado = row['Ejecutado'] || row['EJECUTADO'];
-      const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
-      
-      if (ejecutado && fecha) {
-        lastExecutedTime = new Date(fecha);
-        lastExecutedIndex = i;
-        break;
-      }
-    }
-
-    if (!lastExecutedTime) {
-      console.log('No se encontró último dato ejecutado, usando hora actual');
-      lastExecutedTime = new Date();
-    }
-
-    console.log('Hora del último dato ejecutado:', lastExecutedTime);
-    console.log('Índice del último dato ejecutado:', lastExecutedIndex);
-
-    const processedData = jsonData.map((row: any, index: number) => {
+    // Procesar los datos en el orden original
+    const processedData = jsonData.map((row: any) => {
       const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
       const reprogramacion = row['Reprogramación Diaria'] || row['REPROGRAMACIÓN DIARIA'];
       const pronostico = row['Pronóstico de Demanda Automático de Tiempo Real'] || 
@@ -81,12 +58,8 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       }
 
       // Procesar valores numéricos
-      const processValue = (value: any, isForecast = false): number | null => {
+      const processValue = (value: any): number | null => {
         if (!value) return null;
-        // Para datos de pronóstico, mostrar solo desde el índice del último dato ejecutado
-        if (isForecast && lastExecutedIndex >= 0 && index < lastExecutedIndex) {
-          return null;
-        }
         const processed = parseNumber(value);
         return processed === 0 ? null : processed;
       };
@@ -94,19 +67,43 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       return {
         Fecha: fecha,
         "Reprogramación Diaria": processValue(reprogramacion),
-        "Pronóstico": processValue(pronostico, true),
-        "Rango Mínimo": processValue(rangoMin, true),
-        "Rango Máximo": processValue(rangoMax, true),
+        "Pronóstico": processValue(pronostico),
+        "Rango Mínimo": processValue(rangoMin),
+        "Rango Máximo": processValue(rangoMax),
         "Ejecutado": processValue(ejecutado)
       };
     }).filter((item): item is ProcessedData => item !== null);
 
-    if (processedData.length === 0) {
+    // Encontrar el último dato ejecutado
+    let lastExecutedIndex = processedData.length - 1;
+    for (let i = processedData.length - 1; i >= 0; i--) {
+      if (processedData[i].Ejecutado !== null) {
+        lastExecutedIndex = i;
+        break;
+      }
+    }
+
+    console.log('Índice del último dato ejecutado:', lastExecutedIndex);
+
+    // Limpiar datos de pronóstico antes del último dato ejecutado
+    const finalData = processedData.map((item, index) => {
+      if (index < lastExecutedIndex) {
+        return {
+          ...item,
+          "Pronóstico": null,
+          "Rango Mínimo": null,
+          "Rango Máximo": null
+        };
+      }
+      return item;
+    });
+
+    if (finalData.length === 0) {
       throw new Error('No se encontraron datos válidos en el archivo Excel');
     }
 
-    console.log('Datos procesados exitosamente. Total de registros:', processedData.length);
-    return processedData;
+    console.log('Datos procesados exitosamente. Total de registros:', finalData.length);
+    return finalData;
   } catch (error) {
     console.error('Error procesando Excel:', error);
     throw error;
