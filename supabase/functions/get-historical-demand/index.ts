@@ -70,6 +70,7 @@ serve(async (req) => {
     }
 
     const cookies = initialResponse.headers.get('set-cookie') || '';
+    console.log('Cookies obtenidas:', cookies ? 'Sí' : 'No');
 
     // Esperar antes de la siguiente petición
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -79,7 +80,9 @@ serve(async (req) => {
     searchFormData.append('txtFechaInicio', formatDateForForm(startDate));
     searchFormData.append('txtFechaFin', formatDateForForm(endDate));
 
-    const searchResponse = await fetch(`${baseUrl}/BusquedaProTiempoReal`, {
+    console.log('Enviando búsqueda con fechas:', searchFormData.toString());
+
+    const searchResponse = await fetch(`${baseUrl}/Buscar`, {
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -93,11 +96,13 @@ serve(async (req) => {
       throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
+    console.log('Búsqueda completada, esperando para descargar Excel...');
+
     // Esperar antes de descargar el Excel
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Paso 3: Descargar el archivo Excel
-    const excelResponse = await fetch(`${baseUrl}/ExportarPronosticoTiempoReal`, {
+    const excelResponse = await fetch(`${baseUrl}/Exportar`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Cookie': cookies,
@@ -120,28 +125,47 @@ serve(async (req) => {
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = utils.sheet_to_json(worksheet, { raw: false });
 
+    console.log('Estructura de la primera fila:', JSON.stringify(jsonData[0]));
+
     // Procesar los datos del Excel
-    const processedData = jsonData.map((row: any) => {
+    const processedData = jsonData.map((row: any, index) => {
       try {
-        // Verificar si tenemos las columnas necesarias
-        if (!row['Fecha'] || !row['Hora']) {
-          console.warn('Fila sin fecha u hora:', row);
+        // Identificar las columnas correctas
+        const fechaKey = Object.keys(row).find(key => key.includes('Fecha')) || 'Fecha';
+        const horaKey = Object.keys(row).find(key => key.includes('Hora')) || 'Hora';
+        const programadoKey = Object.keys(row).find(key => 
+          key.includes('Pronóstico') || 
+          key.includes('Pronostico') || 
+          key.includes('Programado')
+        ) || 'Pronóstico';
+        const ejecutadoKey = Object.keys(row).find(key => key.includes('Ejecutado')) || 'Ejecutado';
+
+        if (!row[fechaKey] || !row[horaKey]) {
+          console.warn('Fila sin fecha u hora:', index, JSON.stringify(row));
           return null;
         }
 
-        const fecha = row['Fecha'];
-        const hora = row['Hora'];
-        const ejecutado = row['Ejecutado'] ? parseFloat(row['Ejecutado'].replace(',', '')) : null;
-        const programado = row['Pronóstico'] ? parseFloat(row['Pronóstico'].replace(',', '')) : null;
+        const fecha = row[fechaKey];
+        const hora = row[horaKey];
+
+        // Manejar diferentes formatos de números
+        const parsearNumero = (valor: string) => {
+          if (!valor) return null;
+          // Eliminar espacios y convertir comas a puntos
+          return parseFloat(valor.replace(/\s/g, '').replace(',', '.'));
+        };
+
+        const programado = parsearNumero(row[programadoKey]);
+        const ejecutado = parsearNumero(row[ejecutadoKey]);
 
         return {
-          fecha: fecha,
-          hora: hora,
-          programado: programado,
-          ejecutado: ejecutado
+          fecha,
+          hora,
+          programado: !isNaN(programado) ? programado : null,
+          ejecutado: !isNaN(ejecutado) ? ejecutado : null
         };
       } catch (error) {
-        console.warn('Error procesando fila:', error);
+        console.warn('Error procesando fila:', index, error);
         return null;
       }
     }).filter(item => item !== null);
