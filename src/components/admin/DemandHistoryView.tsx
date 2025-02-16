@@ -13,11 +13,10 @@ import { ExportDataDialog } from "./ExportDataDialog";
 
 export const DemandHistoryView = () => {
   const [loading, setLoading] = useState(false);
-  // Inicializar startDate como 3 días antes de la fecha actual
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 3), 'yyyy-MM-dd'));
-  // Inicializar endDate como 1 día antes de la fecha actual
   const [endDate, setEndDate] = useState(format(subDays(new Date(), 1), 'yyyy-MM-dd'));
   const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [rawResponse, setRawResponse] = useState<any>(null);
 
   const fetchHistoricalData = async () => {
     setLoading(true);
@@ -27,6 +26,10 @@ export const DemandHistoryView = () => {
       });
 
       if (error) throw error;
+
+      // Guardar la respuesta cruda para diagnóstico
+      setRawResponse(data);
+      console.log('Respuesta completa:', data);
 
       if (data && Array.isArray(data)) {
         setHistoricalData(data);
@@ -84,6 +87,16 @@ export const DemandHistoryView = () => {
               filename={`historico-demanda-${format(new Date(), 'yyyyMMdd')}`}
             />
           </div>
+
+          {/* Mostrar la respuesta cruda para diagnóstico */}
+          {rawResponse && (
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg overflow-auto max-h-[500px]">
+              <h3 className="text-lg font-semibold mb-2">Datos del Excel:</h3>
+              <pre className="text-sm">
+                {JSON.stringify(rawResponse, null, 2)}
+              </pre>
+            </div>
+          )}
 
           {historicalData.length > 0 && (
             <div className="space-y-6 mt-4">
