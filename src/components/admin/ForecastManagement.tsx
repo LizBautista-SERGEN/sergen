@@ -2,18 +2,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Calendar } from "lucide-react";
 import { ExportDataDialog } from "./ExportDataDialog";
 import { ForecastChart } from "./forecast/ForecastChart";
 import { ForecastTable } from "./forecast/ForecastTable";
+import { Input } from "@/components/ui/input";
 
 export const ForecastManagement = () => {
   const [loadingCoes, setLoadingCoes] = useState(false);
   const [coesData, setCoesData] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState(format(subDays(new Date(), 3), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(subDays(new Date(), 1), 'yyyy-MM-dd'));
 
   const fetchCoesData = useCallback(async () => {
     setLoadingCoes(true);
@@ -27,10 +30,12 @@ export const ForecastManagement = () => {
 
       console.log('Iniciando llamada a función Edge...');
       
-      // Volvemos a usar el cliente de Supabase para las llamadas a funciones
       const { data, error: functionError } = await supabase.functions.invoke('get-coes-data', {
         method: 'POST',
-        body: {},
+        body: {
+          startDate,
+          endDate
+        },
       });
 
       if (functionError) {
@@ -66,7 +71,7 @@ export const ForecastManagement = () => {
     } finally {
       setLoadingCoes(false);
     }
-  }, []);
+  }, [startDate, endDate]);
 
   useEffect(() => {
     fetchCoesData();
@@ -82,7 +87,32 @@ export const ForecastManagement = () => {
               Última actualización: {format(lastUpdate, 'dd/MM/yyyy HH:mm:ss')}
             </p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative">
+                <label className="block text-sm font-medium mb-1">Desde:</label>
+                <Calendar className="absolute top-9 left-3 h-4 w-4 text-gray-500" />
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="pl-9"
+                  max={endDate}
+                />
+              </div>
+              <div className="relative">
+                <label className="block text-sm font-medium mb-1">Hasta:</label>
+                <Calendar className="absolute top-9 left-3 h-4 w-4 text-gray-500" />
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="pl-9"
+                  min={startDate}
+                  max={format(subDays(new Date(), 1), 'yyyy-MM-dd')}
+                />
+              </div>
+            </div>
             <Button 
               onClick={fetchCoesData} 
               disabled={loadingCoes}

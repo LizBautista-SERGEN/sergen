@@ -1,5 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { extractCoesData } from "./coesApi.ts";
+import { processExcelData } from "./excelProcessor.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,31 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
-// Función temporal para generar datos de prueba
-const generateMockData = () => {
-  const data = [];
-  const startDate = new Date();
-  startDate.setHours(0, 0, 0, 0);
-  
-  for (let i = 0; i < 24; i++) {
-    const date = new Date(startDate);
-    date.setHours(i);
-    
-    data.push({
-      Fecha: date.toISOString(),
-      "Reprogramación Diaria": Math.round(4500 + Math.random() * 1000),
-      "Pronóstico": Math.round(4500 + Math.random() * 1000),
-      "Rango Mínimo": Math.round(4200 + Math.random() * 500),
-      "Rango Máximo": Math.round(5000 + Math.random() * 500),
-      "Ejecutado": Math.round(4500 + Math.random() * 1000)
-    });
-  }
-  
-  return data;
-};
-
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -40,14 +18,14 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Iniciando generación de datos de prueba...');
+    console.log('Iniciando extracción de datos COES...');
     
-    // Por ahora, generamos datos de prueba
-    const mockData = generateMockData();
+    // Obtener datos del COES usando Puppeteer
+    const coesData = await extractCoesData();
     
-    console.log('Datos generados exitosamente:', mockData.length, 'registros');
+    console.log('Datos extraídos exitosamente:', coesData.length, 'registros');
 
-    return new Response(JSON.stringify(mockData), {
+    return new Response(JSON.stringify(coesData), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
