@@ -32,16 +32,20 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   );
 
   // Encontrar el último punto con demanda real
-  const lastRealDemandIndex = sortedData.findIndex((item, index) => {
-    const nextItem = sortedData[index + 1];
-    return item.demanda_real !== null && (!nextItem || nextItem.demanda_real === null);
-  });
+  const lastRealDemandIndex = sortedData.reduce((lastIndex, item, currentIndex) => {
+    if (item.demanda_real !== null) {
+      return currentIndex;
+    }
+    return lastIndex;
+  }, -1);
+
+  console.log('Último índice con demanda real:', lastRealDemandIndex);
 
   const chartData = sortedData.map((item, index) => {
     const currentDate = new Date(item.fecha);
     const hora = currentDate.getUTCHours();
 
-    // Solo mostrar pronóstico y rangos después del último punto de demanda real
+    // Mostrar pronóstico y rangos solo después del último punto de demanda real
     const showForecast = index > lastRealDemandIndex;
 
     return {
@@ -55,6 +59,8 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
       fecha_completa: formatFullDate(item.fecha)
     };
   });
+
+  console.log('Datos procesados del gráfico:', chartData);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
