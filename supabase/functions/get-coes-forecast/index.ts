@@ -12,19 +12,17 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
   const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
   
-  // Configuración específica para la lectura del Excel
+  // Leer el Excel de la manera más simple posible
   const rawData = XLSX.utils.sheet_to_json(worksheet, { 
     header: 1,
-    raw: false,
+    raw: true,
     dateNF: 'yyyy-mm-dd HH:mm:ss'
   });
 
-  console.log('Primera fila de datos del Excel:', rawData[1]);
+  console.log('Datos crudos del Excel:', rawData);
 
-  // Mapeo de columnas según los encabezados del Excel
+  // Mapeo directo de columnas
   const headerRow = rawData[0];
-  console.log('Encabezados del Excel:', headerRow);
-
   const columnIndexes = {
     fecha: headerRow.findIndex((col: string) => col === 'Fecha'),
     reprogramacion: headerRow.findIndex((col: string) => col === 'Reprogramación Diaria'),
@@ -34,90 +32,25 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
     ejecutado: headerRow.findIndex((col: string) => col === 'Ejecutado')
   };
 
-  console.log('Índices de columnas encontrados:', columnIndexes);
-
-  // Verificar que todas las columnas necesarias existen
-  const missingColumns = Object.entries(columnIndexes)
-    .filter(([_, index]) => index === -1)
-    .map(([name]) => name);
-
-  if (missingColumns.length > 0) {
-    console.error('Columnas faltantes:', missingColumns);
-    throw new Error(`Columnas faltantes en el Excel: ${missingColumns.join(', ')}`);
-  }
-
   const now = new Date().toISOString();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
-  // Procesar los datos, eliminando la primera fila (encabezados)
+  // Procesar los datos sin filtros
   const processedData = rawData.slice(1)
     .filter((row: any[]) => Array.isArray(row) && row.length >= 6)
-    .map((row: any[], index: number) => {
-      // Asegurarse de que la fecha se procese correctamente
-      const fechaStr = row[columnIndexes.fecha];
-      console.log(`Procesando fila ${index + 2}, fecha original:`, fechaStr);
+    .map((row: any[]) => {
+      return {
+        fecha: row[columnIndexes.fecha],
+        reprogramacion_diaria: row[columnIndexes.reprogramacion],
+        pronostico: row[columnIndexes.pronostico],
+        rango_minimo: row[columnIndexes.rangoMinimo],
+        rango_maximo: row[columnIndexes.rangoMaximo],
+        ejecutado: row[columnIndexes.ejecutado],
+        created_at: now,
+        updated_at: now
+      };
+    });
 
-      let fecha;
-      try {
-        fecha = new Date(fechaStr);
-        if (isNaN(fecha.getTime())) {
-          console.error(`Fecha inválida en fila ${index + 2}:`, fechaStr);
-          return null;
-        }
-
-        // Verificar si la fecha es del día actual
-        const rowDate = new Date(fecha);
-        rowDate.setHours(0, 0, 0, 0);
-        if (rowDate.getTime() !== today.getTime()) {
-          console.log(`Ignorando fecha no actual en fila ${index + 2}:`, fechaStr);
-          return null;
-        }
-
-        const parseNumber = (value: any) => {
-          if (value === undefined || value === null || value === '') {
-            return null;
-          }
-          if (typeof value === 'string') {
-            // Remover cualquier carácter que no sea número, punto o signo negativo
-            value = value.replace(/[^\d.-]/g, '');
-          }
-          const num = parseFloat(value);
-          return isNaN(num) ? null : Number(num.toFixed(2)); // Redondear a 2 decimales
-        };
-
-        const data = {
-          fecha: fecha.toISOString(),
-          reprogramacion_diaria: parseNumber(row[columnIndexes.reprogramacion]),
-          pronostico: parseNumber(row[columnIndexes.pronostico]),
-          rango_minimo: parseNumber(row[columnIndexes.rangoMinimo]),
-          rango_maximo: parseNumber(row[columnIndexes.rangoMaximo]),
-          ejecutado: parseNumber(row[columnIndexes.ejecutado]),
-          created_at: now,
-          updated_at: now
-        };
-
-        // Convertir ejecutado = 0 a null para mantener consistencia
-        if (data.ejecutado === 0) {
-          data.ejecutado = null;
-        }
-
-        console.log(`Datos procesados fila ${index + 2}:`, data);
-        return data;
-
-      } catch (error) {
-        console.error(`Error procesando fila ${index + 2}:`, error);
-        return null;
-      }
-    })
-    .filter(row => row !== null);
-
-  console.log('Total de filas procesadas:', processedData.length);
-  if (processedData.length > 0) {
-    console.log('Primera fila procesada:', processedData[0]);
-    console.log('Última fila procesada:', processedData[processedData.length - 1]);
-  }
-
+  console.log('Datos procesados (sin filtros):', processedData);
   return processedData;
 }
 
@@ -139,7 +72,7 @@ serve(async (req) => {
 
     // Verificar que tengamos datos para procesar
     if (!processedData.length) {
-      throw new Error('No se encontraron datos para el día actual en el Excel');
+      throw new Error('No se encontraron datos en el Excel');
     }
 
     // Guardar los datos en Supabase
@@ -148,22 +81,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Primero, eliminar los datos antiguos del día actual
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const { error: deleteError } = await supabase
-      .from('coes_forecast')
-      .delete()
-      .gte('fecha', today.toISOString())
-      .lt(new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString());
-
-    if (deleteError) {
-      console.error('Error eliminando datos antiguos:', deleteError);
-      throw deleteError;
-    }
-
-    // Insertar los nuevos datos
+    // Insertar los datos sin eliminar los anteriores
     const { error } = await supabase
       .from('coes_forecast')
       .insert(processedData);
