@@ -2,8 +2,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { HistoricalChart } from "./HistoricalChart";
+import { ExportDataDialog } from "../ExportDataDialog";
 
 export const HistoricalTab = () => {
   const { data: historicalData, isLoading, refetch } = useQuery({
@@ -21,10 +24,21 @@ export const HistoricalTab = () => {
 
   const updateHistoricalData = async () => {
     try {
-      await supabase.functions.invoke('get-coes-historical');
-      refetch();
+      const response = await supabase.functions.invoke('get-coes-historical');
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      if (response.data.success) {
+        toast.success(`Datos actualizados correctamente (${response.data.count} registros)`);
+        refetch();
+      } else {
+        throw new Error('Error al actualizar los datos');
+      }
     } catch (error) {
       console.error('Error al actualizar datos históricos:', error);
+      toast.error('Error al actualizar los datos históricos');
     }
   };
 
@@ -40,42 +54,67 @@ export const HistoricalTab = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Datos Históricos</h2>
-        <Button onClick={updateHistoricalData}>
-          Actualizar Datos
-        </Button>
+        <div className="flex gap-4">
+          <Button onClick={updateHistoricalData}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualizar Datos
+          </Button>
+          {historicalData && historicalData.length > 0 && (
+            <ExportDataDialog 
+              data={historicalData} 
+              filename="datos-historicos" 
+              chartComponent={<HistoricalChart data={historicalData} />}
+            />
+          )}
+        </div>
       </div>
 
-      <div className="border rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fecha
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Reprogramación Diaria
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ejecutado
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {historicalData?.map((row) => (
-              <tr key={row.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {format(new Date(row.fecha), 'dd/MM/yyyy HH:mm')}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {row.reprogramacion_diaria?.toLocaleString() || '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {row.ejecutado?.toLocaleString() || '-'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 gap-6">
+        {historicalData && historicalData.length > 0 ? (
+          <>
+            <div className="bg-white p-4 rounded-lg shadow h-[400px]">
+              <HistoricalChart data={historicalData} />
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fecha
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Reprogramación Diaria
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ejecutado
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {historicalData.map((row) => (
+                    <tr key={row.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {format(new Date(row.fecha), 'dd/MM/yyyy HH:mm')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {row.reprogramacion_diaria?.toLocaleString() || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {row.ejecutado?.toLocaleString() || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">
+              No hay datos históricos disponibles. Haz clic en "Actualizar Datos" para obtener los datos más recientes.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
