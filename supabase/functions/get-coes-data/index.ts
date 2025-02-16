@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -19,15 +18,13 @@ serve(async (req) => {
   try {
     console.log('Edge function called successfully');
     
-    // Datos de prueba simplificados
+    // Datos de prueba para pronóstico
     const mockData = [
       {
-        Fecha: new Date().toISOString(),
-        "Reprogramación Diaria": 4500,
-        "Pronóstico": 4600,
-        "Rango Mínimo": 4300,
-        "Rango Máximo": 4800,
-        "Ejecutado": 4550
+        fecha: new Date().toISOString(),
+        pronostico: 4600,
+        rango_min: 4300,
+        rango_max: 4800
       }
     ];
 
