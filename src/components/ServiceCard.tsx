@@ -29,7 +29,7 @@ const ServiceCard = ({ title, description, icon, image, onClick }: ServiceCardPr
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-sergen-100 text-sergen-700">
           {icon}
         </div>
-        <h3 className="mb-2 text-xl font-semibold text-gray-900">{title}</h3>
+        <h3 className="mb-2 text-xl font-semibold text-[#f39200]">{title}</h3>
         <p className="text-gray-600 flex-grow">{description}</p>
       </div>
     </Card>

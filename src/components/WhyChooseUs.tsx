@@ -27,13 +27,13 @@ const WhyChooseUs = () => {
   ];
 
   return (
-    <section className="bg-sergen-600 py-24">
+    <section className="bg-gradient-to-b from-white to-sergen-50/30 py-24">
       <div className="container mx-auto px-4">
         <AnimatedSection className="text-center mb-16">
-          <h2 className="mb-6 text-4xl font-bold text-white">
+          <h2 className="mb-6 text-4xl font-bold text-gray-900">
             Por qué elegirnos
           </h2>
-          <p className="text-lg text-white/80 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Nuestra experiencia y compromiso nos distinguen en el mercado de eficiencia energética
           </p>
         </AnimatedSection>
