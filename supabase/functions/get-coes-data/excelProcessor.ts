@@ -74,15 +74,39 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       };
     }).filter((item): item is ProcessedData => item !== null);
 
-    // Identificar la hora de corte (último dato ejecutado)
-    const currentDate = new Date();
-    const currentHour = currentDate.getHours();
-    
-    console.log('Procesando datos finales:', processedData.length, 'registros');
-    console.log('Hora actual:', currentHour);
+    // Verificar si hay datos ejecutados
+    const hasExecutedData = processedData.some(item => item.Ejecutado !== null);
+    console.log('¿Hay datos ejecutados?:', hasExecutedData);
 
-    // No limpiamos los datos de pronóstico, permitimos que se muestren todos
-    const finalData = processedData;
+    let finalData = processedData;
+
+    if (hasExecutedData) {
+      // Encontrar el último dato ejecutado solo si hay datos ejecutados
+      let lastExecutedIndex = processedData.length - 1;
+      for (let i = processedData.length - 1; i >= 0; i--) {
+        if (processedData[i].Ejecutado !== null) {
+          lastExecutedIndex = i;
+          break;
+        }
+      }
+
+      console.log('Índice del último dato ejecutado:', lastExecutedIndex);
+
+      // Aplicar el filtrado solo si hay datos ejecutados
+      finalData = processedData.map((item, index) => {
+        if (index < lastExecutedIndex) {
+          return {
+            ...item,
+            "Pronóstico": null,
+            "Rango Mínimo": null,
+            "Rango Máximo": null
+          };
+        }
+        return item;
+      });
+    } else {
+      console.log('No hay datos ejecutados, mostrando todos los pronósticos');
+    }
 
     if (finalData.length === 0) {
       throw new Error('No se encontraron datos válidos en el archivo Excel');
