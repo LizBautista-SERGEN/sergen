@@ -9,23 +9,65 @@ const corsHeaders = {
 }
 
 async function processExcelData(arrayBuffer: ArrayBuffer) {
-  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
 
   console.log('Datos crudos del Excel:', rawData);
+
+  // Mapeo de columnas según los encabezados del Excel
+  const headerRow = rawData[0];
+  const columnIndexes = {
+    fecha: headerRow.findIndex((col: string) => col === 'Fecha'),
+    reprogramacion: headerRow.findIndex((col: string) => col === 'Reprogramación Diaria'),
+    pronostico: headerRow.findIndex((col: string) => col === 'Pronóstico de Demanda Automático de Tiempo Real'),
+    rangoMinimo: headerRow.findIndex((col: string) => col === 'Rango Mínimo del Pronóstico de Demanda Automático de Tiempo Real'),
+    rangoMaximo: headerRow.findIndex((col: string) => col === 'Rango Máximo del Pronóstico de Demanda Automático de Tiempo Real'),
+    ejecutado: headerRow.findIndex((col: string) => col === 'Ejecutado')
+  };
+
+  // Verificar que todas las columnas necesarias existen
+  const missingColumns = Object.entries(columnIndexes)
+    .filter(([_, index]) => index === -1)
+    .map(([name]) => name);
+
+  if (missingColumns.length > 0) {
+    console.error('Columnas faltantes:', missingColumns);
+    throw new Error(`Columnas faltantes en el Excel: ${missingColumns.join(', ')}`);
+  }
 
   // Procesar los datos, eliminando la primera fila (encabezados)
   return rawData.slice(1)
     .filter((row: any[]) => Array.isArray(row) && row.length >= 6)
-    .map((row: any[]) => ({
-      fecha: new Date(row[0]).toISOString(),
-      pronostico: typeof row[1] === 'number' ? row[1] : null,
-      reprogramacion_diaria: typeof row[2] === 'number' ? row[2] : null,
-      rango_minimo: typeof row[3] === 'number' ? row[3] : null,
-      rango_maximo: typeof row[4] === 'number' ? row[4] : null,
-      ejecutado: typeof row[5] === 'number' ? row[5] : null
-    }));
+    .map((row: any[]) => {
+      // Asegurarse de que la fecha se procese correctamente
+      const fechaStr = row[columnIndexes.fecha];
+      let fecha;
+      try {
+        fecha = new Date(fechaStr);
+        if (isNaN(fecha.getTime())) {
+          throw new Error('Fecha inválida');
+        }
+      } catch (error) {
+        console.error('Error procesando fecha:', fechaStr);
+        return null;
+      }
+
+      const parseNumber = (value: any) => {
+        const num = parseFloat(value);
+        return isNaN(num) ? null : num;
+      };
+
+      return {
+        fecha: fecha.toISOString(),
+        reprogramacion_diaria: parseNumber(row[columnIndexes.reprogramacion]),
+        pronostico: parseNumber(row[columnIndexes.pronostico]),
+        rango_minimo: parseNumber(row[columnIndexes.rangoMinimo]),
+        rango_maximo: parseNumber(row[columnIndexes.rangoMaximo]),
+        ejecutado: parseNumber(row[columnIndexes.ejecutado])
+      };
+    })
+    .filter(row => row !== null); // Eliminar filas con fechas inválidas
 }
 
 serve(async (req) => {
