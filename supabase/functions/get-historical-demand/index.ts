@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 
@@ -89,17 +90,17 @@ serve(async (req) => {
     // Esperar 5 segundos antes de la siguiente petición
     await new Promise(resolve => setTimeout(resolve, 5000));
 
-    // Paso 2: Realizar la búsqueda con las fechas usando BusquedaProDemanda
-    const formData = new URLSearchParams();
-    formData.append('txtFechaInicial', startDateStr);
-    formData.append('txtFechaFinal', endDateStr);
+    // Paso 2: Simular el clic en el botón Consultar
+    const searchFormData = new URLSearchParams();
+    searchFormData.append('txtFechaInicial', startDateStr);
+    searchFormData.append('txtFechaFinal', endDateStr);
     if (csrfToken) {
-      formData.append('__RequestVerificationToken', csrfToken);
+      searchFormData.append('__RequestVerificationToken', csrfToken);
     }
 
-    console.log('Enviando formulario con datos:', formData.toString());
+    console.log('Enviando formulario con datos:', searchFormData.toString());
 
-    const searchResponse = await fetch(`${baseUrl}/BusquedaProDemanda`, {
+    const searchResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -111,18 +112,18 @@ serve(async (req) => {
         'Referer': baseUrl,
         'X-Requested-With': 'XMLHttpRequest',
       },
-      body: formData.toString(),
+      body: searchFormData.toString(),
     });
 
     if (!searchResponse.ok) {
       throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
-    // Esperar 10 segundos antes de exportar
+    // Esperar 10 segundos antes de simular el clic en Exportar
     await new Promise(resolve => setTimeout(resolve, 10000));
 
-    // Paso 3: Descargar el Excel usando ExportarProDemanda
-    const exportResponse = await fetch(`${baseUrl}/ExportarProDemanda`, {
+    // Paso 3: Simular el clic en el botón Exportar
+    const exportResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
