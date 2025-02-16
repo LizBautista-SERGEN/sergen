@@ -28,22 +28,28 @@ serve(async (req) => {
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     
     // Configuramos para obtener los datos con encabezados
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-    console.log("Datos del Excel:", jsonData);
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    console.log("Datos crudos del Excel:", rawData);
 
-    // Procesamos los datos exactamente como vienen en el Excel
-    const data = jsonData.map((row: any) => {
-      const entries = Object.entries(row);
-      // Asumiendo que las columnas están en el orden: Fecha, Pronóstico, Reprogramación, Mínimo, Máximo, Ejecutado
+    // Eliminamos la primera fila (encabezados)
+    const dataRows = rawData.slice(1);
+
+    // Procesamos los datos
+    const data = dataRows.map((row: any) => {
+      if (!Array.isArray(row) || row.length < 6) {
+        console.warn('Fila inválida:', row);
+        return null;
+      }
+      
       return {
-        fecha: entries[0][1],  // Primera columna (fecha)
-        pronostico: typeof entries[1]?.[1] === 'number' ? entries[1][1] : null,
-        reprogramacion_diaria: typeof entries[2]?.[1] === 'number' ? entries[2][1] : null,
-        rango_minimo: typeof entries[3]?.[1] === 'number' ? entries[3][1] : null,
-        rango_maximo: typeof entries[4]?.[1] === 'number' ? entries[4][1] : null,
-        ejecutado: typeof entries[5]?.[1] === 'number' ? entries[5][1] : null
+        fecha: row[0],
+        pronostico: typeof row[1] === 'number' ? row[1] : null,
+        reprogramacion_diaria: typeof row[2] === 'number' ? row[2] : null,
+        rango_minimo: typeof row[3] === 'number' ? row[3] : null,
+        rango_maximo: typeof row[4] === 'number' ? row[4] : null,
+        ejecutado: typeof row[5] === 'number' ? row[5] : null
       };
-    });
+    }).filter(item => item !== null);
 
     console.log("Datos procesados:", data);
 
@@ -53,11 +59,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    let successCount = 0;
+    let errorCount = 0;
+
     for (const item of data) {
       const { error } = await supabase
         .from('coes_forecast')
         .upsert({
-          fecha: new Date(item.fecha),
+          fecha: new Date(item.fecha).toISOString(),
           pronostico: item.pronostico,
           reprogramacion_diaria: item.reprogramacion_diaria,
           rango_minimo: item.rango_minimo,
@@ -69,11 +78,24 @@ serve(async (req) => {
 
       if (error) {
         console.error('Error insertando datos:', error);
+        errorCount++;
+      } else {
+        successCount++;
       }
     }
 
+    console.log(`Registros procesados: ${successCount} exitosos, ${errorCount} errores`);
+
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ 
+        success: true, 
+        data,
+        stats: {
+          totalProcessed: data.length,
+          successCount,
+          errorCount
+        }
+      }),
       { 
         headers: { 
           ...corsHeaders,

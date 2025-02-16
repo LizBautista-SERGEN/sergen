@@ -28,17 +28,8 @@ export const ForecastPage = () => {
         return;
       }
 
-      const processedData = forecastData.map(item => ({
-        Fecha: item.fecha,
-        "Pronóstico": item.pronostico,
-        "Reprogramación Diaria": item.reprogramacion_diaria,
-        "Rango Mínimo": item.rango_minimo,
-        "Rango Máximo": item.rango_maximo,
-        "Ejecutado": item.ejecutado
-      }));
-
-      setData(processedData);
-      console.log('Datos cargados:', processedData);
+      setData(forecastData);
+      console.log('Datos cargados de Supabase:', forecastData);
 
     } catch (error) {
       console.error('Error fetching forecast data:', error);
@@ -57,6 +48,7 @@ export const ForecastPage = () => {
         throw new Error('Error actualizando datos del COES');
       }
 
+      console.log('Respuesta de la función get-coes-forecast:', response.data);
       await fetchData();
       toast.success('Datos actualizados correctamente');
     } catch (error) {
@@ -93,12 +85,20 @@ export const ForecastPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white p-4 rounded-lg shadow h-[400px]">
-          <ForecastChart data={data} />
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
-          <ForecastTable data={data} />
-        </div>
+        {data.length > 0 ? (
+          <>
+            <div className="bg-white p-4 rounded-lg shadow h-[400px]">
+              <ForecastChart data={data} />
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
+              <ForecastTable data={data} />
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No hay datos disponibles. Haz clic en "Actualizar" para cargar los datos.</p>
+          </div>
+        )}
       </div>
     </div>
   );
