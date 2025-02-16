@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart } from 'recharts';
 import { format } from 'date-fns';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -61,19 +61,71 @@ export const ForecastManagement = () => {
   }, []);
 
   useEffect(() => {
-    // Cargar datos inmediatamente al montar el componente
     fetchCoesData();
-
-    // Configurar actualización automática cada 30 minutos
-    const interval = setInterval(fetchCoesData, 30 * 60 * 1000);
-
-    return () => clearInterval(interval);
   }, [fetchCoesData]);
 
   const formatNumber = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return '-';
     return value.toLocaleString();
   };
+
+  const renderChart = () => (
+    <ComposedChart
+      width={800}
+      height={400}
+      data={coesData}
+      margin={{ top: 30, right: 30, left: 50, bottom: 30 }}
+    >
+      <XAxis
+        dataKey="Fecha"
+        tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+      />
+      <YAxis
+        domain={[6000, 9000]}
+        tickFormatter={(value) => `${value.toLocaleString()}`}
+      />
+      <Tooltip
+        labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
+        formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
+      />
+      <Legend />
+      <Area
+        type="monotone"
+        dataKey="Rango Máximo"
+        fill="#90C41833"
+        stroke="#90C418"
+        strokeWidth={2}
+      />
+      <Area
+        type="monotone"
+        dataKey="Rango Mínimo"
+        fill="#90C41833"
+        stroke="#90C418"
+        strokeWidth={2}
+      />
+      <Line
+        type="monotone"
+        dataKey="Ejecutado"
+        stroke="#156082"
+        strokeWidth={2}
+        dot={false}
+      />
+      <Line
+        type="monotone"
+        dataKey="Reprogramación Diaria"
+        stroke="#C00000"
+        strokeWidth={2}
+        dot={false}
+      />
+      <Line
+        type="monotone"
+        dataKey="Pronóstico"
+        stroke="#F39200"
+        strokeWidth={2}
+        dot={false}
+      />
+    </ComposedChart>
+  );
 
   return (
     <div className="space-y-6 p-6">
@@ -101,66 +153,7 @@ export const ForecastManagement = () => {
             <ExportDataDialog 
               data={coesData}
               filename={`pronostico-demanda-${format(new Date(), 'yyyyMMdd')}`}
-              chartComponent={
-                <LineChart 
-                  width={800} 
-                  height={400} 
-                  data={coesData}
-                  margin={{ top: 30, right: 30, left: 50, bottom: 30 }}
-                >
-                  <XAxis 
-                    dataKey="Fecha"
-                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
-                  />
-                  <YAxis 
-                    domain={[6000, 9000]}
-                    tickFormatter={(value) => `${value.toLocaleString()}`}
-                  />
-                  <Tooltip 
-                    labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
-                    formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="Rango Máximo"
-                    stroke="#90C418"
-                    fill="#90C41833"
-                    fillOpacity={0.3}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="Rango Mínimo"
-                    stroke="#90C418"
-                    fill="#90C41833"
-                    fillOpacity={0.3}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Ejecutado"
-                    name="Ejecutado"
-                    stroke="#156082" 
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Reprogramación Diaria"
-                    name="Programado"
-                    stroke="#C00000"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Pronóstico"
-                    name="Pronóstico"
-                    stroke="#F39200"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              }
+              chartComponent={renderChart()}
             />
           </div>
         </div>
@@ -175,62 +168,7 @@ export const ForecastManagement = () => {
           <div className="mt-4 space-y-6">
             <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart 
-                  data={coesData}
-                  margin={{ top: 30, right: 30, left: 50, bottom: 30 }}
-                >
-                  <XAxis 
-                    dataKey="Fecha"
-                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
-                  />
-                  <YAxis 
-                    domain={[6000, 9000]}
-                    tickFormatter={(value) => `${value.toLocaleString()}`}
-                  />
-                  <Tooltip 
-                    labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
-                    formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="Rango Máximo"
-                    stroke="#90C418"
-                    fill="#90C41833"
-                    fillOpacity={0.3}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="Rango Mínimo"
-                    stroke="#90C418"
-                    fill="#90C41833"
-                    fillOpacity={0.3}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Ejecutado"
-                    name="Ejecutado"
-                    stroke="#156082" 
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Reprogramación Diaria"
-                    name="Programado"
-                    stroke="#C00000"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Pronóstico"
-                    name="Pronóstico"
-                    stroke="#F39200"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
+                {renderChart()}
               </ResponsiveContainer>
             </div>
 

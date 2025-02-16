@@ -82,21 +82,13 @@ const Navbar = () => {
               </Link>
             ))}
             {isLoggedIn ? (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/admin/dashboard"
-                  className="text-gray-600 hover:text-sergen-500 transition-colors"
-                >
-                  Panel de Control
-                </Link>
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                  className="text-sergen-500 hover:text-sergen-600"
-                >
-                  Cerrar Sesión
-                </Button>
-              </div>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="text-sergen-500 hover:text-sergen-600"
+              >
+                Cerrar Sesión
+              </Button>
             ) : (
               <Link to="/login">
                 <Button
@@ -137,24 +129,15 @@ const Navbar = () => {
               </Link>
             ))}
             {isLoggedIn ? (
-              <>
-                <Link
-                  to="/admin/dashboard"
-                  className="block text-gray-600 hover:text-sergen-500 transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Panel de Control
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsOpen(false);
-                  }}
-                  className="block w-full text-left text-gray-600 hover:text-sergen-500 transition-colors"
-                >
-                  Cerrar Sesión
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setIsOpen(false);
+                }}
+                className="block w-full text-left text-gray-600 hover:text-sergen-500 transition-colors"
+              >
+                Cerrar Sesión
+              </button>
             ) : (
               <Link
                 to="/login"
