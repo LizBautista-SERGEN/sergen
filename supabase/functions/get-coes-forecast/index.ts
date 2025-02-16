@@ -20,7 +20,6 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
 
   console.log('Datos crudos del Excel:', rawData);
 
-  // Actualizar los índices de las columnas con los nuevos nombres
   const headerRow = rawData[0];
   const columnIndexes = {
     fecha: headerRow.findIndex((col: string) => col === 'Fecha'),
@@ -77,12 +76,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Usar upsert en lugar de insert
     const { error } = await supabase
       .from('coes_forecast')
-      .insert(processedData);
+      .upsert(processedData, {
+        onConflict: 'fecha',
+        ignoreDuplicates: false
+      });
 
     if (error) {
-      console.error('Error insertando datos:', error);
+      console.error('Error actualizando datos:', error);
       throw error;
     }
 
