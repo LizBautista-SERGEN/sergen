@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,8 +22,9 @@ export const ForecastManagement = () => {
   const [loadingCoes, setLoadingCoes] = useState(false);
   const [coesData, setCoesData] = useState<CoesData[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-  const fetchCoesData = async () => {
+  const fetchCoesData = useCallback(async () => {
     setLoadingCoes(true);
     setError(null);
     try {
@@ -43,8 +45,8 @@ export const ForecastManagement = () => {
         toast.warning('No se encontraron datos disponibles');
       } else {
         setCoesData(response);
-        console.log('Datos de COES:', response);
-        toast.success('Datos obtenidos exitosamente');
+        setLastUpdate(new Date());
+        console.log('Datos de COES actualizados:', response);
       }
       
     } catch (error) {
@@ -55,11 +57,18 @@ export const ForecastManagement = () => {
     } finally {
       setLoadingCoes(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCoesData();
-  }, []);
+
+    // Configurar actualización automática cada 30 minutos
+    const interval = setInterval(() => {
+      fetchCoesData();
+    }, 30 * 60 * 1000); // 30 minutos en milisegundos
+
+    return () => clearInterval(interval);
+  }, [fetchCoesData]);
 
   // Función auxiliar para formatear números de manera segura
   const formatNumber = (value: number | null | undefined): string => {
@@ -71,7 +80,12 @@ export const ForecastManagement = () => {
     <div className="space-y-6 p-6">
       <div className="flex flex-col space-y-4 rounded-lg border p-6 bg-white">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Pronóstico de Demanda</h2>
+          <div>
+            <h2 className="text-xl font-semibold">Pronóstico de Demanda</h2>
+            <p className="text-sm text-gray-500">
+              Última actualización: {format(lastUpdate, 'dd/MM/yyyy HH:mm:ss')}
+            </p>
+          </div>
           <div className="flex gap-4">
             <Button 
               onClick={fetchCoesData} 

@@ -39,6 +39,26 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       throw new Error('No se encontraron datos en el archivo Excel');
     }
 
+    // Encontrar el último dato ejecutado
+    let lastExecutedTime: Date | null = null;
+    for (let i = jsonData.length - 1; i >= 0; i--) {
+      const row = jsonData[i];
+      const ejecutado = row['Ejecutado'] || row['EJECUTADO'];
+      const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
+      
+      if (ejecutado && fecha) {
+        lastExecutedTime = new Date(fecha);
+        break;
+      }
+    }
+
+    if (!lastExecutedTime) {
+      console.log('No se encontró último dato ejecutado, usando hora actual');
+      lastExecutedTime = new Date();
+    }
+
+    console.log('Hora del último dato ejecutado:', lastExecutedTime);
+
     const processedData = jsonData.map((row: any) => {
       const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
       const reprogramacion = row['Reprogramación Diaria'] || row['REPROGRAMACIÓN DIARIA'];
@@ -56,8 +76,12 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
         return null;
       }
 
-      // Procesar valores numéricos, convertir 0 a null pero mantener los valores tal cual vienen del Excel
-      const processValue = (value: any): number | null => {
+      const rowDate = new Date(fecha);
+      const shouldShowForecast = lastExecutedTime && rowDate >= lastExecutedTime;
+
+      // Procesar valores numéricos
+      const processValue = (value: any, isForecast = false): number | null => {
+        if (isForecast && !shouldShowForecast) return null;
         if (!value) return null;
         const processed = parseNumber(value);
         return processed === 0 ? null : processed;
@@ -66,9 +90,9 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       return {
         Fecha: fecha,
         "Reprogramación Diaria": processValue(reprogramacion),
-        "Pronóstico": processValue(pronostico),
-        "Rango Mínimo": processValue(rangoMin),
-        "Rango Máximo": processValue(rangoMax),
+        "Pronóstico": processValue(pronostico, true),
+        "Rango Mínimo": processValue(rangoMin, true),
+        "Rango Máximo": processValue(rangoMax, true),
         "Ejecutado": processValue(ejecutado)
       };
     }).filter((item): item is ProcessedData => item !== null);
