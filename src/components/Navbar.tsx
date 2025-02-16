@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
@@ -72,10 +73,10 @@ const Navbar = () => {
             {isLoggedIn ? (
               <div className="flex items-center space-x-4">
                 <Link
-                  to="/dashboard"
+                  to="/admin/dashboard"
                   className="text-gray-600 hover:text-sergen-500 transition-colors"
                 >
-                  Dashboard
+                  Panel de Control
                 </Link>
                 <Button
                   onClick={handleLogout}
@@ -127,11 +128,11 @@ const Navbar = () => {
             {isLoggedIn ? (
               <>
                 <Link
-                  to="/dashboard"
+                  to="/admin/dashboard"
                   className="block text-gray-600 hover:text-sergen-500 transition-colors"
                   onClick={() => setIsOpen(false)}
                 >
-                  Dashboard
+                  Panel de Control
                 </Link>
                 <button
                   onClick={() => {
