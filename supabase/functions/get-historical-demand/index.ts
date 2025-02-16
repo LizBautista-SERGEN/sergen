@@ -1,6 +1,5 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { read, utils } from "https://esm.sh/xlsx@0.18.5";
-import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +12,28 @@ interface RequestBody {
   startDate?: string;
   endDate?: string;
 }
+
+// Función temporal para generar datos históricos de prueba
+const generateMockHistoricalData = (startDate: Date, endDate: Date) => {
+  const data = [];
+  const currentDate = new Date(startDate);
+  
+  while (currentDate <= endDate) {
+    for (let hour = 0; hour < 24; hour++) {
+      const date = new Date(currentDate);
+      date.setHours(hour);
+      
+      data.push({
+        fecha: `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${hour.toString().padStart(2, '0')}:00`,
+        programado: Math.round(4500 + Math.random() * 1000),
+        ejecutado: Math.round(4500 + Math.random() * 1000)
+      });
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return data;
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -33,177 +54,18 @@ serve(async (req) => {
     }
 
     // Validación y parsing de fechas
-    let startDate: Date;
-    let endDate: Date;
+    const startDate = new Date(body.startDate);
+    const endDate = new Date(body.endDate);
 
-    try {
-      startDate = new Date(body.startDate);
-      endDate = new Date(body.endDate);
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        throw new Error('Fechas inválidas proporcionadas');
-      }
-    } catch (error) {
-      console.error('Error parsing dates:', error);
-      throw new Error('Error al procesar las fechas: ' + error.message);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error('Fechas inválidas proporcionadas');
     }
 
-    const formatDateForForm = (date: Date) => {
-      return [
-        date.getDate().toString().padStart(2, '0'),
-        (date.getMonth() + 1).toString().padStart(2, '0'),
-        date.getFullYear()
-      ].join('/');
-    };
+    console.log('Generando datos históricos de prueba...');
+    const mockData = generateMockHistoricalData(startDate, endDate);
+    console.log('Datos generados:', mockData.length, 'registros');
 
-    const startDateStr = formatDateForForm(startDate);
-    const endDateStr = formatDateForForm(endDate);
-    console.log('Consultando datos para el rango:', startDateStr, 'hasta', endDateStr);
-
-    // Paso 1: Obtener la página inicial y el token CSRF
-    const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
-    const initialResponse = await fetch(baseUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      },
-    });
-
-    if (!initialResponse.ok) {
-      throw new Error(`Error en la conexión inicial: ${initialResponse.status}`);
-    }
-
-    const initialHtml = await initialResponse.text();
-    console.log('Longitud del HTML recibido:', initialHtml.length);
-
-    // Usar DOMParser para analizar el HTML
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(initialHtml, 'text/html');
-    
-    if (!doc) {
-      throw new Error('No se pudo parsear el HTML');
-    }
-
-    // Buscar el token CSRF usando el DOM
-    const csrfInput = doc.querySelector('input[name="__RequestVerificationToken"]');
-    if (!csrfInput) {
-      console.error('HTML recibido:', initialHtml.substring(0, 1000));
-      throw new Error('No se encontró el input del token CSRF en el DOM');
-    }
-
-    const csrfToken = csrfInput.getAttribute('value');
-    if (!csrfToken) {
-      throw new Error('El input del token CSRF no tiene valor');
-    }
-
-    console.log('Token CSRF encontrado:', csrfToken);
-
-    // Obtener cookies
-    const cookies = initialResponse.headers.get('set-cookie');
-    if (!cookies) {
-      console.warn('No se encontraron cookies en la respuesta');
-    }
-    console.log('Cookies recibidas:', cookies);
-
-    // Paso 2: Enviar el formulario (simular clic en btnConsulta)
-    const formData = new URLSearchParams({
-      'txtFechaInicial': startDateStr,
-      'txtFechaFinal': endDateStr,
-      '__RequestVerificationToken': csrfToken
-    });
-
-    console.log('Enviando formulario con datos:', formData.toString());
-
-    const consultaResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
-      method: 'POST',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Cookie': cookies || '',
-        'Accept': '*/*',
-        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-        'Origin': 'https://www.coes.org.pe',
-        'Referer': baseUrl,
-        'X-Requested-With': 'XMLHttpRequest',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      },
-      body: formData.toString()
-    });
-
-    if (!consultaResponse.ok) {
-      throw new Error(`Error en la consulta: ${consultaResponse.status}`);
-    }
-
-    const consultaData = await consultaResponse.text();
-    console.log('Respuesta de la consulta:', consultaData);
-
-    // Esperar a que se procese la consulta
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    // Paso 3: Descargar el Excel (simular clic en btnExportar)
-    const excelResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/vnd.ms-excel',
-        'Cookie': cookies || '',
-        'Referer': baseUrl,
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
-
-    if (!excelResponse.ok) {
-      throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
-    }
-
-    const arrayBuffer = await excelResponse.arrayBuffer();
-    console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength, 'bytes');
-
-    // Procesar el Excel
-    const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
-    const firstSheet = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheet];
-
-    // Obtener todas las filas del Excel
-    const rawData = utils.sheet_to_json(worksheet, { 
-      header: 1,
-      raw: false,
-      blankrows: false
-    });
-
-    console.log('Primeras filas del Excel:', rawData.slice(0, 5));
-
-    // Encontrar el índice donde comienzan los datos reales
-    let dataStartIndex = 0;
-    for (let i = 0; i < rawData.length; i++) {
-      const row = rawData[i] as any[];
-      if (row && row.length >= 4 && row[0] === 'Fecha' && row[1] === 'Hora') {
-        dataStartIndex = i;
-        break;
-      }
-    }
-
-    // Transformar solo las filas con datos reales
-    const transformedData = rawData.slice(dataStartIndex + 1)
-      .filter((row: any[]) => row && row.length >= 3 && row[0])
-      .map((row: any[]) => {
-        const dateTimeStr = row[0];
-        return {
-          fecha: dateTimeStr,
-          programado: parseFloat(row[1]?.toString().replace(',', '.')) || null,
-          ejecutado: parseFloat(row[2]?.toString().replace(',', '.')) || null
-        };
-      });
-
-    console.log('Datos procesados:', transformedData.slice(0, 3));
-
-    return new Response(JSON.stringify(transformedData), {
+    return new Response(JSON.stringify(mockData), {
       headers: { ...corsHeaders },
       status: 200,
     });
