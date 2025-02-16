@@ -12,6 +12,11 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
     return value.toLocaleString();
   };
 
+  // Ordenamos los datos por fecha
+  const sortedData = [...data].sort((a, b) => 
+    new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+  );
+
   return (
     <Table>
       <TableHeader>
@@ -25,16 +30,22 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.map((item, index) => (
-          <TableRow key={index}>
-            <TableCell>{format(parseISO(item.fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-            <TableCell>{formatNumber(item.reprogramacion)}</TableCell>
-            <TableCell>{formatNumber(item.pronostico_diario)}</TableCell>
-            <TableCell>{formatNumber(item.rango_inferior)}</TableCell>
-            <TableCell>{formatNumber(item.rango_superior)}</TableCell>
-            <TableCell>{formatNumber(item.demanda_real)}</TableCell>
-          </TableRow>
-        ))}
+        {sortedData.map((item, index) => {
+          // Extraemos solo la fecha y hora del campo fecha, ignorando created_at y updated_at
+          const fechaOriginal = parseISO(item.fecha);
+          return (
+            <TableRow key={index}>
+              <TableCell>
+                {format(fechaOriginal, 'dd/MM/yyyy HH:mm')}
+              </TableCell>
+              <TableCell>{formatNumber(item.reprogramacion)}</TableCell>
+              <TableCell>{formatNumber(item.pronostico_diario)}</TableCell>
+              <TableCell>{formatNumber(item.rango_inferior)}</TableCell>
+              <TableCell>{formatNumber(item.rango_superior)}</TableCell>
+              <TableCell>{formatNumber(item.demanda_real)}</TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

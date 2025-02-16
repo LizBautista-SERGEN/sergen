@@ -8,16 +8,23 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
-  const chartData = data.map(item => {
-    const itemDate = parseISO(item.fecha);
+  // Ordenamos los datos por fecha
+  const sortedData = [...data].sort((a, b) => 
+    new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+  );
+
+  const chartData = sortedData.map(item => {
+    // Usamos solo el campo fecha, ignorando created_at y updated_at
+    const fechaOriginal = parseISO(item.fecha);
     return {
-      time: format(itemDate, 'HH:mm'),
+      time: format(fechaOriginal, 'HH:mm'),
       "Reprogramación": item.reprogramacion || null,
       "Pronóstico Diario": item.pronostico_diario || null,
       "Rango Inferior": item.rango_inferior || null,
       "Rango Superior": item.rango_superior || null,
       "Demanda Real": item.demanda_real || null,
-      hora: parseInt(format(itemDate, 'H')),
+      hora: parseInt(format(fechaOriginal, 'H')),
+      fecha_completa: format(fechaOriginal, 'dd/MM/yyyy HH:mm')
     };
   });
 
@@ -40,7 +47,12 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         />
         <Tooltip
           formatter={(value: any) => value ? [`${value.toLocaleString()} MW`, ''] : ['No disponible', '']}
-          labelFormatter={(label) => `Hora: ${label}`}
+          labelFormatter={(label, payload) => {
+            if (payload && payload[0]) {
+              return `${payload[0].payload.fecha_completa}`;
+            }
+            return label;
+          }}
         />
         <Legend verticalAlign="top" height={36} />
 
