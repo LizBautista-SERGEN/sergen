@@ -1,27 +1,17 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart, ReferenceArea } from 'recharts';
-import { format, isWithinInterval, set } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { ExportDataDialog } from "./ExportDataDialog";
-
-interface CoesData {
-  Fecha: string;
-  "Reprogramación Diaria": number | null;
-  "Pronóstico": number | null;
-  "Rango Mínimo": number | null;
-  "Rango Máximo": number | null;
-  "Ejecutado": number | null;
-}
+import { ForecastChart } from "./forecast/ForecastChart";
+import { ForecastTable } from "./forecast/ForecastTable";
 
 export const ForecastManagement = () => {
   const [loadingCoes, setLoadingCoes] = useState(false);
-  const [coesData, setCoesData] = useState<CoesData[]>([]);
+  const [coesData, setCoesData] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
@@ -64,102 +54,6 @@ export const ForecastManagement = () => {
     fetchCoesData();
   }, [fetchCoesData]);
 
-  const formatNumber = (value: number | null | undefined): string => {
-    if (value === null || value === undefined) return '-';
-    return value.toLocaleString();
-  };
-
-  const isPeakHour = (time: string) => {
-    const hour = new Date(time).getHours();
-    return hour >= 18 && hour <= 23;
-  };
-
-  const renderChart = () => {
-    // Identificar todas las fechas únicas para las áreas sombreadas de horas punta
-    const uniqueDates = [...new Set(coesData.map(data => format(new Date(data.Fecha), 'yyyy-MM-dd')))];
-    const peakHourRanges = uniqueDates.map(date => {
-      return {
-        start: `${date}T18:00:00`,
-        end: `${date}T23:00:00`
-      };
-    });
-
-    return (
-      <ComposedChart
-        width={800}
-        height={400}
-        data={coesData}
-        margin={{ top: 30, right: 30, left: 50, bottom: 30 }}
-      >
-        {/* Áreas sombreadas para horas punta */}
-        {peakHourRanges.map((range, index) => (
-          <ReferenceArea
-            key={index}
-            x1={range.start}
-            x2={range.end}
-            fill="#00000010"
-            fillOpacity={0.3}
-          />
-        ))}
-        <XAxis
-          dataKey="Fecha"
-          tickFormatter={(value) => format(new Date(value), 'HH:mm')}
-        />
-        <YAxis
-          domain={[6000, 9000]}
-          tickFormatter={(value) => `${value.toLocaleString()}`}
-        />
-        <Tooltip
-          labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
-          formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
-        />
-        <Legend />
-        <Area
-          type="monotone"
-          dataKey="Rango Máximo"
-          fill="#90C41833"
-          fillOpacity={0.3}
-          stroke="#90C418"
-          strokeWidth={1}
-          strokeDasharray="5 5"
-          activeDot={false}
-        />
-        <Area
-          type="monotone"
-          dataKey="Rango Mínimo"
-          stroke="#90C418"
-          strokeWidth={1}
-          strokeDasharray="5 5"
-          fill="#90C41833"
-          fillOpacity={0.3}
-          activeDot={false}
-          baseValue="dataMin"
-        />
-        <Line
-          type="monotone"
-          dataKey="Ejecutado"
-          stroke="#156082"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line
-          type="monotone"
-          dataKey="Reprogramación Diaria"
-          stroke="#C00000"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line
-          type="monotone"
-          dataKey="Pronóstico"
-          stroke="#F39200"
-          strokeWidth={2}
-          dot={false}
-        />
-      </ComposedChart>
-    );
-  };
-
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col space-y-4 rounded-lg border p-6 bg-white">
@@ -186,7 +80,7 @@ export const ForecastManagement = () => {
             <ExportDataDialog 
               data={coesData}
               filename={`pronostico-demanda-${format(new Date(), 'yyyyMMdd')}`}
-              chartComponent={renderChart()}
+              chartComponent={<ForecastChart data={coesData} forPDF={true} />}
             />
           </div>
         </div>
@@ -201,34 +95,11 @@ export const ForecastManagement = () => {
           <div className="mt-4 space-y-6">
             <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                {renderChart()}
+                <ForecastChart data={coesData} />
               </ResponsiveContainer>
             </div>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Programado</TableHead>
-                  <TableHead>Pronóstico</TableHead>
-                  <TableHead>Rango Mínimo</TableHead>
-                  <TableHead>Rango Máximo</TableHead>
-                  <TableHead>Ejecutado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {coesData.map((data, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
-                    <TableCell>{data["Reprogramación Diaria"] ? `${formatNumber(data["Reprogramación Diaria"])} MW` : '-'}</TableCell>
-                    <TableCell>{data["Pronóstico"] ? `${formatNumber(data["Pronóstico"])} MW` : '-'}</TableCell>
-                    <TableCell>{data["Rango Mínimo"] ? `${formatNumber(data["Rango Mínimo"])} MW` : '-'}</TableCell>
-                    <TableCell>{data["Rango Máximo"] ? `${formatNumber(data["Rango Máximo"])} MW` : '-'}</TableCell>
-                    <TableCell>{data["Ejecutado"] ? `${formatNumber(data["Ejecutado"])} MW` : '-'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ForecastTable data={coesData} />
           </div>
         )}
       </div>
