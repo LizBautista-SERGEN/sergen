@@ -1,5 +1,5 @@
 
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ForecastTableProps {
@@ -27,7 +27,7 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
       <TableBody>
         {data.map((item, index) => (
           <TableRow key={index}>
-            <TableCell>{format(new Date(item.fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
+            <TableCell>{format(parseISO(item.fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
             <TableCell>{formatNumber(item.reprogramacion)}</TableCell>
             <TableCell>{formatNumber(item.pronostico_diario)}</TableCell>
             <TableCell>{formatNumber(item.rango_inferior)}</TableCell>

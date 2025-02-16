@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
 import * as XLSX from 'npm:xlsx@0.18.5'
@@ -13,25 +12,21 @@ function parseExcelDate(date: any): string {
   
   // Si es un objeto Date, lo convertimos directamente
   if (date instanceof Date) {
-    // Ajustamos a UTC-5 (América Latina)
-    const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
-    return utcDate.toISOString();
+    return date.toISOString();
   }
   
   // Si es un número (fecha en formato Excel), lo convertimos a fecha
   if (typeof date === 'number') {
     const excelEpoch = new Date(1899, 11, 30);
     const utcDate = new Date(excelEpoch.getTime() + (date * 24 * 60 * 60 * 1000));
-    // Ajustamos a UTC-5
-    return new Date(utcDate.getTime() + (utcDate.getTimezoneOffset() * 60000)).toISOString();
+    return utcDate.toISOString();
   }
   
   // Si es string, intentamos parsearlo
   try {
     const parsedDate = new Date(date);
     if (!isNaN(parsedDate.getTime())) {
-      // Ajustamos a UTC-5
-      return new Date(parsedDate.getTime() + (parsedDate.getTimezoneOffset() * 60000)).toISOString();
+      return parsedDate.toISOString();
     }
   } catch (error) {
     console.error('Error parsing date:', error);

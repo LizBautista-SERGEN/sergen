@@ -1,5 +1,5 @@
 
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 
 interface ForecastChartProps {
@@ -9,7 +9,7 @@ interface ForecastChartProps {
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   const chartData = data.map(item => {
-    const itemDate = new Date(item.fecha);
+    const itemDate = parseISO(item.fecha);
     return {
       time: format(itemDate, 'HH:mm'),
       "Reprogramación": item.reprogramacion || null,
