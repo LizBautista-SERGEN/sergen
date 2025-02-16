@@ -29,23 +29,32 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      // Primero verificamos si hay una sesión activa
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Si no hay error o si el error es session_not_found, consideramos el logout exitoso
-      if (!error || error.message === "session_not_found") {
+      if (!session) {
+        // Si no hay sesión, simplemente actualizamos el estado y redirigimos
         setIsLoggedIn(false);
-        toast.success("Sesión cerrada correctamente");
         navigate("/");
         return;
       }
 
-      // Para cualquier otro tipo de error
-      console.error("Error al cerrar sesión:", error);
-      toast.error("Error al cerrar sesión");
+      // Si hay sesión, intentamos cerrarla
+      const { error } = await supabase.auth.signOut();
+      
+      if (error && error.message !== "session_not_found") {
+        console.error("Error al cerrar sesión:", error);
+        toast.error("Error al cerrar sesión");
+        return;
+      }
+
+      // Si todo fue exitoso o el error fue session_not_found
+      setIsLoggedIn(false);
+      toast.success("Sesión cerrada correctamente");
+      navigate("/");
       
     } catch (error: any) {
       console.error("Error inesperado al cerrar sesión:", error);
-      // En caso de error inesperado, también limpiamos el estado local
       setIsLoggedIn(false);
       toast.error("Error al cerrar sesión");
       navigate("/");
