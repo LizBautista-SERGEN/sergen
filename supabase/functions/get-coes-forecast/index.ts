@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
-import puppeteer from 'https://deno.land/x/puppeteer@16.2.0/mod.ts'
+import * as XLSX from 'https://deno.land/x/xlsx@v0.0.2/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,38 +14,29 @@ serve(async (req) => {
   }
 
   try {
-    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
-    const page = await browser.newPage();
+    console.log("Obteniendo archivo Excel del COES...");
+    const response = await fetch('https://www.coes.org.pe//Portal/portalinformacion/ExportarPronosticoTiempoReal');
+    
+    if (!response.ok) {
+      throw new Error(`Error al descargar el archivo: ${response.status}`);
+    }
 
-    console.log("Navegando a la página del COES...");
-    await page.goto('https://www.coes.org.pe/Portal/portalinformacion/demanda');
+    const arrayBuffer = await response.arrayBuffer();
+    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
     
-    // Esperar a que la página cargue
-    await page.waitForSelector('#btnPronosticoTR');
-    
-    // Hacer clic en la pestaña de pronóstico
-    await page.click('#btnPronosticoTR');
-    
-    // Esperar a que los datos se carguen
-    await page.waitForSelector('.k-grid-content');
-    
-    // Extraer los datos
-    const data = await page.evaluate(() => {
-      const rows = document.querySelectorAll('.k-grid-content tr');
-      return Array.from(rows).map(row => {
-        const cells = row.querySelectorAll('td');
-        return {
-          fecha: cells[0]?.textContent,
-          pronostico: parseFloat(cells[1]?.textContent?.replace(',', '') || '0'),
-          reprogramacion_diaria: parseFloat(cells[2]?.textContent?.replace(',', '') || '0'),
-          rango_minimo: parseFloat(cells[3]?.textContent?.replace(',', '') || '0'),
-          rango_maximo: parseFloat(cells[4]?.textContent?.replace(',', '') || '0'),
-          ejecutado: parseFloat(cells[5]?.textContent?.replace(',', '') || '0')
-        };
-      });
-    });
+    // Asumimos que los datos están en la primera hoja
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-    await browser.close();
+    // Procesar los datos del Excel
+    const data = jsonData.map((row: any) => ({
+      fecha: Object.values(row)[0], // Primera columna
+      pronostico: parseFloat(Object.values(row)[1] as string || '0'),
+      reprogramacion_diaria: parseFloat(Object.values(row)[2] as string || '0'),
+      rango_minimo: parseFloat(Object.values(row)[3] as string || '0'),
+      rango_maximo: parseFloat(Object.values(row)[4] as string || '0'),
+      ejecutado: parseFloat(Object.values(row)[5] as string || '0')
+    }));
 
     // Guardar los datos en Supabase
     const supabase = createClient(

@@ -93,16 +93,16 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="forecast">
+        <Tabs defaultValue="users">
           <TabsList>
-            <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
             <TabsTrigger value="users">Usuarios</TabsTrigger>
+            <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
           </TabsList>
-          <TabsContent value="forecast">
-            <ForecastPage />
-          </TabsContent>
           <TabsContent value="users">
             <UserManagement />
+          </TabsContent>
+          <TabsContent value="forecast">
+            <ForecastPage />
           </TabsContent>
         </Tabs>
       </div>
