@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { ResponsiveContainer } from 'recharts';
 import { ExportDataDialog } from "./ExportDataDialog";
 import { ForecastChart } from "./forecast/ForecastChart";
 import { ForecastTable } from "./forecast/ForecastTable";
