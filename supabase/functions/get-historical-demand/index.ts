@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
+import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,7 +42,6 @@ serve(async (req) => {
       startDate = body.startDate ? new Date(body.startDate + 'T00:00:00') : defaultStartDate;
       endDate = body.endDate ? new Date(body.endDate + 'T23:59:59') : defaultEndDate;
 
-      // Verificar si las fechas son válidas
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         throw new Error('Fechas inválidas proporcionadas');
       }
@@ -51,74 +50,92 @@ serve(async (req) => {
       throw new Error('Error al procesar las fechas: ' + error.message);
     }
 
-    const formatDateForDisplay = (date: Date) => {
+    const formatDateForForm = (date: Date) => {
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
     };
 
-    console.log('Consultando datos para el rango:', formatDateForDisplay(startDate), 'hasta', formatDateForDisplay(endDate));
+    console.log('Consultando datos para el rango:', formatDateForForm(startDate), 'hasta', formatDateForForm(endDate));
 
-    const url = `https://www.coes.org.pe/Portal/portalinformacion/demanda`;
-    
-    const response = await fetch(url, {
+    // Paso 1: Obtener cookies de la sesión inicial
+    const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
+    const initialResponse = await fetch(baseUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!initialResponse.ok) {
+      throw new Error(`Error en la conexión inicial: ${initialResponse.status}`);
     }
 
-    const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+    const cookies = initialResponse.headers.get('set-cookie') || '';
 
-    if (!doc) {
-      throw new Error("Failed to parse HTML");
+    // Paso 2: Realizar la búsqueda con las fechas
+    const searchFormData = new URLSearchParams();
+    searchFormData.append('txtFechaInicio', formatDateForForm(startDate));
+    searchFormData.append('txtFechaFin', formatDateForForm(endDate));
+
+    const searchResponse = await fetch(`${baseUrl}/BusquedaProTiempoReal`, {
+      method: 'POST',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cookie': cookies,
+      },
+      body: searchFormData.toString(),
+    });
+
+    if (!searchResponse.ok) {
+      throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
-    // Extraer datos de la tabla
-    const table = doc.querySelector("table");
-    if (!table) {
-      throw new Error("Table not found in HTML");
+    // Paso 3: Descargar el archivo Excel
+    const excelResponse = await fetch(`${baseUrl}/ExportarPronosticoTiempoReal`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Cookie': cookies,
+      },
+    });
+
+    if (!excelResponse.ok) {
+      throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
     }
 
-    const rows = Array.from(table.querySelectorAll("tr"));
-    const data = rows.slice(1).map(row => {
+    // Paso 4: Procesar el archivo Excel
+    const arrayBuffer = await excelResponse.arrayBuffer();
+    const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = utils.sheet_to_json(worksheet, { raw: false });
+
+    // Procesar los datos del Excel
+    const processedData = jsonData.map((row: any) => {
       try {
-        const cells = Array.from(row.querySelectorAll("td"));
-        const fechaStr = cells[0]?.textContent?.trim() || '';
-        const horaStr = cells[1]?.textContent?.trim() || '';
-        
-        if (!fechaStr || !horaStr) {
-          console.warn('Fila sin fecha u hora:', { fechaStr, horaStr });
-          return null;
-        }
+        const fechaStr = row['Fecha'] || '';
+        const horaStr = row['Hora'] || '';
 
-        // Parsear la fecha con validación
+        if (!fechaStr || !horaStr) return null;
+
         const [dia, mes, anio] = fechaStr.split('/').map(n => parseInt(n));
         const [hora, minuto] = horaStr.split(':').map(n => parseInt(n));
 
         if (isNaN(dia) || isNaN(mes) || isNaN(anio) || isNaN(hora) || isNaN(minuto)) {
-          console.warn('Valores de fecha/hora inválidos:', { dia, mes, anio, hora, minuto });
           return null;
         }
 
         const fechaCompleta = new Date(anio, mes - 1, dia, hora, minuto);
 
         if (isNaN(fechaCompleta.getTime())) {
-          console.warn('Fecha completa inválida:', fechaCompleta);
           return null;
         }
 
         return {
           fecha: fechaCompleta.toISOString(),
           hora: horaStr,
-          programado: parseFloat(cells[2]?.textContent?.trim().replace(",", ".") || "0"),
-          ejecutado: parseFloat(cells[3]?.textContent?.trim().replace(",", ".") || "0"),
+          programado: parseFloat(row['Pronóstico'] || '0'),
+          ejecutado: parseFloat(row['Ejecutado'] || '0'),
         };
       } catch (error) {
         console.warn('Error procesando fila:', error);
@@ -126,16 +143,9 @@ serve(async (req) => {
       }
     }).filter(item => item !== null);
 
-    // Filtrar por rango de fechas
-    const filteredData = data.filter(item => {
-      if (!item) return false;
-      const itemDate = new Date(item.fecha);
-      return itemDate >= startDate && itemDate <= endDate;
-    });
+    console.log(`Datos procesados: ${processedData.length} registros`);
 
-    console.log(`Datos filtrados: ${filteredData.length} registros`);
-
-    return new Response(JSON.stringify(filteredData), {
+    return new Response(JSON.stringify(processedData), {
       headers: corsHeaders,
       status: 200,
     });
