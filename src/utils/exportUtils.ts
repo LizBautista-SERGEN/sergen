@@ -28,15 +28,19 @@ export const exportToExcel = (data: any[], filename: string) => {
 export const exportToPDF = async (data: any[], filename: string, chartComponent?: ReactNode) => {
   const doc = new jsPDF();
   
-  // Si hay un componente de gráfico, añadirlo primero
+  // Añadir título
+  doc.setFontSize(16);
+  doc.text('Pronóstico de Demanda', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+  
+  // Si hay un componente de gráfico, añadirlo después del título
   if (chartComponent) {
     try {
       // Crear un contenedor temporal
       const container = document.createElement('div');
       container.style.position = 'fixed';
       container.style.left = '-9999px';
-      container.style.width = '800px'; // Ancho fijo para el gráfico
-      container.style.height = '400px'; // Alto fijo para el gráfico
+      container.style.width = '800px';
+      container.style.height = '400px';
       document.body.appendChild(container);
 
       // Renderizar el componente React
@@ -50,21 +54,20 @@ export const exportToPDF = async (data: any[], filename: string, chartComponent?
         logging: false,
         useCORS: true,
         allowTaint: true,
-        scale: 2, // Mayor calidad
+        scale: 2,
         backgroundColor: '#ffffff'
       });
 
       // Convertir el canvas a imagen
       const imgData = canvas.toDataURL('image/png');
 
-      // Añadir la imagen al PDF
-      doc.addImage(imgData, 'PNG', 10, 10, 190, 100);
+      // Añadir la imagen al PDF después del título
+      doc.addImage(imgData, 'PNG', 10, 25, 190, 100);
 
       // Limpiar
       document.body.removeChild(container);
     } catch (error) {
       console.error('Error al generar el gráfico:', error);
-      // Continuar sin el gráfico si hay error
     }
   }
 
@@ -81,7 +84,7 @@ export const exportToPDF = async (data: any[], filename: string, chartComponent?
   autoTable(doc, {
     head: [tableColumn],
     body: tableRows,
-    startY: chartComponent ? 120 : 20,
+    startY: chartComponent ? 135 : 25,
     styles: { fontSize: 8, cellPadding: 1.5 },
     headStyles: { fillColor: [21, 96, 130] }
   });
