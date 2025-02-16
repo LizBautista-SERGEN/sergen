@@ -32,23 +32,22 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   );
 
   // Encontrar la fecha del último punto con demanda real
-  let lastRealDemandDate = null;
-  for (let i = sortedData.length - 1; i >= 0; i--) {
+  let lastRealDemandIndex = -1;
+  for (let i = 0; i < sortedData.length; i++) {
     if (sortedData[i].demanda_real !== null) {
-      lastRealDemandDate = new Date(sortedData[i].fecha).getTime();
-      break;
+      lastRealDemandIndex = i;
     }
   }
 
-  console.log('Fecha del último dato real:', new Date(lastRealDemandDate || 0).toISOString());
+  console.log('Índice del último dato real:', lastRealDemandIndex);
+  console.log('Fecha del último dato real:', sortedData[lastRealDemandIndex]?.fecha);
 
-  const chartData = sortedData.map((item) => {
+  const chartData = sortedData.map((item, index) => {
     const currentDate = new Date(item.fecha);
     const hora = currentDate.getUTCHours();
-    const itemTime = currentDate.getTime();
 
-    // Mostrar pronóstico y rangos solo para fechas posteriores al último punto de demanda real
-    const showForecast = lastRealDemandDate && itemTime > lastRealDemandDate;
+    // Mostrar pronóstico y rangos solo después del último punto de demanda real
+    const showForecast = index > lastRealDemandIndex;
 
     return {
       time: formatTime(item.fecha),
@@ -56,7 +55,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
       "Pronóstico Diario": showForecast ? item.pronostico_diario : null,
       "Rango Inferior": showForecast ? item.rango_inferior : null,
       "Rango Superior": showForecast ? item.rango_superior : null,
-      "Demanda Real": item.demanda_real || null,
+      "Demanda Real": item.demanda_real,
       hora: hora,
       fecha_completa: formatFullDate(item.fecha)
     };

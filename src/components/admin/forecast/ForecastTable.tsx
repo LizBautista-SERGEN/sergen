@@ -29,6 +29,22 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
     new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
   );
 
+  // Encontrar el último índice con demanda real
+  let lastRealDemandIndex = -1;
+  for (let i = 0; i < sortedData.length; i++) {
+    if (sortedData[i].demanda_real !== null) {
+      lastRealDemandIndex = i;
+    }
+  }
+
+  // Procesamos los datos aplicando la misma lógica que en el gráfico
+  const processedData = sortedData.map((item, index) => ({
+    ...item,
+    pronostico_diario: index > lastRealDemandIndex ? item.pronostico_diario : null,
+    rango_inferior: index > lastRealDemandIndex ? item.rango_inferior : null,
+    rango_superior: index > lastRealDemandIndex ? item.rango_superior : null
+  }));
+
   return (
     <Table>
       <TableHeader>
@@ -42,7 +58,7 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {sortedData.map((item, index) => (
+        {processedData.map((item, index) => (
           <TableRow key={index}>
             <TableCell>{formatDate(item.fecha)}</TableCell>
             <TableCell>{formatNumber(item.reprogramacion)}</TableCell>
