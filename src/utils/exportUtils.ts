@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ReactNode } from 'react';
 import html2canvas from 'html2canvas';
+import ReactDOMServer from 'react-dom/server';
 
 export const exportToExcel = (data: any[], filename: string) => {
   const ws = utils.json_to_sheet(data.map(item => ({
@@ -29,20 +30,42 @@ export const exportToPDF = async (data: any[], filename: string, chartComponent?
   
   // Si hay un componente de gráfico, añadirlo primero
   if (chartComponent) {
-    const chart = document.createElement('div');
-    chart.style.position = 'absolute';
-    chart.style.left = '-9999px';
-    document.body.appendChild(chart);
-    
-    // Renderizar el gráfico y capturarlo
-    const canvas = await html2canvas(chart);
-    const chartImage = canvas.toDataURL('image/png');
-    
-    // Añadir el gráfico al PDF
-    doc.addImage(chartImage, 'PNG', 10, 10, 190, 100);
-    
-    // Limpiar
-    document.body.removeChild(chart);
+    try {
+      // Crear un contenedor temporal
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.width = '800px'; // Ancho fijo para el gráfico
+      container.style.height = '400px'; // Alto fijo para el gráfico
+      document.body.appendChild(container);
+
+      // Renderizar el componente React
+      container.innerHTML = ReactDOMServer.renderToString(chartComponent as any);
+
+      // Esperar a que el gráfico se renderice completamente
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Capturar el gráfico como imagen
+      const canvas = await html2canvas(container, {
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        scale: 2, // Mayor calidad
+        backgroundColor: '#ffffff'
+      });
+
+      // Convertir el canvas a imagen
+      const imgData = canvas.toDataURL('image/png');
+
+      // Añadir la imagen al PDF
+      doc.addImage(imgData, 'PNG', 10, 10, 190, 100);
+
+      // Limpiar
+      document.body.removeChild(container);
+    } catch (error) {
+      console.error('Error al generar el gráfico:', error);
+      // Continuar sin el gráfico si hay error
+    }
   }
 
   const tableColumn = ["Fecha", "Programado", "Pronóstico", "Rango Mínimo", "Rango Máximo", "Ejecutado"];
