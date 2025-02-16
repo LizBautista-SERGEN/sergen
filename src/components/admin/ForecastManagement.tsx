@@ -27,24 +27,16 @@ export const ForecastManagement = () => {
 
       console.log('Iniciando llamada a función Edge...');
       
-      // Llamada directa a la función Edge usando fetch
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-coes-data`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({}),
-        }
-      );
+      // Volvemos a usar el cliente de Supabase para las llamadas a funciones
+      const { data, error: functionError } = await supabase.functions.invoke('get-coes-data', {
+        method: 'POST',
+        body: {},
+      });
 
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
+      if (functionError) {
+        console.error('Error en la función:', functionError);
+        throw new Error(functionError.message);
       }
-
-      const data = await response.json();
 
       if (!Array.isArray(data)) {
         console.error('Respuesta inválida:', data);
