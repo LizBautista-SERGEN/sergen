@@ -1,4 +1,4 @@
 
 [functions]
 [functions.get-coes-data]
-verify_jwt = true
+verify_jwt = false

@@ -1,7 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { extractCoesData } from "./coesApi.ts";
-import { processExcelData } from "./excelProcessor.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +8,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -18,14 +17,21 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Iniciando extracción de datos COES...');
+    console.log('Edge function called successfully');
     
-    // Obtener datos del COES usando Puppeteer
-    const coesData = await extractCoesData();
-    
-    console.log('Datos extraídos exitosamente:', coesData.length, 'registros');
+    // Datos de prueba simplificados
+    const mockData = [
+      {
+        Fecha: new Date().toISOString(),
+        "Reprogramación Diaria": 4500,
+        "Pronóstico": 4600,
+        "Rango Mínimo": 4300,
+        "Rango Máximo": 4800,
+        "Ejecutado": 4550
+      }
+    ];
 
-    return new Response(JSON.stringify(coesData), {
+    return new Response(JSON.stringify(mockData), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
