@@ -182,6 +182,60 @@ export type Database = {
           },
         ]
       }
+      historical_demand: {
+        Row: {
+          created_at: string
+          daily_schedule: number | null
+          date: string
+          executed_power: number | null
+          id: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          daily_schedule?: number | null
+          date: string
+          executed_power?: number | null
+          id?: never
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          daily_schedule?: number | null
+          date?: string
+          executed_power?: number | null
+          id?: never
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      peak_power: {
+        Row: {
+          created_at: string
+          date: string
+          id: number
+          is_modulated: boolean | null
+          max_power: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: never
+          is_modulated?: boolean | null
+          max_power: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: never
+          is_modulated?: boolean | null
+          max_power?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity: string | null

@@ -5,8 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { ForecastManagement } from "@/components/admin/ForecastManagement";
+import { DemandHistoryView } from "@/components/admin/DemandHistoryView";
+import { PeakPowerView } from "@/components/admin/PeakPowerView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, LineChart } from "lucide-react";
+import { Users, LineChart, History, Zap } from "lucide-react";
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -94,7 +96,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="users" className="w-full">
+        <Tabs defaultValue="forecast" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -104,12 +106,26 @@ const AdminDashboard = () => {
               <LineChart className="h-4 w-4" />
               Pronóstico
             </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Histórico
+            </TabsTrigger>
+            <TabsTrigger value="power" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Potencia
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="users">
             <UserManagement />
           </TabsContent>
           <TabsContent value="forecast">
             <ForecastManagement />
+          </TabsContent>
+          <TabsContent value="history">
+            <DemandHistoryView />
+          </TabsContent>
+          <TabsContent value="power">
+            <PeakPowerView />
           </TabsContent>
         </Tabs>
       </div>

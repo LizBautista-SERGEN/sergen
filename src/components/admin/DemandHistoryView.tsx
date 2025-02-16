@@ -1,0 +1,149 @@
+
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { format, subDays } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { ExportDataDialog } from "./ExportDataDialog";
+
+export const DemandHistoryView = () => {
+  const [loading, setLoading] = useState(false);
+  const [startDate, setStartDate] = useState(format(subDays(new Date(), 2), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [historicalData, setHistoricalData] = useState<any[]>([]);
+
+  const fetchHistoricalData = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-coes-data', {
+        body: { startDate, endDate }
+      });
+
+      if (error) throw error;
+
+      setHistoricalData(data || []);
+    } catch (error) {
+      console.error('Error fetching historical data:', error);
+      toast.error('Error al obtener datos históricos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistoricalData();
+  }, []);
+
+  return (
+    <div className="space-y-6 p-6">
+      <Card className="p-6">
+        <div className="flex flex-col space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium mb-1">Desde:</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Hasta:</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <Button 
+              onClick={fetchHistoricalData}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Consultando...
+                </>
+              ) : 'Consultar'}
+            </Button>
+            <ExportDataDialog 
+              data={historicalData}
+              filename={`historico-demanda-${format(new Date(), 'yyyyMMdd')}`}
+            />
+          </div>
+
+          {historicalData.length > 0 && (
+            <div className="space-y-6 mt-4">
+              <div className="h-[400px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart 
+                    data={historicalData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <XAxis 
+                      dataKey="Fecha"
+                      tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => `${value.toLocaleString()}`}
+                    />
+                    <Tooltip 
+                      labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
+                      formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Ejecutado"
+                      name="Ejecutado"
+                      stroke="#156082" 
+                      dot={false}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Reprogramación Diaria"
+                      name="Programado"
+                      stroke="#C00000"
+                      strokeDasharray="5 5"
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Programado (MW)</TableHead>
+                    <TableHead>Ejecutado (MW)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historicalData.map((data, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        {format(new Date(data.Fecha), 'dd/MM/yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell>
+                        {data['Reprogramación Diaria']?.toLocaleString() || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {data['Ejecutado']?.toLocaleString() || '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+};

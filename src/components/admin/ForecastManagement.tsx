@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Ar
 import { format } from 'date-fns';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { ExportDataDialog } from "@/components/ui/export-data-dialog";
 
 interface CoesData {
   Fecha: string;
@@ -99,9 +99,10 @@ export const ForecastManagement = () => {
                 </>
               ) : 'Actualizar datos'}
             </Button>
-            <Button variant="outline">
-              Exportar
-            </Button>
+            <ExportDataDialog 
+              data={coesData}
+              filename={`pronostico-demanda-${format(new Date(), 'yyyyMMdd')}`}
+            />
           </div>
         </div>
 
