@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { format, subDays } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Loader2 } from "lucide-react";
+import { Loader2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { ExportDataDialog } from "./ExportDataDialog";
 
@@ -44,20 +44,24 @@ export const DemandHistoryView = () => {
       <Card className="p-6">
         <div className="flex flex-col space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium mb-1">Desde:</label>
+              <Calendar className="absolute top-9 left-3 h-4 w-4 text-gray-500" />
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                className="pl-9"
               />
             </div>
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium mb-1">Hasta:</label>
+              <Calendar className="absolute top-9 left-3 h-4 w-4 text-gray-500" />
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                className="pl-9"
               />
             </div>
             <Button 

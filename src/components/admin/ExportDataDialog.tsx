@@ -9,13 +9,15 @@ import {
 } from "@/components/ui/dialog";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { exportToExcel, exportToPDF } from "@/utils/exportUtils";
+import { ReactNode } from "react";
 
 interface ExportDataDialogProps {
   data: any[];
   filename: string;
+  chartComponent?: ReactNode;
 }
 
-export function ExportDataDialog({ data, filename }: ExportDataDialogProps) {
+export function ExportDataDialog({ data, filename, chartComponent }: ExportDataDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -29,7 +31,7 @@ export function ExportDataDialog({ data, filename }: ExportDataDialogProps) {
           <Button
             variant="outline"
             className="w-full h-24 flex flex-col items-center justify-center gap-2"
-            onClick={() => exportToPDF(data, filename)}
+            onClick={() => exportToPDF(data, filename, chartComponent)}
           >
             <FileText className="h-8 w-8" />
             PDF

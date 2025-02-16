@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,17 +61,15 @@ export const ForecastManagement = () => {
   }, []);
 
   useEffect(() => {
+    // Cargar datos inmediatamente al montar el componente
     fetchCoesData();
 
     // Configurar actualización automática cada 30 minutos
-    const interval = setInterval(() => {
-      fetchCoesData();
-    }, 30 * 60 * 1000); // 30 minutos en milisegundos
+    const interval = setInterval(fetchCoesData, 30 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [fetchCoesData]);
 
-  // Función auxiliar para formatear números de manera segura
   const formatNumber = (value: number | null | undefined): string => {
     if (value === null || value === undefined) return '-';
     return value.toLocaleString();
@@ -102,6 +101,58 @@ export const ForecastManagement = () => {
             <ExportDataDialog 
               data={coesData}
               filename={`pronostico-demanda-${format(new Date(), 'yyyyMMdd')}`}
+              chartComponent={
+                <LineChart 
+                  width={800} 
+                  height={400} 
+                  data={coesData}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <XAxis 
+                    dataKey="Fecha"
+                    tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                  />
+                  <YAxis domain={[6000, 9000]} />
+                  <Tooltip />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="Rango Máximo"
+                    stroke="none"
+                    fill="#90C41833"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="Rango Mínimo"
+                    stroke="none"
+                    fill="#90C41833"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Ejecutado"
+                    name="Ejecutado"
+                    stroke="#156082" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Reprogramación Diaria"
+                    name="Programado"
+                    stroke="#C00000"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Pronóstico"
+                    name="Pronóstico"
+                    stroke="#F39200"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              }
             />
           </div>
         </div>
@@ -133,20 +184,19 @@ export const ForecastManagement = () => {
                     formatter={(value: any) => value !== null ? [`${value.toLocaleString()} MW`, ''] : ['-', '']}
                   />
                   <Legend />
-                  {/* Área sombreada entre rangos */}
                   <Area
                     type="monotone"
                     dataKey="Rango Máximo"
                     stroke="none"
                     fill="#90C41833"
-                    activeDot={false}
+                    hide={true}
                   />
                   <Area
                     type="monotone"
                     dataKey="Rango Mínimo"
                     stroke="none"
                     fill="#90C41833"
-                    activeDot={false}
+                    hide={true}
                   />
                   <Line 
                     type="monotone" 
@@ -163,7 +213,6 @@ export const ForecastManagement = () => {
                     name="Programado"
                     stroke="#C00000"
                     strokeWidth={2}
-                    strokeDasharray="5 5"
                     dot={false}
                   />
                   <Line 
@@ -172,24 +221,6 @@ export const ForecastManagement = () => {
                     name="Pronóstico"
                     stroke="#F39200"
                     strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Rango Máximo"
-                    name="Rango Máximo"
-                    stroke="#90C418"
-                    strokeWidth={1}
-                    strokeDasharray="3 3"
-                    dot={false}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="Rango Mínimo"
-                    name="Rango Mínimo"
-                    stroke="#90C418"
-                    strokeWidth={1}
-                    strokeDasharray="3 3"
                     dot={false}
                   />
                 </LineChart>
