@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.31.0'
 import * as XLSX from 'npm:xlsx@0.18.5'
@@ -10,23 +11,48 @@ const corsHeaders = {
 function parseExcelDate(date: any): string {
   if (!date) return '';
   
-  // Si es un objeto Date, lo convertimos directamente
+  // Si es un objeto Date, lo mantenemos como está sin ajustes
   if (date instanceof Date) {
-    return date.toISOString();
+    // Forzamos la fecha a ser interpretada como UTC para mantener la hora original
+    return new Date(
+      Date.UTC(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        date.getHours(),
+        date.getMinutes()
+      )
+    ).toISOString();
   }
   
   // Si es un número (fecha en formato Excel), lo convertimos a fecha
   if (typeof date === 'number') {
-    const excelEpoch = new Date(1899, 11, 30);
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
     const utcDate = new Date(excelEpoch.getTime() + (date * 24 * 60 * 60 * 1000));
-    return utcDate.toISOString();
+    return new Date(
+      Date.UTC(
+        utcDate.getFullYear(),
+        utcDate.getMonth(),
+        utcDate.getDate(),
+        utcDate.getHours(),
+        utcDate.getMinutes()
+      )
+    ).toISOString();
   }
   
   // Si es string, intentamos parsearlo
   try {
     const parsedDate = new Date(date);
     if (!isNaN(parsedDate.getTime())) {
-      return parsedDate.toISOString();
+      return new Date(
+        Date.UTC(
+          parsedDate.getFullYear(),
+          parsedDate.getMonth(),
+          parsedDate.getDate(),
+          parsedDate.getHours(),
+          parsedDate.getMinutes()
+        )
+      ).toISOString();
     }
   } catch (error) {
     console.error('Error parsing date:', error);
