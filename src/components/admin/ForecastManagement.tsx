@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +24,8 @@ export const ForecastManagement = () => {
         throw new Error('No hay sesión activa');
       }
 
+      console.log('Iniciando llamada a función Edge...');
+      
       const { data: response, error: functionError } = await supabase.functions.invoke(
         'get-coes-data',
         {
@@ -33,6 +34,7 @@ export const ForecastManagement = () => {
             Authorization: `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
+          body: {} // Enviamos un objeto vacío para asegurar que el cuerpo es válido
         }
       );
 

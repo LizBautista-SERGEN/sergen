@@ -19,6 +19,9 @@ serve(async (req) => {
 
   try {
     console.log('Iniciando extracción de datos COES...');
+    console.log('Método de la solicitud:', req.method);
+    console.log('Headers de la solicitud:', Object.fromEntries(req.headers.entries()));
+
     const data = await extractCoesData();
     
     console.log('Datos extraídos exitosamente:', data.length, 'registros');
