@@ -7,7 +7,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, Ar
 import { format } from 'date-fns';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { ExportDataDialog } from "@/components/ui/export-data-dialog";
+import { ExportDataDialog } from "./ExportDataDialog";
 
 interface CoesData {
   Fecha: string;
