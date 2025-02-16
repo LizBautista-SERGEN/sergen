@@ -15,29 +15,37 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Verificar si ya hay una sesión activa
     checkSession();
-  }, [navigate]);
+  }, []);
 
   const checkSession = async () => {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) {
-      console.error('Error al verificar sesión:', error);
-      return;
-    }
-    
-    if (session) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profile?.role === 'superuser') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/dashboard');
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        if (error.message !== 'Invalid Refresh Token: Refresh Token Not Found') {
+          console.error('Error al verificar sesión:', error);
+          toast.error("Error al verificar la sesión");
+        }
+        // Si hay error de refresh token, simplemente continuamos sin redireccionar
+        return;
       }
+      
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.role === 'superuser') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    } catch (error) {
+      console.error('Error inesperado al verificar sesión:', error);
     }
   };
 
@@ -50,6 +58,7 @@ const LoginPage = () => {
       
       if (!trimmedEmail || !password) {
         toast.error("Por favor ingrese su correo y contraseña");
+        setLoading(false);
         return;
       }
 
@@ -65,6 +74,7 @@ const LoginPage = () => {
         } else {
           toast.error("Error al iniciar sesión");
         }
+        setLoading(false);
         return;
       }
 
@@ -78,12 +88,14 @@ const LoginPage = () => {
         if (profileError) {
           console.error('Error fetching profile:', profileError);
           toast.error("Error al cargar el perfil");
+          setLoading(false);
           return;
         }
 
         if (!profile?.has_access) {
           toast.error("Su cuenta está pendiente de activación");
           await supabase.auth.signOut();
+          setLoading(false);
           return;
         }
 
