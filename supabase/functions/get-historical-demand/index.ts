@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 
@@ -148,7 +147,11 @@ serve(async (req) => {
     }
 
     // Paso 4: Procesar el archivo Excel
-    const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
+    const workbook = read(new Uint8Array(arrayBuffer), { 
+      type: 'array',
+      cellDates: true,
+      dateNF: 'yyyy-mm-dd HH:mm:ss'
+    });
     
     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
       throw new Error('El archivo Excel no contiene hojas');
@@ -160,6 +163,7 @@ serve(async (req) => {
     const jsonData = utils.sheet_to_json(worksheet, {
       raw: false,
       defval: null,
+      dateNF: 'yyyy-mm-dd HH:mm:ss',
       header: 1,
     });
 
@@ -195,7 +199,18 @@ serve(async (req) => {
           const progDiariaIndex = headers.findIndex((h: string) => h && h.includes('Prog. Diaria'));
           const progSemanalIndex = headers.findIndex((h: string) => h && h.includes('Prog. Semanal'));
 
-          const fecha = row[fechaIndex];
+          const fechaRaw = row[fechaIndex];
+          
+          // Extraer fecha y hora del valor
+          let fecha = fechaRaw;
+          let hora = '';
+          
+          if (typeof fechaRaw === 'string' && fechaRaw.includes(' ')) {
+            [fecha, hora] = fechaRaw.split(' ');
+            if (hora.length > 5) {
+              hora = hora.substring(0, 5);
+            }
+          }
 
           if (!fecha) return null;
 
@@ -212,6 +227,7 @@ serve(async (req) => {
 
           console.log('Procesando fila:', {
             fecha,
+            hora,
             ejecutado,
             programado,
             progsemanal
@@ -219,6 +235,7 @@ serve(async (req) => {
 
           return {
             fecha,
+            hora,
             ejecutado,
             programado,
             progsemanal,
