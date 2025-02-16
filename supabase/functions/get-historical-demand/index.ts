@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
-import { format, subDays } from "https://deno.land/x/date_fns@v2.22.1/index.js";
+import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,18 +29,23 @@ serve(async (req) => {
     }
 
     const today = new Date();
-    const defaultStartDate = subDays(today, 2);
-    const defaultEndDate = subDays(today, 1); // Siempre un día antes que hoy
+    const defaultStartDate = new Date(today);
+    defaultStartDate.setDate(today.getDate() - 2);
+    const defaultEndDate = new Date(today);
+    defaultEndDate.setDate(today.getDate() - 1); // Siempre un día antes que hoy
 
     const startDate = body.startDate ? new Date(body.startDate) : defaultStartDate;
     const endDate = body.endDate ? new Date(body.endDate) : defaultEndDate;
 
-    // Formatear fechas para la URL
-    const formatDateForUrl = (date: Date) => {
-      return format(date, 'dd/MM/yyyy');
+    // Formatear fechas para la URL y logging
+    const formatDateForDisplay = (date: Date) => {
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     };
 
-    console.log('Consultando datos para el rango:', formatDateForUrl(startDate), 'hasta', formatDateForUrl(endDate));
+    console.log('Consultando datos para el rango:', formatDateForDisplay(startDate), 'hasta', formatDateForDisplay(endDate));
 
     const url = `https://www.coes.org.pe/Portal/portalinformacion/demanda`;
     
@@ -75,8 +79,10 @@ serve(async (req) => {
       const fechaStr = cells[0]?.textContent?.trim() || '';
       const horaStr = cells[1]?.textContent?.trim() || '';
       
-      // Combinar fecha y hora
-      const fechaCompleta = new Date(`${fechaStr} ${horaStr}`);
+      // Parsear la fecha
+      const [dia, mes, anio] = fechaStr.split('/').map(n => parseInt(n));
+      const [hora, minuto] = horaStr.split(':').map(n => parseInt(n));
+      const fechaCompleta = new Date(anio, mes - 1, dia, hora, minuto);
       
       return {
         fecha: fechaCompleta.toISOString(),
