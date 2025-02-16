@@ -11,12 +11,20 @@ const corsHeaders = {
 async function processExcelData(arrayBuffer: ArrayBuffer) {
   const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
+  
+  // Configuración específica para la lectura del Excel
+  const rawData = XLSX.utils.sheet_to_json(worksheet, { 
+    header: 1,
+    raw: false,
+    dateNF: 'yyyy-mm-dd HH:mm:ss'
+  });
 
-  console.log('Datos crudos del Excel:', rawData);
+  console.log('Primera fila de datos del Excel:', rawData[1]);
 
   // Mapeo de columnas según los encabezados del Excel
   const headerRow = rawData[0];
+  console.log('Encabezados del Excel:', headerRow);
+
   const columnIndexes = {
     fecha: headerRow.findIndex((col: string) => col === 'Fecha'),
     reprogramacion: headerRow.findIndex((col: string) => col === 'Reprogramación Diaria'),
@@ -25,6 +33,8 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
     rangoMaximo: headerRow.findIndex((col: string) => col === 'Rango Máximo del Pronóstico de Demanda Automático de Tiempo Real'),
     ejecutado: headerRow.findIndex((col: string) => col === 'Ejecutado')
   };
+
+  console.log('Índices de columnas encontrados:', columnIndexes);
 
   // Verificar que todas las columnas necesarias existen
   const missingColumns = Object.entries(columnIndexes)
@@ -41,47 +51,65 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
   today.setHours(0, 0, 0, 0);
 
   // Procesar los datos, eliminando la primera fila (encabezados)
-  return rawData.slice(1)
+  const processedData = rawData.slice(1)
     .filter((row: any[]) => Array.isArray(row) && row.length >= 6)
-    .map((row: any[]) => {
+    .map((row: any[], index: number) => {
       // Asegurarse de que la fecha se procese correctamente
       const fechaStr = row[columnIndexes.fecha];
+      console.log(`Procesando fila ${index + 2}, fecha original:`, fechaStr);
+
       let fecha;
       try {
         fecha = new Date(fechaStr);
         if (isNaN(fecha.getTime())) {
-          throw new Error('Fecha inválida');
+          console.error(`Fecha inválida en fila ${index + 2}:`, fechaStr);
+          return null;
         }
 
         // Verificar si la fecha es del día actual
         const rowDate = new Date(fecha);
         rowDate.setHours(0, 0, 0, 0);
         if (rowDate.getTime() !== today.getTime()) {
-          console.log('Ignorando fecha no actual:', fechaStr);
+          console.log(`Ignorando fecha no actual en fila ${index + 2}:`, fechaStr);
           return null;
         }
+
+        const parseNumber = (value: any) => {
+          if (value === undefined || value === null || value === '') {
+            return null;
+          }
+          const num = parseFloat(value);
+          return isNaN(num) ? null : num;
+        };
+
+        const data = {
+          fecha: fecha.toISOString(),
+          reprogramacion_diaria: parseNumber(row[columnIndexes.reprogramacion]),
+          pronostico: parseNumber(row[columnIndexes.pronostico]),
+          rango_minimo: parseNumber(row[columnIndexes.rangoMinimo]),
+          rango_maximo: parseNumber(row[columnIndexes.rangoMaximo]),
+          ejecutado: parseNumber(row[columnIndexes.ejecutado]),
+          created_at: now,
+          updated_at: now
+        };
+
+        console.log(`Datos procesados fila ${index + 2}:`, data);
+        return data;
+
       } catch (error) {
-        console.error('Error procesando fecha:', fechaStr);
+        console.error(`Error procesando fila ${index + 2}:`, error);
         return null;
       }
-
-      const parseNumber = (value: any) => {
-        const num = parseFloat(value);
-        return isNaN(num) ? null : num;
-      };
-
-      return {
-        fecha: fecha.toISOString(),
-        reprogramacion_diaria: parseNumber(row[columnIndexes.reprogramacion]),
-        pronostico: parseNumber(row[columnIndexes.pronostico]),
-        rango_minimo: parseNumber(row[columnIndexes.rangoMinimo]),
-        rango_maximo: parseNumber(row[columnIndexes.rangoMaximo]),
-        ejecutado: parseNumber(row[columnIndexes.ejecutado]),
-        created_at: now,
-        updated_at: now
-      };
     })
-    .filter(row => row !== null); // Eliminar filas con fechas inválidas o de otros días
+    .filter(row => row !== null);
+
+  console.log('Total de filas procesadas:', processedData.length);
+  if (processedData.length > 0) {
+    console.log('Primera fila procesada:', processedData[0]);
+    console.log('Última fila procesada:', processedData[processedData.length - 1]);
+  }
+
+  return processedData;
 }
 
 serve(async (req) => {
@@ -100,8 +128,6 @@ serve(async (req) => {
     const arrayBuffer = await response.arrayBuffer();
     const processedData = await processExcelData(arrayBuffer);
 
-    console.log("Datos procesados:", processedData);
-
     // Verificar que tengamos datos para procesar
     if (!processedData.length) {
       throw new Error('No se encontraron datos para el día actual en el Excel');
@@ -114,6 +140,9 @@ serve(async (req) => {
     );
 
     // Primero, eliminar los datos antiguos del día actual
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const { error: deleteError } = await supabase
       .from('coes_forecast')
       .delete()
