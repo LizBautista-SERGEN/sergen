@@ -13,8 +13,10 @@ import { ExportDataDialog } from "./ExportDataDialog";
 
 export const DemandHistoryView = () => {
   const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState(format(subDays(new Date(), 2), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  // Inicializar startDate como 3 días antes de la fecha actual
+  const [startDate, setStartDate] = useState(format(subDays(new Date(), 3), 'yyyy-MM-dd'));
+  // Inicializar endDate como 1 día antes de la fecha actual
+  const [endDate, setEndDate] = useState(format(subDays(new Date(), 1), 'yyyy-MM-dd'));
   const [historicalData, setHistoricalData] = useState<any[]>([]);
 
   const fetchHistoricalData = async () => {
