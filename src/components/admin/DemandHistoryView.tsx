@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { format, subDays, parse } from "date-fns";
+import { format, parse } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Loader2, Calendar } from "lucide-react";
@@ -13,25 +13,21 @@ import { ExportDataDialog } from "./ExportDataDialog";
 
 export const DemandHistoryView = () => {
   const [loading, setLoading] = useState(false);
-  const [startDate, setStartDate] = useState(format(subDays(new Date(), 3), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(subDays(new Date(), 1), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [historicalData, setHistoricalData] = useState<any[]>([]);
-  const [rawResponse, setRawResponse] = useState<any>(null);
 
-  const formatHourValue = (hora: string) => {
+  const parseDateTime = (dateTimeStr: string) => {
     try {
-      // Asegurarse de que la hora tenga el formato correcto (HH:mm)
-      if (!hora) return '';
-      
-      // Si la hora ya está en formato HH:mm, devolverla como está
-      if (hora.match(/^\d{2}:\d{2}$/)) return hora;
-      
-      // Si la hora está en otro formato, intentar parsearlo
-      const parsedDate = parse(hora, 'HH:mm:ss', new Date());
-      return format(parsedDate, 'HH:mm');
+      // Asumiendo que el formato es "DD/MM/YYYY HH:mm"
+      const parsedDate = parse(dateTimeStr, 'dd/MM/yyyy HH:mm', new Date());
+      return {
+        fecha: format(parsedDate, 'dd/MM/yyyy'),
+        hora: format(parsedDate, 'HH:mm')
+      };
     } catch (error) {
-      console.error('Error formateando hora:', hora, error);
-      return hora; // Devolver el valor original si hay error
+      console.error('Error parseando fecha:', dateTimeStr, error);
+      return { fecha: '', hora: '' };
     }
   };
 
@@ -44,16 +40,16 @@ export const DemandHistoryView = () => {
 
       if (error) throw error;
 
-      // Guardar la respuesta cruda para diagnóstico
-      setRawResponse(data);
-      console.log('Respuesta completa:', data);
-
       if (Array.isArray(data)) {
-        // Procesar los datos para asegurar que las horas estén en formato correcto
-        const processedData = data.map(item => ({
-          ...item,
-          hora: formatHourValue(item.hora)
-        }));
+        // Procesar los datos separando fecha y hora
+        const processedData = data.map(item => {
+          const { fecha, hora } = parseDateTime(item.fecha);
+          return {
+            ...item,
+            fecha,
+            hora
+          };
+        });
         setHistoricalData(processedData);
       } else {
         console.error('Datos recibidos no son un array:', data);
@@ -65,6 +61,14 @@ export const DemandHistoryView = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const prepareChartData = () => {
+    return historicalData.map(item => ({
+      time: `${item.fecha} ${item.hora}`,
+      Programado: item.programado,
+      Ejecutado: item.ejecutado
+    }));
   };
 
   return (
@@ -109,49 +113,48 @@ export const DemandHistoryView = () => {
             />
           </div>
 
-          {/* Mostrar la respuesta cruda para diagnóstico */}
-          {rawResponse && (
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg overflow-auto max-h-[500px]">
-              <h3 className="text-lg font-semibold mb-2">Datos del Excel:</h3>
-              <pre className="text-sm">
-                {JSON.stringify(rawResponse, null, 2)}
-              </pre>
-            </div>
-          )}
-
           {historicalData.length > 0 && (
             <div className="space-y-6 mt-4">
-              <div className="h-[400px] w-full">
+              <div className="h-[400px] w-full bg-white rounded-lg p-4 shadow">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart 
-                    data={historicalData}
+                    data={prepareChartData()}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <XAxis 
-                      dataKey="hora"
-                      // No necesitamos formatear aquí ya que las horas ya están en formato correcto
+                      dataKey="time"
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                      interval={Math.ceil(historicalData.length / 12)}
                     />
                     <YAxis 
+                      label={{ 
+                        value: 'Potencia (MW)', 
+                        angle: -90, 
+                        position: 'insideLeft',
+                        style: { textAnchor: 'middle' }
+                      }}
                       tickFormatter={(value) => `${value.toLocaleString()}`}
                     />
                     <Tooltip 
-                      labelFormatter={(label) => `Hora: ${label}`}
-                      formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
+                      formatter={(value: any) => [`${Number(value).toLocaleString()} MW`, '']}
+                      labelFormatter={(label) => `Fecha/Hora: ${label}`}
                     />
-                    <Legend />
+                    <Legend verticalAlign="top" height={36}/>
                     <Line 
                       type="monotone" 
-                      dataKey="ejecutado"
-                      name="Ejecutado"
-                      stroke="#156082" 
-                      dot={false}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="programado"
-                      name="Programado"
+                      dataKey="Programado"
                       stroke="#C00000"
+                      strokeWidth={2}
+                      dot={false}
                       strokeDasharray="5 5"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Ejecutado"
+                      stroke="#156082"
+                      strokeWidth={2}
                       dot={false}
                     />
                   </LineChart>

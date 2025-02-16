@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { read, utils } from "https://esm.sh/xlsx@0.18.5";
 import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
@@ -192,13 +191,15 @@ serve(async (req) => {
 
     // Transformar solo las filas con datos reales
     const transformedData = rawData.slice(dataStartIndex + 1)
-      .filter((row: any[]) => row && row.length >= 4 && row[0] && row[1])
-      .map((row: any[]) => ({
-        fecha: row[0],
-        hora: row[1],
-        programado: parseFloat(row[2]?.toString().replace(',', '.')) || null,
-        ejecutado: parseFloat(row[3]?.toString().replace(',', '.')) || null
-      }));
+      .filter((row: any[]) => row && row.length >= 3 && row[0])
+      .map((row: any[]) => {
+        const dateTimeStr = row[0];
+        return {
+          fecha: dateTimeStr,
+          programado: parseFloat(row[1]?.toString().replace(',', '.')) || null,
+          ejecutado: parseFloat(row[2]?.toString().replace(',', '.')) || null
+        };
+      });
 
     console.log('Datos procesados:', transformedData.slice(0, 3));
 
