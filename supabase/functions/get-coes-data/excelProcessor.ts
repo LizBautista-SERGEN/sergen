@@ -41,6 +41,8 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
 
     // Encontrar el último dato ejecutado
     let lastExecutedTime: Date | null = null;
+    let lastExecutedIndex = -1;
+
     for (let i = jsonData.length - 1; i >= 0; i--) {
       const row = jsonData[i];
       const ejecutado = row['Ejecutado'] || row['EJECUTADO'];
@@ -48,6 +50,7 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
       
       if (ejecutado && fecha) {
         lastExecutedTime = new Date(fecha);
+        lastExecutedIndex = i;
         break;
       }
     }
@@ -58,8 +61,9 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
     }
 
     console.log('Hora del último dato ejecutado:', lastExecutedTime);
+    console.log('Índice del último dato ejecutado:', lastExecutedIndex);
 
-    const processedData = jsonData.map((row: any) => {
+    const processedData = jsonData.map((row: any, index: number) => {
       const fecha = row['Fecha'] || row['fecha'] || row['FECHA'];
       const reprogramacion = row['Reprogramación Diaria'] || row['REPROGRAMACIÓN DIARIA'];
       const pronostico = row['Pronóstico de Demanda Automático de Tiempo Real'] || 
@@ -76,13 +80,13 @@ export const processExcelData = async (arrayBuffer: ArrayBuffer): Promise<Proces
         return null;
       }
 
-      const rowDate = new Date(fecha);
-      const shouldShowForecast = lastExecutedTime && rowDate >= lastExecutedTime;
-
       // Procesar valores numéricos
       const processValue = (value: any, isForecast = false): number | null => {
-        if (isForecast && !shouldShowForecast) return null;
         if (!value) return null;
+        // Para datos de pronóstico, mostrar solo desde el índice del último dato ejecutado
+        if (isForecast && lastExecutedIndex >= 0 && index < lastExecutedIndex) {
+          return null;
+        }
         const processed = parseNumber(value);
         return processed === 0 ? null : processed;
       };
