@@ -18,15 +18,18 @@ serve(async (req) => {
   try {
     console.log('Edge function called successfully');
     
-    // Datos de prueba para pronóstico
-    const mockData = [
-      {
-        fecha: new Date().toISOString(),
-        pronostico: 4600,
-        rango_min: 4300,
-        rango_max: 4800
-      }
-    ];
+    // Aseguramos que la fecha esté en formato ISO 8601
+    const currentDate = new Date().toISOString();
+    
+    // Datos de prueba para pronóstico con fecha válida
+    const mockData = [{
+      fecha: currentDate,
+      pronostico: 4600,
+      rango_min: 4300,
+      rango_max: 4800
+    }];
+
+    console.log('Enviando datos:', mockData);
 
     return new Response(JSON.stringify(mockData), {
       headers: {
