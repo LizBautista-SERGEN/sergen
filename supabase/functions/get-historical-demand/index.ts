@@ -61,10 +61,15 @@ serve(async (req) => {
     console.log('Consultando datos para el rango:', startDateStr, 'hasta', endDateStr);
 
     // Paso 1: Obtener la página inicial para obtener cookies y token
-    const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/demanda';
+    const baseUrl = 'https://www.coes.org.pe/Portal/portalinformacion/Demanda';
     const initialResponse = await fetch(baseUrl, {
+      method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
     });
 
@@ -95,7 +100,7 @@ serve(async (req) => {
 
     console.log('Enviando formulario con datos:', formData.toString());
 
-    const searchResponse = await fetch(`${baseUrl}/Buscar`, {
+    const searchResponse = await fetch(`${baseUrl}/BusquedaDemanda`, {
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -105,6 +110,8 @@ serve(async (req) => {
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Origin': 'https://www.coes.org.pe',
         'Referer': baseUrl,
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       body: formData.toString(),
       redirect: 'follow',
@@ -121,14 +128,16 @@ serve(async (req) => {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Paso 3: Descargar el Excel
-    const exportResponse = await fetch(`${baseUrl}/Exportar`, {
+    const exportResponse = await fetch(`${baseUrl}/ExportarDemanda`, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept': 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
         'Cookie': cookies,
         'Referer': baseUrl,
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       redirect: 'follow',
     });
@@ -169,9 +178,9 @@ serve(async (req) => {
       Array.isArray(row) && row.some(cell => 
         cell && typeof cell === 'string' && (
           cell.includes('Fecha') || 
-          cell.includes('Hora') ||
-          cell.includes('Pronóstico') ||
-          cell.includes('Ejecutado')
+          cell.includes('Ejecutado') ||
+          cell.includes('Prog. Diaria') ||
+          cell.includes('Prog. Semanal')
         )
       )
     );
@@ -189,18 +198,13 @@ serve(async (req) => {
       .filter((row: any[]) => Array.isArray(row) && row.length >= 2)
       .map((row: any[]) => {
         const fechaIndex = headers.findIndex((h: string) => h && h.includes('Fecha'));
-        const horaIndex = headers.findIndex((h: string) => h && h.includes('Hora'));
-        const programadoIndex = headers.findIndex((h: string) => h && (
-          h.includes('Pronóstico') || 
-          h.includes('Pronostico') || 
-          h.includes('Programado')
-        ));
         const ejecutadoIndex = headers.findIndex((h: string) => h && h.includes('Ejecutado'));
+        const progDiariaIndex = headers.findIndex((h: string) => h && h.includes('Prog. Diaria'));
+        const progSemanalIndex = headers.findIndex((h: string) => h && h.includes('Prog. Semanal'));
 
         const fecha = row[fechaIndex];
-        const hora = row[horaIndex];
 
-        if (!fecha || !hora) return null;
+        if (!fecha) return null;
 
         const parsearNumero = (valor: any) => {
           if (!valor) return null;
@@ -211,9 +215,9 @@ serve(async (req) => {
 
         return {
           fecha,
-          hora,
-          programado: programadoIndex !== -1 ? parsearNumero(row[programadoIndex]) : null,
           ejecutado: ejecutadoIndex !== -1 ? parsearNumero(row[ejecutadoIndex]) : null,
+          programado: progDiariaIndex !== -1 ? parsearNumero(row[progDiariaIndex]) : null,
+          progsemanal: progSemanalIndex !== -1 ? parsearNumero(row[progSemanalIndex]) : null,
         };
       })
       .filter(item => item !== null);
