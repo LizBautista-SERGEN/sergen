@@ -62,6 +62,8 @@ serve(async (req) => {
     const initialResponse = await fetch(baseUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
       },
     });
 
@@ -79,15 +81,23 @@ serve(async (req) => {
     const searchFormData = new URLSearchParams();
     searchFormData.append('txtFechaInicio', formatDateForForm(startDate));
     searchFormData.append('txtFechaFin', formatDateForForm(endDate));
+    searchFormData.append('__RequestVerificationToken', ''); // Token CSRF si es necesario
 
     console.log('Enviando búsqueda con fechas:', searchFormData.toString());
 
-    const searchResponse = await fetch(`${baseUrl}/Buscar`, {
+    const searchUrl = `${baseUrl}/Buscar`;
+    console.log('URL de búsqueda:', searchUrl);
+
+    const searchResponse = await fetch(searchUrl, {
       method: 'POST',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Cookie': cookies,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Origin': 'https://www.coes.org.pe',
+        'Referer': baseUrl,
       },
       body: searchFormData.toString(),
     });
@@ -96,25 +106,34 @@ serve(async (req) => {
       throw new Error(`Error en la búsqueda: ${searchResponse.status}`);
     }
 
-    console.log('Búsqueda completada, esperando para descargar Excel...');
+    const searchResponseText = await searchResponse.text();
+    console.log('Respuesta de búsqueda recibida, longitud:', searchResponseText.length);
 
     // Esperar antes de descargar el Excel
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Paso 3: Descargar el archivo Excel
-    const excelResponse = await fetch(`${baseUrl}/Exportar`, {
+    const exportUrl = `${baseUrl}/Exportar`;
+    console.log('URL de exportación:', exportUrl);
+
+    const excelResponse = await fetch(exportUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Cookie': cookies,
+        'Accept': 'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Referer': baseUrl,
       },
     });
 
     if (!excelResponse.ok) {
+      const responseText = await excelResponse.text();
+      console.error('Respuesta de error al descargar Excel:', responseText);
       throw new Error(`Error al descargar Excel: ${excelResponse.status}`);
     }
 
     const arrayBuffer = await excelResponse.arrayBuffer();
-    console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength);
+    console.log('Tamaño del archivo Excel:', arrayBuffer.byteLength, 'bytes');
 
     if (arrayBuffer.byteLength === 0) {
       throw new Error('El archivo Excel descargado está vacío');
@@ -122,50 +141,95 @@ serve(async (req) => {
 
     // Paso 4: Procesar el archivo Excel
     const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
+    
+    console.log('Nombres de hojas disponibles:', workbook.SheetNames);
+    
+    if (workbook.SheetNames.length === 0) {
+      throw new Error('El archivo Excel no contiene hojas');
+    }
+
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = utils.sheet_to_json(worksheet, { raw: false });
+    const jsonData = utils.sheet_to_json(worksheet, { 
+      raw: false,
+      defval: null,
+      header: 1 
+    });
 
-    console.log('Estructura de la primera fila:', JSON.stringify(jsonData[0]));
+    console.log('Primeras filas del Excel:', JSON.stringify(jsonData.slice(0, 3)));
 
-    // Procesar los datos del Excel
-    const processedData = jsonData.map((row: any, index) => {
+    // Encontrar la fila del encabezado
+    const headerRowIndex = jsonData.findIndex((row: any[]) => 
+      row.some((cell: any) => 
+        cell && (
+          String(cell).includes('Fecha') || 
+          String(cell).includes('Hora') ||
+          String(cell).includes('Pronóstico') ||
+          String(cell).includes('Ejecutado')
+        )
+      )
+    );
+
+    if (headerRowIndex === -1) {
+      throw new Error('No se encontró la fila de encabezados en el Excel');
+    }
+
+    console.log('Índice de fila de encabezados:', headerRowIndex);
+
+    // Convertir a formato de objetos usando los encabezados encontrados
+    const headers = jsonData[headerRowIndex];
+    const data = jsonData.slice(headerRowIndex + 1);
+
+    console.log('Encabezados encontrados:', headers);
+
+    const processedData = data.map((row: any[], index: number) => {
       try {
-        // Identificar las columnas correctas
-        const fechaKey = Object.keys(row).find(key => key.includes('Fecha')) || 'Fecha';
-        const horaKey = Object.keys(row).find(key => key.includes('Hora')) || 'Hora';
-        const programadoKey = Object.keys(row).find(key => 
-          key.includes('Pronóstico') || 
-          key.includes('Pronostico') || 
-          key.includes('Programado')
-        ) || 'Pronóstico';
-        const ejecutadoKey = Object.keys(row).find(key => key.includes('Ejecutado')) || 'Ejecutado';
-
-        if (!row[fechaKey] || !row[horaKey]) {
-          console.warn('Fila sin fecha u hora:', index, JSON.stringify(row));
+        if (!Array.isArray(row) || row.length < 2) {
+          console.warn('Fila inválida:', index + headerRowIndex + 1, row);
           return null;
         }
 
-        const fecha = row[fechaKey];
-        const hora = row[horaKey];
+        // Mapear columnas basado en los encabezados
+        const fechaIndex = headers.findIndex((h: string) => h && h.includes('Fecha'));
+        const horaIndex = headers.findIndex((h: string) => h && h.includes('Hora'));
+        const programadoIndex = headers.findIndex((h: string) => h && (
+          h.includes('Pronóstico') || 
+          h.includes('Pronostico') || 
+          h.includes('Programado')
+        ));
+        const ejecutadoIndex = headers.findIndex((h: string) => h && h.includes('Ejecutado'));
 
-        // Manejar diferentes formatos de números
-        const parsearNumero = (valor: string) => {
+        if (fechaIndex === -1 || horaIndex === -1) {
+          console.warn('No se encontraron columnas requeridas en fila:', index + headerRowIndex + 1);
+          return null;
+        }
+
+        const fecha = row[fechaIndex];
+        const hora = row[horaIndex];
+
+        if (!fecha || !hora) {
+          console.warn('Fila sin fecha u hora:', index + headerRowIndex + 1, row);
+          return null;
+        }
+
+        // Parsear números
+        const parsearNumero = (valor: any) => {
           if (!valor) return null;
-          // Eliminar espacios y convertir comas a puntos
-          return parseFloat(valor.replace(/\s/g, '').replace(',', '.'));
+          const strVal = String(valor).replace(/\s/g, '').replace(',', '.');
+          const num = parseFloat(strVal);
+          return !isNaN(num) ? num : null;
         };
 
-        const programado = parsearNumero(row[programadoKey]);
-        const ejecutado = parsearNumero(row[ejecutadoKey]);
+        const programado = programadoIndex !== -1 ? parsearNumero(row[programadoIndex]) : null;
+        const ejecutado = ejecutadoIndex !== -1 ? parsearNumero(row[ejecutadoIndex]) : null;
 
         return {
           fecha,
           hora,
-          programado: !isNaN(programado) ? programado : null,
-          ejecutado: !isNaN(ejecutado) ? ejecutado : null
+          programado,
+          ejecutado
         };
       } catch (error) {
-        console.warn('Error procesando fila:', index, error);
+        console.warn('Error procesando fila:', index + headerRowIndex + 1, error);
         return null;
       }
     }).filter(item => item !== null);
@@ -186,6 +250,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       error: error.message,
       timestamp: new Date().toISOString(),
+      details: error.stack
     }), {
       headers: corsHeaders,
       status: 500,
