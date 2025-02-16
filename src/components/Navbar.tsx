@@ -29,13 +29,24 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error && error.message !== "session_not_found") {
+        console.error("Error al cerrar sesión:", error);
+        toast.error("Error al cerrar sesión");
+        return;
+      }
+
+      // Always clear local state and redirect regardless of error
+      setIsLoggedIn(false);
       toast.success("Sesión cerrada correctamente");
+      navigate("/");
+      
+    } catch (error: any) {
+      console.error("Error inesperado al cerrar sesión:", error);
+      // Still clear local state and redirect on unexpected errors
       setIsLoggedIn(false);
       navigate("/");
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-      toast.error("Error al cerrar sesión");
     }
   };
 
