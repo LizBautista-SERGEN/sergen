@@ -10,21 +10,31 @@ export const extractCoesData = async () => {
       return `${day}${month}${year}`;
     };
 
-    // URL del archivo Excel (esto es un ejemplo, necesitamos la URL correcta del COES)
-    const excelUrl = `https://www.coes.org.pe/Portal/portalinformacion/demanda/generacion/generacion_${formatDateStr(today)}.xlsx`;
+    // URL corregida para apuntar a la sección de demanda
+    const excelUrl = `https://www.coes.org.pe/Portal/portalinformacion/demanda/demanda_${formatDateStr(today)}.xlsx`;
     
     console.log('Intentando descargar Excel desde:', excelUrl);
 
-    const response = await fetch(excelUrl);
+    const response = await fetch(excelUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
     if (!response.ok) {
+      console.error('Error de respuesta:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
       throw new Error(`Error al descargar el archivo: ${response.statusText}`);
     }
 
     // Procesar el archivo Excel
     const arrayBuffer = await response.arrayBuffer();
     
-    // Aquí procesaríamos el Excel, pero primero necesitamos confirmar si esta es la URL correcta
     console.log('Tamaño del archivo descargado:', arrayBuffer.byteLength);
+    console.log('Headers de respuesta:', Object.fromEntries(response.headers.entries()));
 
     // Por ahora retornamos datos de ejemplo para probar la estructura
     return [{
