@@ -1,6 +1,5 @@
 
 import { chromium } from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
-import { format } from "https://deno.land/std@0.168.0/datetime/mod.ts";
 
 export const extractCoesData = async () => {
   const browser = await chromium.launch({
@@ -58,27 +57,45 @@ export const extractCoesData = async () => {
     console.log('Botón consultar clickeado');
 
     // Esperar a que los datos se carguen
-    await page.waitForTimeout(5000);
+    await page.waitForSelector('#dgDemanda', { timeout: 10000 });
+    await page.waitForFunction(() => {
+      const rows = document.querySelectorAll('#dgDemanda tr');
+      return rows.length > 1;
+    }, { timeout: 10000 });
 
     // Obtener los datos de la tabla
     const tableData = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll('#dgDemanda tr'));
       return rows.slice(1).map(row => {
         const cells = Array.from(row.querySelectorAll('td'));
-        const fecha = cells[0]?.innerText?.trim() || '';
+        const fechaStr = cells[0]?.innerText?.trim() || '';
         const programado = cells[1]?.innerText ? parseFloat(cells[1].innerText.replace(',', '.')) : null;
         const ejecutado = cells[2]?.innerText ? parseFloat(cells[2].innerText.replace(',', '.')) : null;
 
+        // Parsear la fecha correctamente
+        const [fecha, hora] = fechaStr.split(' ');
+        const [dia, mes, año] = fecha.split('/');
+        const [hh, mm] = hora.split(':');
+        
+        const fechaObj = new Date(
+          parseInt(año),
+          parseInt(mes) - 1,
+          parseInt(dia),
+          parseInt(hh),
+          parseInt(mm)
+        );
+
         return {
-          Fecha: fecha,
-          "Reprogramación Diaria": programado,
-          "Pronóstico": null,
-          "Rango Mínimo": null,
-          "Rango Máximo": null,
-          "Ejecutado": ejecutado
+          fecha: fechaObj.toISOString(),
+          reprogramacion_diaria: programado,
+          ejecutado: ejecutado
         };
       });
     });
+
+    if (!tableData.length) {
+      throw new Error('No se encontraron datos en la tabla');
+    }
 
     console.log('Datos extraídos:', tableData.slice(0, 3));
     return tableData;
