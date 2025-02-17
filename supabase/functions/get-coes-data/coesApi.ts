@@ -1,7 +1,8 @@
-import { Browser } from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+
+import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 
 export const extractCoesData = async () => {
-  const browser = await Browser.create({
+  const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
