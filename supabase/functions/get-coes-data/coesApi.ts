@@ -3,7 +3,8 @@ import { Browser } from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 
 export const extractCoesData = async () => {
   const browser = await Browser.create({
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: 'C:/herramientas/chromium.exe'
   });
 
   try {
