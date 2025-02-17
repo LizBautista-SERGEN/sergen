@@ -12,32 +12,46 @@ export const HistoricalTab = () => {
   const { data: historicalData, isLoading, refetch } = useQuery({
     queryKey: ['historical-data'],
     queryFn: async () => {
+      console.log('Fetching historical data...');
       const { data, error } = await supabase
         .from('coes_historical')
         .select('*')
         .order('fecha', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching historical data:', error);
+        toast.error('Error al cargar los datos históricos');
+        throw error;
+      }
+
+      console.log('Historical data received:', data);
       return data;
     }
   });
 
   const updateHistoricalData = async () => {
     try {
-      const response = await supabase.functions.invoke('get-coes-historical');
+      console.log('Calling get-coes-historical function...');
+      const response = await supabase.functions.invoke('get-coes-historical', {
+        method: 'POST'
+      });
       
+      console.log('Function response:', response);
+
       if (response.error) {
+        console.error('Function error:', response.error);
         throw new Error(response.error.message);
       }
       
-      if (response.data.success) {
+      if (response.data?.success) {
         toast.success(`Datos actualizados correctamente (${response.data.count} registros)`);
         refetch();
       } else {
+        console.error('Unexpected response:', response);
         throw new Error('Error al actualizar los datos');
       }
     } catch (error) {
-      console.error('Error al actualizar datos históricos:', error);
+      console.error('Error updating historical data:', error);
       toast.error('Error al actualizar los datos históricos');
     }
   };
