@@ -6,6 +6,7 @@ import * as XLSX from 'npm:xlsx@0.18.5'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS'
 }
 
 function parseExcelDate(date: any): string {
@@ -148,8 +149,12 @@ async function processExcelData(arrayBuffer: ArrayBuffer) {
 }
 
 serve(async (req) => {
+  // Manejo específico de las solicitudes OPTIONS para CORS
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { 
+      headers: corsHeaders,
+      status: 200
+    });
   }
 
   try {
