@@ -62,6 +62,9 @@ const LoginPage = () => {
         return;
       }
 
+      // Primero intentamos cerrar cualquier sesión existente
+      await supabase.auth.signOut();
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
