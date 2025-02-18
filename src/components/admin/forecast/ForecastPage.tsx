@@ -10,6 +10,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
+import { startOfDay, endOfDay } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -19,9 +20,15 @@ export const ForecastPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const today = new Date();
+      const startOfToday = startOfDay(today).toISOString();
+      const endOfToday = endOfDay(today).toISOString();
+
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
+        .gte('fecha', startOfToday)
+        .lte('fecha', endOfToday)
         .order('fecha', { ascending: true });
 
       if (error) {
@@ -30,8 +37,8 @@ export const ForecastPage = () => {
       }
 
       if (!forecastData || forecastData.length === 0) {
-        console.log('No hay datos disponibles');
-        toast.info('No hay datos disponibles');
+        console.log('No hay datos disponibles para hoy');
+        toast.info('No hay datos disponibles para hoy');
         setData([]);
         return;
       }
@@ -125,7 +132,7 @@ export const ForecastPage = () => {
               </>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-500">No hay datos disponibles. Haz clic en "Actualizar" para cargar los datos.</p>
+                <p className="text-gray-500">No hay datos disponibles para hoy. Haz clic en "Actualizar" para cargar los datos.</p>
               </div>
             )}
           </div>
