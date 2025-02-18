@@ -162,6 +162,8 @@ const LoginPage = () => {
         console.error('Signup error:', error);
         if (error.message.includes('already registered')) {
           toast.error("Este correo ya está registrado");
+        } else if (error.message.includes('Signups not allowed')) {
+          toast.error("El registro de usuarios está deshabilitado temporalmente. Por favor, contacte al administrador.");
         } else {
           toast.error("Error al crear la cuenta");
         }
