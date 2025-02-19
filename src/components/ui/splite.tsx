@@ -1,6 +1,7 @@
 
 'use client'
 
+import * as React from 'react'
 import { Suspense, lazy, useState, useEffect } from 'react'
 import type { SplineProps } from '@splinetool/react-spline';
 
@@ -30,8 +31,8 @@ interface SplineSceneProps {
 }
 
 export function SplineScene({ scene, className }: SplineSceneProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [hasError, setHasError] = React.useState(false);
 
   useEffect(() => {
     // Verificar si la escena está accesible
