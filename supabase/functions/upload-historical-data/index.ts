@@ -11,41 +11,43 @@ const corsHeaders = {
 serve(async (req) => {
   console.log('🚀 Iniciando función upload-historical-data');
 
-  // Manejar la solicitud OPTIONS para CORS
+  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
     console.log('📥 Procesando archivo...');
-    const formData = await req.formData()
-    const file = formData.get('file')
-
-    if (!file || !(file instanceof File)) {
-      throw new Error('No se proporcionó un archivo válido')
+    
+    const { fileName, fileContent, contentType } = await req.json();
+    
+    if (!fileContent || !fileName) {
+      throw new Error('No se proporcionó un archivo válido');
     }
 
-    console.log('📄 Archivo recibido:', file.name);
+    console.log('📄 Archivo recibido:', fileName);
 
-    // Leer el archivo Excel
-    const arrayBuffer = await file.arrayBuffer()
-    const workbook = parse(new Uint8Array(arrayBuffer))
-    const worksheet = workbook.sheets[0]
+    // Convert base64 to array buffer
+    const base64Data = fileContent.split(',')[1];
+    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    // Parse Excel data
+    const workbook = parse(binaryData);
+    const worksheet = workbook.sheets[0];
 
     if (!worksheet) {
-      throw new Error('El archivo no contiene hojas de cálculo')
+      throw new Error('El archivo no contiene hojas de cálculo');
     }
 
     console.log('📊 Procesando datos del Excel...');
 
-    // Procesar datos
-    const data = []
+    // Process data
+    const data = [];
     for (let i = 1; i < worksheet.rows.length; i++) {
-      const row = worksheet.rows[i]
-      if (!row[0]) continue // Saltar filas vacías
+      const row = worksheet.rows[i];
+      if (!row[0]) continue;
 
-      // Asumiendo columnas: Fecha, Ejecutado, Prog. Diaria
-      const fecha = new Date(row[0])
+      const fecha = new Date(row[0]);
       if (isNaN(fecha.getTime())) {
         console.warn(`⚠️ Fila ${i + 1}: Fecha inválida:`, row[0]);
         continue;
@@ -56,21 +58,21 @@ serve(async (req) => {
         ejecutado: parseFloat(row[1] || '0'),
         reprogramacion_diaria: parseFloat(row[2] || '0'),
         created_at: new Date().toISOString()
-      })
+      });
     }
 
     console.log(`✅ Datos procesados: ${data.length} registros`);
 
-    // Guardar en Supabase
+    // Save to Supabase
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
     console.log('💾 Guardando datos en Supabase...');
     const { error } = await supabase
       .from('coes_historical')
-      .upsert(data)
+      .upsert(data);
 
     if (error) {
       console.error('❌ Error al guardar en Supabase:', error);
@@ -90,7 +92,7 @@ serve(async (req) => {
           'Content-Type': 'application/json' 
         } 
       }
-    )
+    );
 
   } catch (error) {
     console.error('❌ Error:', error);
@@ -98,12 +100,12 @@ serve(async (req) => {
       JSON.stringify({ 
         error: 'Error al procesar el archivo', 
         details: error.message,
-        stack: error.stack
+        stack: error.stack 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 
       }
-    )
+    );
   }
-})
+});

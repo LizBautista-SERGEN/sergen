@@ -21,15 +21,22 @@ export const UploadHistoricalData = () => {
 
     try {
       setIsUploading(true);
-      const formData = new FormData();
-      formData.append('file', file);
+      
+      // Convert file to base64
+      const base64File = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
       console.log('Enviando archivo:', file.name);
 
       const { data, error } = await supabase.functions.invoke('upload-historical-data', {
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
+        body: {
+          fileName: file.name,
+          fileContent: base64File,
+          contentType: file.type
         }
       });
 
