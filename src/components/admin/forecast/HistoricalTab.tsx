@@ -7,12 +7,18 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { HistoricalChart } from "./HistoricalChart";
 import { ExportDataDialog } from "../ExportDataDialog";
+import { Calendar } from "@/components/ui/calendar";
+import { useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export const HistoricalTab = () => {
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+
   const { data: historicalData, isLoading, refetch } = useQuery({
     queryKey: ['historical-data'],
     queryFn: async () => {
-      console.log('Fetching historical data...');
       const { data, error } = await supabase
         .from('coes_historical')
         .select('*')
@@ -24,22 +30,28 @@ export const HistoricalTab = () => {
         throw error;
       }
 
-      console.log('Historical data received:', data);
       return data;
     }
   });
 
   const updateHistoricalData = async () => {
+    if (!startDate || !endDate) {
+      toast.error('Por favor selecciona las fechas de inicio y fin');
+      return;
+    }
+
     try {
-      console.log('Calling get-coes-historical function...');
+      console.log('Llamando a la función get-coes-historical...');
       const response = await supabase.functions.invoke('get-coes-historical', {
-        method: 'POST'
+        body: {
+          startDate: format(startDate, 'yyyy-MM-dd'),
+          endDate: format(endDate, 'yyyy-MM-dd')
+        }
       });
       
-      console.log('Function response:', response);
+      console.log('Respuesta de la función:', response);
 
       if (response.error) {
-        console.error('Function error:', response.error);
         throw new Error(response.error.message);
       }
       
@@ -47,7 +59,6 @@ export const HistoricalTab = () => {
         toast.success(`Datos actualizados correctamente (${response.data.count} registros)`);
         refetch();
       } else {
-        console.error('Unexpected response:', response);
         throw new Error('Error al actualizar los datos');
       }
     } catch (error) {
@@ -69,10 +80,48 @@ export const HistoricalTab = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Datos Históricos</h2>
         <div className="flex gap-4">
-          <Button onClick={updateHistoricalData}>
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  {startDate ? format(startDate, "PP") : "Fecha inicial"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={setStartDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  {endDate ? format(endDate, "PP") : "Fecha final"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={setEndDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <Button 
+            onClick={updateHistoricalData} 
+            disabled={!startDate || !endDate}
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             Actualizar Datos
           </Button>
+
           {historicalData && historicalData.length > 0 && (
             <ExportDataDialog 
               data={historicalData} 
@@ -125,7 +174,7 @@ export const HistoricalTab = () => {
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500">
-              No hay datos históricos disponibles. Haz clic en "Actualizar Datos" para obtener los datos más recientes.
+              No hay datos históricos disponibles. Selecciona un rango de fechas y haz clic en "Actualizar Datos".
             </p>
           </div>
         )}
