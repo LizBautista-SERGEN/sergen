@@ -19,13 +19,14 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
   const formatFullDate = (isoString: string): string => {
     if (!isoString) return '';
     const fecha = new Date(isoString);
-    const dia = fecha.getDate().toString().padStart(2, '0');
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const año = fecha.getFullYear();
-    const hora = fecha.getHours().toString().padStart(2, '0');
-    const minutos = fecha.getMinutes().toString().padStart(2, '0');
-    
-    return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+    return new Intl.DateTimeFormat('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(fecha);
   };
 
   // Filtrar datos según el rango de fechas seleccionado
@@ -40,11 +41,20 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
   const chartData = filteredData.map(item => ({
     time: formatTime(item.fecha),
     fecha_completa: formatFullDate(item.fecha),
-    "Reprogramación Diaria": item.reprogramacion_diaria,
-    "Ejecutado": item.ejecutado
+    "Prog. Semanal": item.prog_semanal,
+    "Reprog. Diaria": item.reprogramacion_diaria,
+    "Demanda Prog.": item.demanda_programada,
+    "Ejecutado": item.ejecutado,
+    "Error %": item.error_porcentual
   }));
 
-  console.log('Datos procesados para el gráfico:', chartData);
+  const lineColors = {
+    "Prog. Semanal": "#8884d8",
+    "Reprog. Diaria": "#f39200",
+    "Demanda Prog.": "#82ca9d",
+    "Ejecutado": "#156082",
+    "Error %": "#ff7300"
+  };
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -67,23 +77,22 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
             }
             return label;
           }}
-          formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
+          formatter={(value: any, name: string) => [
+            `${value.toLocaleString()} ${name === "Error %" ? "%" : "MW"}`,
+            name
+          ]}
         />
         <Legend verticalAlign="top" height={36} />
-        <Line
-          type="monotone"
-          dataKey="Reprogramación Diaria"
-          stroke="#f39200"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line
-          type="monotone"
-          dataKey="Ejecutado"
-          stroke="#156082"
-          strokeWidth={2}
-          dot={false}
-        />
+        {Object.entries(lineColors).map(([key, color]) => (
+          <Line
+            key={key}
+            type="monotone"
+            dataKey={key}
+            stroke={color}
+            strokeWidth={2}
+            dot={false}
+          />
+        ))}
       </LineChart>
     </ResponsiveContainer>
   );

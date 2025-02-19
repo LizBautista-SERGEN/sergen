@@ -20,25 +20,20 @@ export const ForecastPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const today = new Date();
-      const tomorrow = addDays(today, 1);
+      const today = startOfDay(new Date());
+      today.setHours(0, 30, 0, 0); // Establecer a 00:30
       
-      // Configurar la hora inicial a las 00:30 del día actual
-      let startTime = startOfDay(today);
-      startTime = setHours(startTime, 0);
-      startTime = setMinutes(startTime, 30);
-      
-      // Configurar la hora final a las 00:00 del día siguiente
-      const endTime = startOfDay(tomorrow);
+      const tomorrow = startOfDay(addDays(today, 1));
+      tomorrow.setHours(0, 0, 0, 0); // Establecer a 00:00
 
-      console.log('Consultando datos desde:', startTime.toISOString());
-      console.log('Hasta:', endTime.toISOString());
+      console.log('Consultando datos desde:', today.toISOString());
+      console.log('Hasta:', tomorrow.toISOString());
 
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
-        .gte('fecha', startTime.toISOString())
-        .lte('fecha', endTime.toISOString())
+        .gte('fecha', today.toISOString())
+        .lt('fecha', tomorrow.toISOString())
         .order('fecha', { ascending: true });
 
       if (error) {
@@ -52,6 +47,11 @@ export const ForecastPage = () => {
         setData([]);
         return;
       }
+
+      // Verificar la primera hora de los datos
+      const primeraHora = new Date(forecastData[0].fecha).getHours();
+      const primeroMinutos = new Date(forecastData[0].fecha).getMinutes();
+      console.log('Primera hora en los datos:', `${primeraHora}:${primeroMinutos}`);
 
       console.log('Datos obtenidos de Supabase:', forecastData);
       setData(forecastData);
