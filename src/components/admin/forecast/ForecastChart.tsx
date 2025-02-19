@@ -1,5 +1,5 @@
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface ForecastChartProps {
   data: any[];
@@ -7,72 +7,49 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
-  // Función para formatear la fecha manualmente sin conversiones
   const formatTime = (isoString: string): string => {
+    if (!isoString) return '';
     const fecha = new Date(isoString);
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    const hora = fecha.getHours().toString().padStart(2, '0');
+    const minutos = fecha.getMinutes().toString().padStart(2, '0');
     return `${hora}:${minutos}`;
   };
 
   const formatFullDate = (isoString: string): string => {
+    if (!isoString) return '';
     const fecha = new Date(isoString);
-    const dia = fecha.getUTCDate().toString().padStart(2, '0');
-    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
-    const año = fecha.getUTCFullYear();
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
-    
-    return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+    return new Intl.DateTimeFormat('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(fecha);
   };
 
-  // Función para validar si un valor es efectivamente nulo o cero
-  const isNullOrZero = (value: any): boolean => {
-    return value === null || value === undefined || value === 0;
-  };
+  // Procesamos los datos para el gráfico
+  const chartData = data.map(item => ({
+    time: formatTime(item.fecha),
+    fecha_completa: formatFullDate(item.fecha),
+    "Reprogramación": item.reprogramacion,
+    "Pronóstico Diario": item.pronostico_diario,
+    "Rango Inferior": item.rango_inferior,
+    "Rango Superior": item.rango_superior,
+    "Demanda Real": item.demanda_real,
+    hora: new Date(item.fecha).getHours(),
+  }));
 
-  // Ordenamos los datos por fecha
-  const sortedData = [...data].sort((a, b) => 
-    new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
-  );
-
-  // Encontrar el último índice con demanda real (excluyendo ceros)
-  let lastRealDemandIndex = -1;
-  for (let i = 0; i < sortedData.length; i++) {
-    if (!isNullOrZero(sortedData[i].demanda_real)) {
-      lastRealDemandIndex = i;
-    }
-  }
-
-  console.log('Índice del último dato real:', lastRealDemandIndex);
-  console.log('Fecha del último dato real:', sortedData[lastRealDemandIndex]?.fecha);
-
-  const chartData = sortedData.map((item, index) => {
-    const currentDate = new Date(item.fecha);
-    const hora = currentDate.getUTCHours();
-
-    // Mostrar pronóstico y rangos solo después del último punto de demanda real
-    const showForecast = index > lastRealDemandIndex;
-
-    return {
-      time: formatTime(item.fecha),
-      "Reprogramación": isNullOrZero(item.reprogramacion) ? null : item.reprogramacion,
-      "Pronóstico Diario": showForecast && !isNullOrZero(item.pronostico_diario) ? item.pronostico_diario : null,
-      "Rango Inferior": showForecast && !isNullOrZero(item.rango_inferior) ? item.rango_inferior : null,
-      "Rango Superior": showForecast && !isNullOrZero(item.rango_superior) ? item.rango_superior : null,
-      "Demanda Real": isNullOrZero(item.demanda_real) ? null : item.demanda_real,
-      hora: hora,
-      fecha_completa: formatFullDate(item.fecha)
-    };
-  });
-
+  // Debugging
+  console.log('Índice del último dato real:', chartData.findIndex(d => d["Demanda Real"] === null) - 1);
+  console.log('Fecha del último dato real:', data.find(d => d.demanda_real !== null)?.fecha);
   console.log('Datos procesados del gráfico:', chartData);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
         data={chartData}
-        margin={{ top: 5, right: 30, left: 50, bottom: 25 }}
+        margin={forPDF ? { top: 20, right: 30, left: 20, bottom: 5 } : undefined}
       >
         <XAxis
           dataKey="time"
@@ -80,79 +57,59 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           angle={-45}
           textAnchor="end"
           height={60}
+          scale="point"
+          padding={{ left: 0, right: 0 }}
         />
         <YAxis
-          domain={[5500, 8500]}
+          domain={[5000, 8500]}
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
-          formatter={(value: any) => value ? [`${value.toLocaleString()} MW`, ''] : ['No disponible', '']}
           labelFormatter={(label, payload) => {
             if (payload && payload[0]) {
-              return `${payload[0].payload.fecha_completa}`;
+              return payload[0].payload.fecha_completa;
             }
             return label;
           }}
+          formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
         />
         <Legend verticalAlign="top" height={36} />
-
-        {/* Áreas grises para horas pico */}
-        {chartData.map((entry, index) => {
-          if (entry.hora >= 18 && entry.hora < 23 && index < chartData.length - 1) {
-            return (
-              <ReferenceArea
-                key={`area-${index}`}
-                x1={entry.time}
-                x2={chartData[index + 1].time}
-                fill="#E8E8E8"
-                fillOpacity={0.8}
-              />
-            );
-          }
-          return null;
-        })}
-        
-        <Line
-          type="monotone"
-          dataKey="Reprogramación"
-          stroke="#C00000"
-          strokeWidth={2}
-          dot={false}
-          connectNulls={true}
-        />
-        <Line
-          type="monotone"
-          dataKey="Pronóstico Diario"
-          stroke="#f39200"
-          strokeWidth={2}
-          dot={false}
-          connectNulls={true}
-        />
-        <Line
-          type="monotone"
-          dataKey="Rango Inferior"
-          stroke="#90C418"
-          strokeWidth={1}
-          strokeDasharray="5 5"
-          dot={false}
-          connectNulls={true}
-        />
-        <Line
-          type="monotone"
-          dataKey="Rango Superior"
-          stroke="#90C418"
-          strokeWidth={1}
-          strokeDasharray="5 5"
-          dot={false}
-          connectNulls={true}
-        />
         <Line
           type="monotone"
           dataKey="Demanda Real"
           stroke="#156082"
           strokeWidth={2}
           dot={false}
-          connectNulls={true}
+        />
+        <Line
+          type="monotone"
+          dataKey="Reprogramación"
+          stroke="#f39200"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="Pronóstico Diario"
+          stroke="#82ca9d"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="Rango Superior"
+          stroke="#d9d9d9"
+          strokeWidth={1}
+          strokeDasharray="3 3"
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="Rango Inferior"
+          stroke="#d9d9d9"
+          strokeWidth={1}
+          strokeDasharray="3 3"
+          dot={false}
         />
       </LineChart>
     </ResponsiveContainer>
