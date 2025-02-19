@@ -10,7 +10,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { startOfDay, endOfDay } from "date-fns";
+import { startOfDay, endOfDay, addDays } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -21,19 +21,35 @@ export const ForecastPage = () => {
     try {
       setLoading(true);
       const today = new Date();
-      const startOfToday = startOfDay(today).toISOString();
-      const endOfToday = endOfDay(today).toISOString();
+      const tomorrow = addDays(today, 1);
+      
+      // Configurar la hora inicial a las 00:30 del día actual
+      const startTime = startOfDay(today);
+      startTime.setMinutes(30);
+      
+      // Configurar la hora final a las 00:00 del día siguiente
+      const endTime = startOfDay(tomorrow);
 
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
-        .gte('fecha', startOfToday)
-        .lte('fecha', endOfToday)
+        .gte('fecha', startTime.toISOString())
+        .lte('fecha', endTime.toISOString())
         .order('fecha', { ascending: true });
 
       if (error) {
         console.error('Error al obtener datos:', error);
         throw error;
+      }
+
+      // Eliminar datos antiguos
+      const { error: deleteError } = await supabase
+        .from('coes_forecast')
+        .delete()
+        .lt('fecha', startTime.toISOString());
+
+      if (deleteError) {
+        console.error('Error al eliminar datos antiguos:', deleteError);
       }
 
       if (!forecastData || forecastData.length === 0) {
