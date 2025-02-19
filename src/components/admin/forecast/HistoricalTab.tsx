@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ConsoleOutput } from "./ConsoleOutput";
+import { UploadHistoricalData } from "./UploadHistoricalData";
 
 export const HistoricalTab = () => {
   const [startDate, setStartDate] = useState<Date>();
@@ -87,6 +88,8 @@ export const HistoricalTab = () => {
 
   return (
     <div className="space-y-4">
+      <UploadHistoricalData />
+      
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Datos Históricos</h2>
         <div className="flex gap-4">
