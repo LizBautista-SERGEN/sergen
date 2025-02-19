@@ -5,10 +5,12 @@ import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const UploadHistoricalData = () => {
   const [isUploading, setIsUploading] = useState(false);
   const { isSuperUser } = useUserProfile();
+  const queryClient = useQueryClient();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -59,6 +61,11 @@ export const UploadHistoricalData = () => {
 
       console.log('Respuesta:', data);
       toast.success('Datos históricos actualizados correctamente');
+      
+      // Invalidar la consulta para forzar una actualización de los datos
+      await queryClient.invalidateQueries({
+        queryKey: ['historical-data']
+      });
       
       // Limpiar el input file
       event.target.value = '';
