@@ -1,5 +1,5 @@
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface HistoricalChartProps {
   data: any[];
@@ -8,21 +8,22 @@ interface HistoricalChartProps {
 }
 
 export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartProps) => {
-  // Función para formatear la fecha manualmente sin conversiones
   const formatTime = (isoString: string): string => {
+    if (!isoString) return '';
     const fecha = new Date(isoString);
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    const hora = fecha.getHours().toString().padStart(2, '0');
+    const minutos = fecha.getMinutes().toString().padStart(2, '0');
     return `${hora}:${minutos}`;
   };
 
   const formatFullDate = (isoString: string): string => {
+    if (!isoString) return '';
     const fecha = new Date(isoString);
-    const dia = fecha.getUTCDate().toString().padStart(2, '0');
-    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
-    const año = fecha.getUTCFullYear();
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    const dia = fecha.getDate().toString().padStart(2, '0');
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const año = fecha.getFullYear();
+    const hora = fecha.getHours().toString().padStart(2, '0');
+    const minutos = fecha.getMinutes().toString().padStart(2, '0');
     
     return `${dia}/${mes}/${año} ${hora}:${minutos}`;
   };
@@ -39,16 +40,21 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
   const chartData = filteredData.map(item => ({
     time: formatTime(item.fecha),
     fecha_completa: formatFullDate(item.fecha),
-    "Prog. Diaria": item.reprogramacion_diaria,
+    "Reprogramación Diaria": item.reprogramacion_diaria,
     "Ejecutado": item.ejecutado
   }));
+
+  console.log('Datos procesados para el gráfico:', chartData);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={chartData}>
         <XAxis 
           dataKey="time" 
-          hide={true}
+          interval={2}
+          angle={-45}
+          textAnchor="end"
+          height={60}
         />
         <YAxis 
           domain={[5000, 8500]}
@@ -63,13 +69,13 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
           }}
           formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
         />
+        <Legend verticalAlign="top" height={36} />
         <Line
           type="monotone"
-          dataKey="Prog. Diaria"
+          dataKey="Reprogramación Diaria"
           stroke="#f39200"
           strokeWidth={2}
           dot={false}
-          name="Prog. Diaria"
         />
         <Line
           type="monotone"
@@ -77,7 +83,6 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
           stroke="#156082"
           strokeWidth={2}
           dot={false}
-          name="Ejecutado"
         />
       </LineChart>
     </ResponsiveContainer>

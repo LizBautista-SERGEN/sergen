@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ForecastChart } from "./ForecastChart";
@@ -9,7 +10,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { startOfDay, endOfDay, addDays } from "date-fns";
+import { startOfDay, addDays, setHours, setMinutes } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -22,11 +23,16 @@ export const ForecastPage = () => {
       const today = new Date();
       const tomorrow = addDays(today, 1);
       
-      // Configurar la hora inicial a las 00:00 del día actual
-      const startTime = startOfDay(today);
+      // Configurar la hora inicial a las 00:30 del día actual
+      let startTime = startOfDay(today);
+      startTime = setHours(startTime, 0);
+      startTime = setMinutes(startTime, 30);
       
       // Configurar la hora final a las 00:00 del día siguiente
       const endTime = startOfDay(tomorrow);
+
+      console.log('Consultando datos desde:', startTime.toISOString());
+      console.log('Hasta:', endTime.toISOString());
 
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
