@@ -8,8 +8,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function parseExcelDate(value: any): Date | null {
+  if (!value) return null;
+  
+  try {
+    if (typeof value === 'number') {
+      // Handle Excel serial date
+      return new Date(Math.round((value - 25569) * 86400 * 1000));
+    } else if (typeof value === 'string') {
+      // Try parsing string date
+      const parts = value.split(/[/\-]/)
+      if (parts.length === 3) {
+        // Asumiendo formato DD/MM/YYYY o DD-MM-YYYY
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1; // Meses en JS son 0-based
+        const year = parseInt(parts[2]);
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          return new Date(year, month, day);
+        }
+      }
+      // Intentar parse directo si el formato es estándar
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing date:', value, error);
+  }
+  return null;
+}
+
 serve(async (req) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -19,49 +49,61 @@ serve(async (req) => {
 
     console.log('Procesando archivo:', fileName)
 
-    // Extraer el contenido Base64 real (remover el prefijo data:...;base64,)
     const base64Content = fileContent.split(',')[1]
     const fileBuffer = Uint8Array.from(atob(base64Content), c => c.charCodeAt(0))
 
-    // Leer el archivo Excel
     const workbook = XLSX.read(fileBuffer, { type: 'array' })
     const sheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[sheetName]
     
-    // Convertir a JSON
     const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
-    console.log('Datos extraídos del Excel:', jsonData)
+    console.log('Número de filas extraídas:', jsonData.length)
 
-    // Procesar los datos para el formato correcto
-    const processedData = jsonData.map((row: any) => {
-      // Asumiendo que las columnas del Excel son "Fecha", "Reprogramación Diaria" y "Ejecutado"
-      // Convertir la fecha de Excel a formato ISO
-      let fecha
-      if (typeof row.Fecha === 'number') {
-        // Si es un número de serie de Excel
-        fecha = new Date(Math.round((row.Fecha - 25569) * 86400 * 1000))
-      } else if (typeof row.Fecha === 'string') {
-        // Si es una cadena de texto
-        fecha = new Date(row.Fecha)
-      }
+    const processedData = jsonData
+      .map((row: any, index: number) => {
+        console.log(`Procesando fila ${index + 1}:`, row);
+        
+        // Buscar la columna de fecha con diferentes nombres posibles
+        const fechaValue = row.Fecha || row.fecha || row.FECHA || row.Date || row.DATE;
+        const fecha = parseExcelDate(fechaValue);
 
-      return {
-        fecha: fecha.toISOString(),
-        reprogramacion_diaria: row['Reprogramación Diaria'] || row.reprogramacion_diaria || null,
-        ejecutado: row.Ejecutado || row.ejecutado || null
-      }
-    }).filter(row => !isNaN(new Date(row.fecha).getTime())) // Filtrar fechas inválidas
+        if (!fecha) {
+          console.error(`⚠️ Fila ${index + 1}: Fecha inválida:`, fechaValue);
+          return null;
+        }
 
-    console.log('Datos procesados:', processedData)
+        // Buscar las columnas de datos con diferentes nombres posibles
+        const reprogramacion = row['Reprogramación Diaria'] || 
+                             row['REPROGRAMACION DIARIA'] || 
+                             row.reprogramacion_diaria || 
+                             row.Reprogramacion;
 
-    // Conectar a Supabase
+        const ejecutado = row.Ejecutado || 
+                         row.EJECUTADO || 
+                         row.ejecutado || 
+                         row.Execution || 
+                         row.EXECUTION;
+
+        return {
+          fecha: fecha.toISOString(),
+          reprogramacion_diaria: typeof reprogramacion === 'number' ? reprogramacion : null,
+          ejecutado: typeof ejecutado === 'number' ? ejecutado : null
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+
+    if (processedData.length === 0) {
+      throw new Error('No se encontraron datos válidos en el archivo');
+    }
+
+    console.log(`Datos procesados correctamente: ${processedData.length} registros`);
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Insertar los datos procesados
     const { data, error } = await supabase
       .from('coes_historical')
       .insert(processedData)
@@ -71,8 +113,6 @@ serve(async (req) => {
       console.error('Error al insertar datos:', error)
       throw error
     }
-
-    console.log('Datos insertados correctamente:', data)
 
     return new Response(
       JSON.stringify({
@@ -87,7 +127,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error en el procesamiento:', error)
     return new Response(
       JSON.stringify({
         success: false,
