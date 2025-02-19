@@ -4,4 +4,3 @@ project_id = "zbixjkgwperxqrdhvtoy"
 [functions]
 [functions.get-coes-historical]
 verify_jwt = false
-allowed_domains = ["zbixjkgwperxqrdhvtoy.supabase.co", "www.coes.org.pe"]
