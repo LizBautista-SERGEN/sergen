@@ -19,7 +19,10 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkSession();
+    // Al cargar la página de login, aseguramos que no haya sesión activa
+    supabase.auth.signOut().then(() => {
+      checkSession();
+    });
   }, []);
 
   const checkSession = async () => {
@@ -27,7 +30,7 @@ const LoginPage = () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        if (error.message !== 'Invalid Refresh Token: Refresh Token Not Found') {
+        if (!error.message.includes('Invalid Refresh Token')) {
           console.error('Error al verificar sesión:', error);
           toast.error("Error al verificar la sesión");
         }
@@ -65,6 +68,7 @@ const LoginPage = () => {
         return;
       }
 
+      // Aseguramos que no haya sesión activa antes de intentar iniciar sesión
       await supabase.auth.signOut();
 
       const { data, error } = await supabase.auth.signInWithPassword({

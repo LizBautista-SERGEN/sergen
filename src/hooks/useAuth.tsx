@@ -14,15 +14,18 @@ export const useAuth = () => {
     // Obtener la sesión actual
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        if (!error.message.includes('Invalid Refresh Token')) {
-          console.error('Error getting session:', error);
-          toast.error('Error al verificar la sesión');
+        if (error.message.includes('Invalid Refresh Token')) {
+          console.log('Token de actualización inválido, redirigiendo al login');
+          setSession(null);
+          setLoading(false);
+          // Solo redirigimos al login si no estamos ya en la página de login
+          if (window.location.pathname !== '/login') {
+            navigate('/login');
+          }
+          return;
         }
-        // Si hay error de refresh token, redirigimos al login
-        setSession(null);
-        setLoading(false);
-        navigate('/login');
-        return;
+        console.error('Error getting session:', error);
+        toast.error('Error al verificar la sesión');
       }
       setSession(session);
       setLoading(false);
@@ -31,16 +34,35 @@ export const useAuth = () => {
     // Escuchar cambios en la autenticación
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log('Auth state changed:', _event);
+      
       if (_event === 'SIGNED_OUT') {
-        console.log('Auth state changed: SIGNED_OUT');
         setSession(null);
-        navigate('/login');
+        // Solo redirigimos al login si no estamos ya en la página de login
+        if (window.location.pathname !== '/login') {
+          navigate('/login');
+        }
+      } else if (_event === 'SIGNED_IN') {
+        setSession(session);
+        // Validamos el perfil del usuario
+        if (session) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, has_access')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.role === 'superuser') {
+            navigate('/admin/dashboard');
+          } else {
+            navigate('/dashboard');
+          }
+        }
       } else if (_event === 'TOKEN_REFRESHED') {
-        console.log('Auth state changed: TOKEN_REFRESHED');
+        setSession(session);
       }
       
-      setSession(session);
       setLoading(false);
     });
 
