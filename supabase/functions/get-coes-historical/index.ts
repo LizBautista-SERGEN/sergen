@@ -58,50 +58,55 @@ serve(async (req) => {
     const htmlContent = await initialResponse.text();
     console.log('Cookies obtenidas:', cookies);
 
-    // Extraer el token de verificación si existe
+    // Extraer el token de verificación
     const tokenMatch = htmlContent.match(/<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]*)"[^>]*>/);
     const verificationToken = tokenMatch ? tokenMatch[1] : '';
-    console.log('Token de verificación encontrado:', verificationToken ? 'Sí' : 'No');
+    console.log('Token de verificación:', verificationToken);
 
-    // Simular envío del formulario
-    console.log('Enviando formulario de consulta...');
-    const formData = new FormData();
+    // Preparar el formulario con las fechas
+    const formData = new URLSearchParams();
     formData.append('txtFechaInicial', startDate);
     formData.append('txtFechaFinal', endDate);
     if (verificationToken) {
       formData.append('__RequestVerificationToken', verificationToken);
     }
+    formData.append('btnConsultar', 'Consultar');
 
+    // Simular el clic en el botón Consultar
+    console.log('Enviando formulario de consulta...');
     const searchResponse = await fetch('https://www.coes.org.pe/Portal/portalinformacion/demanda', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
         'Cookie': cookies || '',
         'Origin': 'https://www.coes.org.pe',
         'Referer': 'https://www.coes.org.pe/Portal/portalinformacion/demanda'
       },
-      body: formData
+      body: formData.toString()
     });
 
     if (!searchResponse.ok) {
       throw new Error(`Error al enviar formulario: ${searchResponse.status}`);
     }
 
+    // Esperar un momento para que los datos se carguen
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     // Obtener datos exportados
     console.log('Solicitando exportación de datos...');
     const exportResponse = await fetch('https://www.coes.org.pe/Portal/portalinformacion/demanda/exportardemandamaximadiaria', {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Accept': 'application/vnd.ms-excel',
         'Cookie': cookies || '',
         'Origin': 'https://www.coes.org.pe',
         'Referer': 'https://www.coes.org.pe/Portal/portalinformacion/demanda'
       },
-      body: formData
+      body: formData.toString()
     });
 
     if (!exportResponse.ok) {
@@ -109,35 +114,67 @@ serve(async (req) => {
     }
 
     const exportData = await exportResponse.text();
-    console.log('Datos exportados recibidos:', exportData.substring(0, 500));
+    console.log('Respuesta de exportación:', exportData.substring(0, 200));
 
-    // Procesar los datos exportados (asumiendo formato CSV o similar)
-    const lines = exportData.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(',').map(h => h.trim());
-    const rawData = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim());
-      return headers.reduce((obj, header, index) => {
-        obj[header] = values[index] || '';
-        return obj;
-      }, {} as any);
-    });
-
-    console.log('Datos procesados:', rawData);
-
-    // Formatear los datos para Supabase
-    const formattedData = rawData.map(row => ({
-      fecha: row.Fecha || row.fecha,
-      reprogramacion_diaria: parseFloat(row['Reprogramación Diaria'] || row.reprogramacionDiaria || '0'),
-      ejecutado: parseFloat(row.Ejecutado || row.ejecutado || '0'),
-      created_at: new Date().toISOString()
-    }));
-
-    if (formattedData.length === 0) {
-      throw new Error('No se encontraron datos para procesar');
+    if (!exportData || exportData.trim() === '') {
+      throw new Error('Los datos exportados están vacíos');
     }
 
+    // Procesar el CSV
+    const lines = exportData.split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    console.log('Primeras líneas del CSV:', lines.slice(0, 3));
+
+    if (lines.length < 2) {
+      throw new Error('El archivo exportado no contiene datos suficientes');
+    }
+
+    // Procesar encabezados
+    const headers = lines[0].split(',').map(h => h.trim());
+    console.log('Encabezados encontrados:', headers);
+
+    // Procesar datos
+    const rawData = lines.slice(1).map(line => {
+      const values = line.split(',').map(v => v.trim());
+      const row: Record<string, any> = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+      return row;
+    });
+
+    console.log('Ejemplo de datos procesados:', rawData[0]);
+
+    // Formatear los datos para Supabase
+    const formattedData = rawData.map(row => {
+      const fechaStr = row.Fecha || row.fecha;
+      let fecha;
+      try {
+        // Intentar parsear la fecha (ajustar según el formato real)
+        const [day, month, year] = fechaStr.split('/');
+        fecha = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00Z`;
+      } catch (e) {
+        console.error('Error al parsear fecha:', fechaStr, e);
+        return null;
+      }
+
+      return {
+        fecha,
+        reprogramacion_diaria: parseFloat(row['Reprogramación Diaria']?.replace(',', '.') || '0'),
+        ejecutado: parseFloat(row['Ejecutado']?.replace(',', '.') || '0'),
+        created_at: new Date().toISOString()
+      };
+    }).filter(row => row !== null);
+
+    if (formattedData.length === 0) {
+      throw new Error('No se pudieron procesar los datos correctamente');
+    }
+
+    console.log('Datos formateados ejemplo:', formattedData[0]);
+
     // Guardar en Supabase
-    console.log('Conectando con Supabase...');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -157,7 +194,6 @@ serve(async (req) => {
       throw new Error(`Error al insertar datos: ${insertError.message}`);
     }
 
-    console.log('Operación completada con éxito');
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -175,7 +211,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error en get-coes-historical:', error);
+    console.error('Error detallado:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Error al obtener datos históricos',
