@@ -8,6 +8,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function getDefaultDates() {
+  const currentDate = new Date();
+  const startDate = new Date(currentDate);
+  startDate.setDate(currentDate.getDate() - 3);
+  const endDate = new Date(currentDate);
+  endDate.setDate(currentDate.getDate() - 1);
+
+  return {
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0]
+  };
+}
+
 serve(async (req) => {
   console.log('Iniciando función get-coes-historical');
   
@@ -18,88 +31,110 @@ serve(async (req) => {
   }
 
   try {
-    // Obtener los datos del body
-    const { startDate, endDate } = await req.json();
-    console.log('Fechas recibidas:', { startDate, endDate });
+    // Obtener fechas del request o usar las predeterminadas
+    let { startDate, endDate } = await req.json().catch(() => ({}));
+    if (!startDate || !endDate) {
+      const defaultDates = getDefaultDates();
+      startDate = startDate || defaultDates.startDate;
+      endDate = endDate || defaultDates.endDate;
+    }
+    console.log('Fechas a usar:', { startDate, endDate });
 
-    // Obtener la página principal primero para las cookies
-    console.log('Obteniendo página principal...');
+    // Primera petición para obtener cookies y token
+    console.log('Obteniendo página inicial...');
     const initialResponse = await fetch('https://www.coes.org.pe/Portal/portalinformacion/demanda', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3'
       }
     });
 
     if (!initialResponse.ok) {
-      throw new Error(`Error al acceder a la página principal: ${initialResponse.status}`);
+      throw new Error(`Error al acceder a la página inicial: ${initialResponse.status}`);
     }
 
-    // Obtener cookies de la respuesta inicial
     const cookies = initialResponse.headers.get('set-cookie');
+    const htmlContent = await initialResponse.text();
     console.log('Cookies obtenidas:', cookies);
 
-    // Hacer la petición al formulario de demanda máxima diaria
-    console.log('Realizando petición de datos...');
-    const formResponse = await fetch('https://www.coes.org.pe/Portal/portalinformacion/demanda/demandamaximadiaria', {
+    // Extraer el token de verificación si existe
+    const tokenMatch = htmlContent.match(/<input[^>]*name="__RequestVerificationToken"[^>]*value="([^"]*)"[^>]*>/);
+    const verificationToken = tokenMatch ? tokenMatch[1] : '';
+    console.log('Token de verificación encontrado:', verificationToken ? 'Sí' : 'No');
+
+    // Simular envío del formulario
+    console.log('Enviando formulario de consulta...');
+    const formData = new FormData();
+    formData.append('txtFechaInicial', startDate);
+    formData.append('txtFechaFinal', endDate);
+    if (verificationToken) {
+      formData.append('__RequestVerificationToken', verificationToken);
+    }
+
+    const searchResponse = await fetch('https://www.coes.org.pe/Portal/portalinformacion/demanda', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookies || '',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Cookie': cookies || '',
         'Origin': 'https://www.coes.org.pe',
         'Referer': 'https://www.coes.org.pe/Portal/portalinformacion/demanda'
       },
-      body: JSON.stringify({
-        fechaInicial: startDate,
-        fechaFinal: endDate
-      })
+      body: formData
     });
 
-    // Verificar la respuesta
-    if (!formResponse.ok) {
-      throw new Error(`Error al obtener datos: ${formResponse.status}`);
+    if (!searchResponse.ok) {
+      throw new Error(`Error al enviar formulario: ${searchResponse.status}`);
     }
 
-    // Obtener el contenido de la respuesta
-    const htmlContent = await formResponse.text();
-    console.log('Contenido HTML recibido:', htmlContent.substring(0, 500)); // Solo los primeros 500 caracteres para el log
+    // Obtener datos exportados
+    console.log('Solicitando exportación de datos...');
+    const exportResponse = await fetch('https://www.coes.org.pe/Portal/portalinformacion/demanda/exportardemandamaximadiaria', {
+      method: 'POST',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.8,en-US;q=0.5,en;q=0.3',
+        'Cookie': cookies || '',
+        'Origin': 'https://www.coes.org.pe',
+        'Referer': 'https://www.coes.org.pe/Portal/portalinformacion/demanda'
+      },
+      body: formData
+    });
 
-    // Intentar extraer los datos del HTML
-    // Asumiendo que los datos vienen en formato JSON dentro del HTML
-    const dataMatch = htmlContent.match(/var\s+data\s*=\s*(\[.*?\]);/s);
-    if (!dataMatch) {
-      throw new Error('No se encontraron datos en la respuesta');
+    if (!exportResponse.ok) {
+      throw new Error(`Error al exportar datos: ${exportResponse.status}`);
     }
 
-    // Parsear los datos encontrados
-    let rawData;
-    try {
-      rawData = JSON.parse(dataMatch[1]);
-      console.log('Datos extraídos:', rawData);
-    } catch (e) {
-      throw new Error(`Error al parsear datos encontrados: ${e.message}`);
-    }
+    const exportData = await exportResponse.text();
+    console.log('Datos exportados recibidos:', exportData.substring(0, 500));
 
-    // Verificar y formatear los datos
-    if (!Array.isArray(rawData)) {
-      throw new Error('Los datos extraídos no están en el formato esperado');
-    }
+    // Procesar los datos exportados (asumiendo formato CSV o similar)
+    const lines = exportData.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim());
+    const rawData = lines.slice(1).map(line => {
+      const values = line.split(',').map(v => v.trim());
+      return headers.reduce((obj, header, index) => {
+        obj[header] = values[index] || '';
+        return obj;
+      }, {} as any);
+    });
 
-    // Formatear los datos para la base de datos
+    console.log('Datos procesados:', rawData);
+
+    // Formatear los datos para Supabase
     const formattedData = rawData.map(row => ({
-      fecha: row.fecha,
-      reprogramacion_diaria: parseFloat(row.reprogramacionDiaria || '0'),
-      ejecutado: parseFloat(row.ejecutado || '0'),
+      fecha: row.Fecha || row.fecha,
+      reprogramacion_diaria: parseFloat(row['Reprogramación Diaria'] || row.reprogramacionDiaria || '0'),
+      ejecutado: parseFloat(row.Ejecutado || row.ejecutado || '0'),
       created_at: new Date().toISOString()
     }));
 
     if (formattedData.length === 0) {
       throw new Error('No se encontraron datos para procesar');
     }
-
-    console.log('Datos formateados:', formattedData);
 
     // Guardar en Supabase
     console.log('Conectando con Supabase...');
