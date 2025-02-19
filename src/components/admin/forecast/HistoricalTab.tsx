@@ -10,10 +10,12 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ConsoleOutput } from "./ConsoleOutput";
 
 export const HistoricalTab = () => {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [lastError, setLastError] = useState<any>(null);
 
   const { data: historicalData, isLoading, refetch } = useQuery({
     queryKey: ['historical-data'],
@@ -40,6 +42,7 @@ export const HistoricalTab = () => {
     }
 
     try {
+      setLastError(null);
       console.log('Iniciando actualización de datos históricos...');
       console.log('Fechas seleccionadas:', {
         startDate: format(startDate, 'yyyy-MM-dd'),
@@ -56,7 +59,7 @@ export const HistoricalTab = () => {
       console.log('Respuesta completa de la función:', response);
 
       if (response.error) {
-        console.error('Error detallado:', response.error);
+        setLastError(response.error);
         throw new Error(response.error.message || 'Error desconocido');
       }
       
@@ -69,6 +72,7 @@ export const HistoricalTab = () => {
       }
     } catch (error: any) {
       console.error('Error completo:', error);
+      setLastError(error);
       toast.error(`Error al actualizar los datos históricos: ${error.message}`);
     }
   };
@@ -137,6 +141,10 @@ export const HistoricalTab = () => {
           )}
         </div>
       </div>
+
+      {lastError && (
+        <ConsoleOutput error={lastError} />
+      )}
 
       <div className="grid grid-cols-1 gap-6">
         {historicalData && historicalData.length > 0 ? (
