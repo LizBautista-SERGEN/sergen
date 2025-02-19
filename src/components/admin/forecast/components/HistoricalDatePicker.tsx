@@ -24,7 +24,7 @@ export const HistoricalDatePicker = ({
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {startDate ? format(startDate, "PP") : "Fecha inicial"}
+            {startDate ? format(startDate, "dd/MM/yyyy") : "Fecha inicial"}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -41,7 +41,7 @@ export const HistoricalDatePicker = ({
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {endDate ? format(endDate, "PP") : "Fecha final"}
+            {endDate ? format(endDate, "dd/MM/yyyy") : "Fecha final"}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

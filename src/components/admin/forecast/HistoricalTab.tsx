@@ -43,45 +43,6 @@ export const HistoricalTab = () => {
     }
   });
 
-  const updateHistoricalData = async () => {
-    if (!startDate || !endDate) {
-      toast.error('Por favor selecciona las fechas de inicio y fin');
-      return;
-    }
-
-    try {
-      setLastError(null);
-      console.log('Iniciando actualización de datos históricos...');
-      console.log('Fechas seleccionadas:', {
-        startDate: format(startDate, 'yyyy-MM-dd'),
-        endDate: format(endDate, 'yyyy-MM-dd')
-      });
-
-      const response = await supabase.functions.invoke('get-coes-historical', {
-        body: {
-          startDate: format(startDate, 'yyyy-MM-dd'),
-          endDate: format(endDate, 'yyyy-MM-dd')
-        }
-      });
-      
-      if (response.error) {
-        setLastError(response.error);
-        throw new Error(response.error.message || 'Error desconocido');
-      }
-      
-      if (response.data?.success) {
-        toast.success(`Datos actualizados correctamente (${response.data.count} registros)`);
-        refetch();
-      } else {
-        throw new Error('Error al actualizar los datos');
-      }
-    } catch (error: any) {
-      console.error('Error completo:', error);
-      setLastError(error);
-      toast.error(`Error al actualizar los datos históricos: ${error.message}`);
-    }
-  };
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -108,13 +69,11 @@ export const HistoricalTab = () => {
       <UploadHistoricalData />
       
       <div className="flex justify-between items-center">
-        <HistoricalHeader
+        <HistoricalDatePicker
           startDate={startDate}
           endDate={endDate}
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
-          onUpdateData={updateHistoricalData}
-          historicalData={historicalData}
         />
         <Button
           onClick={handleRefresh}
@@ -145,7 +104,7 @@ export const HistoricalTab = () => {
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500">
-              No hay datos históricos disponibles. Selecciona un rango de fechas y haz clic en "Actualizar Datos".
+              No hay datos históricos disponibles. Sube un archivo Excel para comenzar.
             </p>
           </div>
         )}
