@@ -8,7 +8,7 @@ import { HistoricalChart } from "./HistoricalChart";
 import { useState } from "react";
 import { ConsoleOutput } from "./ConsoleOutput";
 import { UploadHistoricalData } from "./UploadHistoricalData";
-import { HistoricalHeader } from "./components/HistoricalHeader";
+import { HistoricalDatePicker } from "./components/HistoricalDatePicker"; // Agregamos esta importación
 import { HistoricalDataTable } from "./components/HistoricalDataTable";
 import { Button } from "@/components/ui/button";
 
