@@ -4,3 +4,7 @@ project_id = "zbixjkgwperxqrdhvtoy"
 [functions]
 [functions.get-coes-historical]
 verify_jwt = false
+
+[functions.upload-historical-data]
+verify_jwt = false
+

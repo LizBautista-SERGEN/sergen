@@ -24,13 +24,26 @@ export const UploadHistoricalData = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const { error } = await supabase.functions.invoke('upload-historical-data', {
-        body: formData
+      console.log('Enviando archivo:', file.name);
+
+      const { data, error } = await supabase.functions.invoke('upload-historical-data', {
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error al subir archivo:', error);
+        throw error;
+      }
 
+      console.log('Respuesta:', data);
       toast.success('Datos históricos actualizados correctamente');
+      
+      // Limpiar el input file
+      event.target.value = '';
+      
     } catch (error: any) {
       console.error('Error al subir archivo:', error);
       toast.error('Error al procesar el archivo: ' + error.message);
