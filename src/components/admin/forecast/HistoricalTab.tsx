@@ -1,18 +1,15 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { HistoricalChart } from "./HistoricalChart";
-import { ExportDataDialog } from "../ExportDataDialog";
-import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 import { ConsoleOutput } from "./ConsoleOutput";
 import { UploadHistoricalData } from "./UploadHistoricalData";
+import { HistoricalHeader } from "./components/HistoricalHeader";
+import { HistoricalDataTable } from "./components/HistoricalDataTable";
 
 export const HistoricalTab = () => {
   const [startDate, setStartDate] = useState<Date>();
@@ -88,62 +85,14 @@ export const HistoricalTab = () => {
     <div className="space-y-4">
       <UploadHistoricalData />
       
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Datos Históricos</h2>
-        <div className="flex gap-4">
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "PP") : "Fecha inicial"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "PP") : "Fecha final"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={setEndDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <Button 
-            onClick={updateHistoricalData} 
-            disabled={!startDate || !endDate}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualizar Datos
-          </Button>
-
-          {historicalData && historicalData.length > 0 && (
-            <ExportDataDialog 
-              data={historicalData} 
-              filename="datos-historicos" 
-              chartComponent={<HistoricalChart data={historicalData} />}
-            />
-          )}
-        </div>
-      </div>
+      <HistoricalHeader
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onUpdateData={updateHistoricalData}
+        historicalData={historicalData}
+      />
 
       {lastError && (
         <ConsoleOutput error={lastError} />
@@ -159,38 +108,7 @@ export const HistoricalTab = () => {
                 endDate={endDate}
               />
             </div>
-            <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fecha
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reprogramación Diaria
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ejecutado
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {historicalData.map((row) => (
-                    <tr key={row.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {format(new Date(row.fecha), 'dd/MM/yyyy HH:mm')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {row.reprogramacion_diaria?.toLocaleString() || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {row.ejecutado?.toLocaleString() || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <HistoricalDataTable data={historicalData} />
           </>
         ) : (
           <div className="text-center py-8">
