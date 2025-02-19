@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { HistoricalChart } from "./HistoricalChart";
@@ -10,6 +10,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { ConsoleOutput } from "./ConsoleOutput";
 import { UploadHistoricalData } from "./UploadHistoricalData";
 
@@ -57,8 +58,6 @@ export const HistoricalTab = () => {
         }
       });
       
-      console.log('Respuesta completa de la función:', response);
-
       if (response.error) {
         setLastError(response.error);
         throw new Error(response.error.message || 'Error desconocido');
@@ -68,7 +67,6 @@ export const HistoricalTab = () => {
         toast.success(`Datos actualizados correctamente (${response.data.count} registros)`);
         refetch();
       } else {
-        console.error('Respuesta inesperada:', response);
         throw new Error('Error al actualizar los datos');
       }
     } catch (error: any) {
@@ -96,11 +94,12 @@ export const HistoricalTab = () => {
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
                   {startDate ? format(startDate, "PP") : "Fecha inicial"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={startDate}
@@ -112,11 +111,12 @@ export const HistoricalTab = () => {
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
                   {endDate ? format(endDate, "PP") : "Fecha final"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={endDate}
@@ -153,7 +153,11 @@ export const HistoricalTab = () => {
         {historicalData && historicalData.length > 0 ? (
           <>
             <div className="bg-white p-4 rounded-lg shadow h-[400px]">
-              <HistoricalChart data={historicalData} />
+              <HistoricalChart 
+                data={historicalData}
+                startDate={startDate}
+                endDate={endDate}
+              />
             </div>
             <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">

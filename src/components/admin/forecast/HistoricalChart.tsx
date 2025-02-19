@@ -1,63 +1,54 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { format } from "date-fns";
 
-export const HistoricalChart = ({ data }: { data: any[] }) => {
-  const formatTime = (isoString: string): string => {
-    const fecha = new Date(isoString);
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
-    return `${hora}:${minutos}`;
-  };
+interface HistoricalChartProps {
+  data: any[];
+  startDate?: Date;
+  endDate?: Date;
+}
+
+export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartProps) => {
+  // Filtrar datos según el rango de fechas seleccionado
+  const filteredData = data.filter(item => {
+    const itemDate = new Date(item.fecha);
+    if (startDate && endDate) {
+      return itemDate >= startDate && itemDate <= endDate;
+    }
+    return true;
+  });
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart
-        data={data}
-        margin={{ top: 5, right: 30, left: 50, bottom: 25 }}
-      >
-        <XAxis
-          dataKey="fecha"
-          tickFormatter={formatTime}
-          interval={2}
-          angle={-45}
-          textAnchor="end"
-          height={60}
+      <LineChart data={filteredData}>
+        <XAxis 
+          dataKey="fecha" 
+          tickFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')}
+          hide={true}
         />
-        <YAxis
-          domain={[5500, 8500]}
+        <YAxis 
+          domain={[5000, 8500]}
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
-          formatter={(value: any) => value ? [`${value.toLocaleString()} MW`, ''] : ['No disponible', '']}
-          labelFormatter={(label) => {
-            if (label) {
-              const fecha = new Date(label);
-              return `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
-            }
-            return '';
-          }}
+          labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
+          formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
         />
-        <Legend verticalAlign="top" height={36} />
-        
         <Line
           type="monotone"
           dataKey="reprogramacion_diaria"
-          name="Reprogramación"
-          stroke="#C00000"
+          stroke="#f39200"
           strokeWidth={2}
           dot={false}
-          connectNulls={true}
+          name="Reprogramación Diaria"
         />
         <Line
           type="monotone"
           dataKey="ejecutado"
-          name="Ejecutado"
           stroke="#156082"
           strokeWidth={2}
           dot={false}
-          connectNulls={true}
+          name="Ejecutado"
         />
       </LineChart>
     </ResponsiveContainer>
