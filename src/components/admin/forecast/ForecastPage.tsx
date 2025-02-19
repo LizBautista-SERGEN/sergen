@@ -10,7 +10,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { addDays } from "date-fns";
+import { addDays, startOfDay } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -20,16 +20,17 @@ export const ForecastPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const today = new Date();
-      today.setHours(0, 30, 0, 0); // Establecer a 00:30:00
       
-      const tomorrow = addDays(new Date(today), 1);
-      tomorrow.setHours(0, 0, 0, 0); // Establecer a 00:00:00 del día siguiente
+      // Obtener el inicio del día actual
+      const today = startOfDay(new Date());
+      
+      // Obtener el inicio del día siguiente
+      const tomorrow = addDays(today, 1);
 
       console.log('Consultando datos desde:', today.toISOString());
       console.log('Hasta:', tomorrow.toISOString());
 
-      const { data: forecastData, error } = await supabase
+      let { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
         .gte('fecha', today.toISOString())
@@ -48,14 +49,19 @@ export const ForecastPage = () => {
         return;
       }
 
-      // Verificar la cantidad de datos y las horas
+      // Debugging de los datos obtenidos
       console.log('Cantidad de datos recuperados:', forecastData.length);
-      console.log('Primera hora:', new Date(forecastData[0].fecha).toLocaleTimeString());
-      console.log('Última hora:', new Date(forecastData[forecastData.length - 1].fecha).toLocaleTimeString());
+      forecastData.forEach((item, index) => {
+        console.log(`Registro ${index + 1}:`, new Date(item.fecha).toLocaleString());
+      });
       
-      // Verificar que tengamos todos los datos esperados (48 intervalos de media hora)
+      // Verificar si tenemos todos los registros esperados
       if (forecastData.length !== 48) {
         console.warn(`Se esperaban 48 registros pero se encontraron ${forecastData.length}`);
+        console.warn('Rango de horas encontrado:', {
+          primera: new Date(forecastData[0].fecha).toLocaleTimeString(),
+          ultima: new Date(forecastData[forecastData.length - 1].fecha).toLocaleTimeString()
+        });
       }
       
       setData(forecastData);
