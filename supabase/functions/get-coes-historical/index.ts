@@ -1,21 +1,19 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import puppeteer from 'https://deno.land/x/puppeteer@16.2.0/mod.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { format } from 'https://deno.land/std@0.168.0/datetime/mod.ts'
 
 interface DateRange {
   startDate: string;
   endDate: string;
 }
 
-// Define CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       headers: corsHeaders
@@ -23,7 +21,6 @@ serve(async (req) => {
   }
 
   try {
-    // Extraer fechas del body
     const { startDate, endDate }: DateRange = await req.json()
 
     if (!startDate || !endDate) {
@@ -39,71 +36,54 @@ serve(async (req) => {
       )
     }
 
-    // Inicializar el navegador
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox']
-    })
+    // Hacer la petición directa a la API del COES
+    const coesResponse = await fetch('https://www.coes.org.pe/Portal/portalinformacion/demanda/demandamaximadiaria', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fechaInicial: startDate,
+        fechaFinal: endDate
+      })
+    });
 
-    const page = await browser.newPage()
+    if (!coesResponse.ok) {
+      throw new Error(`Error en la respuesta del COES: ${coesResponse.statusText}`);
+    }
 
-    // Navegar a la página del COES
-    await page.goto('https://www.coes.org.pe/Portal/portalinformacion/demanda', {
-      waitUntil: 'networkidle0'
-    })
-
-    // Establecer las fechas
-    await page.evaluate((dates) => {
-      const inputInicial = document.querySelector('#txtFechaInicial') as HTMLInputElement
-      const inputFinal = document.querySelector('#txtFechaFinal') as HTMLInputElement
-      if (inputInicial && inputFinal) {
-        inputInicial.value = dates.startDate
-        inputFinal.value = dates.endDate
-        inputInicial.dispatchEvent(new Event('input', { bubbles: true }))
-        inputFinal.dispatchEvent(new Event('input', { bubbles: true }))
-      }
-    }, { startDate, endDate })
-
-    // Hacer clic en consultar
-    await page.click('#btnConsultar')
-    await page.waitForTimeout(3000)
-
-    // Obtener los datos de la tabla
-    const data = await page.evaluate(() => {
-      const rows = Array.from(document.querySelectorAll('table tr'))
-      return rows.map(row => {
-        const cells = Array.from(row.querySelectorAll('td'))
-        return cells.map(cell => cell.textContent?.trim())
-      }).filter(row => row.length > 0)
-    })
-
-    await browser.close()
+    const coesData = await coesResponse.json();
+    
+    if (!Array.isArray(coesData)) {
+      throw new Error('Formato de datos inesperado del COES');
+    }
 
     // Guardar los datos en Supabase
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
+
+    const formattedData = coesData.map(row => ({
+      fecha: row.fecha,
+      reprogramacion_diaria: parseFloat(row.reprogramacionDiaria || '0'),
+      ejecutado: parseFloat(row.ejecutado || '0'),
+      created_at: new Date().toISOString()
+    }));
 
     const { error: insertError } = await supabase
       .from('coes_historical')
-      .upsert(
-        data.map(row => ({
-          fecha: row[0],
-          reprogramacion_diaria: parseFloat(row[1] || '0'),
-          ejecutado: parseFloat(row[2] || '0'),
-          created_at: new Date().toISOString()
-        }))
-      )
+      .upsert(formattedData);
 
     if (insertError) {
-      throw new Error(`Error al insertar datos: ${insertError.message}`)
+      throw new Error(`Error al insertar datos: ${insertError.message}`);
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Datos históricos obtenidos y guardados correctamente',
-        count: data.length 
+        count: formattedData.length 
       }),
       { 
         headers: {
@@ -112,9 +92,10 @@ serve(async (req) => {
         },
         status: 200 
       }
-    )
+    );
 
   } catch (error) {
+    console.error('Error en get-coes-historical:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Error al obtener datos históricos',
@@ -127,6 +108,6 @@ serve(async (req) => {
         },
         status: 500 
       }
-    )
+    );
   }
-})
+});
