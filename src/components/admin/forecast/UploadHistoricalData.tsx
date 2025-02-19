@@ -32,6 +32,18 @@ export const UploadHistoricalData = () => {
 
       console.log('Enviando archivo:', file.name);
 
+      // Primero, eliminar todos los datos existentes
+      const { error: deleteError } = await supabase
+        .from('coes_historical')
+        .delete()
+        .not('id', 'is', null); // Esto eliminará todos los registros
+
+      if (deleteError) {
+        console.error('Error al eliminar datos existentes:', deleteError);
+        throw new Error('Error al eliminar datos existentes');
+      }
+
+      // Luego, proceder con la carga del nuevo archivo
       const { data, error } = await supabase.functions.invoke('upload-historical-data', {
         body: {
           fileName: file.name,
