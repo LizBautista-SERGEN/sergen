@@ -46,16 +46,6 @@ export const ForecastPage = () => {
         throw error;
       }
 
-      // Eliminar datos antiguos
-      const { error: deleteError } = await supabase
-        .from('coes_forecast')
-        .delete()
-        .lt('fecha', startTime.toISOString());
-
-      if (deleteError) {
-        console.error('Error al eliminar datos antiguos:', deleteError);
-      }
-
       if (!forecastData || forecastData.length === 0) {
         console.log('No hay datos disponibles para hoy');
         toast.info('No hay datos disponibles para hoy');
