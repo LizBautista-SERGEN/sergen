@@ -1,8 +1,7 @@
 
 project_id = "zbixjkgwperxqrdhvtoy"
 
+[functions]
 [functions.get-coes-historical]
 verify_jwt = false
-
-[functions.get-coes-historical.permissions]
 allow_net = ["zbixjkgwperxqrdhvtoy.supabase.co", "www.coes.org.pe"]
