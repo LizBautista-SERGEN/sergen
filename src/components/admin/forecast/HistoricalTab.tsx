@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { HistoricalChart } from "./HistoricalChart";
@@ -10,11 +10,13 @@ import { ConsoleOutput } from "./ConsoleOutput";
 import { UploadHistoricalData } from "./UploadHistoricalData";
 import { HistoricalHeader } from "./components/HistoricalHeader";
 import { HistoricalDataTable } from "./components/HistoricalDataTable";
+import { Button } from "@/components/ui/button";
 
 export const HistoricalTab = () => {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [lastError, setLastError] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { data: historicalData, isLoading, refetch } = useQuery({
     queryKey: ['historical-data'],
@@ -30,7 +32,14 @@ export const HistoricalTab = () => {
         throw error;
       }
 
-      return data;
+      // Asegurarse de que las fechas se procesen correctamente
+      const processedData = data.map(row => ({
+        ...row,
+        fecha: new Date(row.fecha).toISOString()
+      }));
+
+      console.log('Datos cargados:', processedData);
+      return processedData;
     }
   });
 
@@ -73,6 +82,19 @@ export const HistoricalTab = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast.success('Datos actualizados correctamente');
+    } catch (error) {
+      toast.error('Error al actualizar los datos');
+      console.error('Error al refrescar datos:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -85,14 +107,24 @@ export const HistoricalTab = () => {
     <div className="space-y-4">
       <UploadHistoricalData />
       
-      <HistoricalHeader
-        startDate={startDate}
-        endDate={endDate}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
-        onUpdateData={updateHistoricalData}
-        historicalData={historicalData}
-      />
+      <div className="flex justify-between items-center">
+        <HistoricalHeader
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          onUpdateData={updateHistoricalData}
+          historicalData={historicalData}
+        />
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Actualizando...' : 'Actualizar Datos'}
+        </Button>
+      </div>
 
       {lastError && (
         <ConsoleOutput error={lastError} />
