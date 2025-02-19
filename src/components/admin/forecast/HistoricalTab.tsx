@@ -10,7 +10,6 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 
 export const HistoricalTab = () => {
   const [startDate, setStartDate] = useState<Date>();
@@ -41,7 +40,12 @@ export const HistoricalTab = () => {
     }
 
     try {
-      console.log('Llamando a la función get-coes-historical...');
+      console.log('Iniciando actualización de datos históricos...');
+      console.log('Fechas seleccionadas:', {
+        startDate: format(startDate, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd')
+      });
+
       const response = await supabase.functions.invoke('get-coes-historical', {
         body: {
           startDate: format(startDate, 'yyyy-MM-dd'),
@@ -49,21 +53,23 @@ export const HistoricalTab = () => {
         }
       });
       
-      console.log('Respuesta de la función:', response);
+      console.log('Respuesta completa de la función:', response);
 
       if (response.error) {
-        throw new Error(response.error.message);
+        console.error('Error detallado:', response.error);
+        throw new Error(response.error.message || 'Error desconocido');
       }
       
       if (response.data?.success) {
         toast.success(`Datos actualizados correctamente (${response.data.count} registros)`);
         refetch();
       } else {
+        console.error('Respuesta inesperada:', response);
         throw new Error('Error al actualizar los datos');
       }
-    } catch (error) {
-      console.error('Error updating historical data:', error);
-      toast.error('Error al actualizar los datos históricos');
+    } catch (error: any) {
+      console.error('Error completo:', error);
+      toast.error(`Error al actualizar los datos históricos: ${error.message}`);
     }
   };
 
