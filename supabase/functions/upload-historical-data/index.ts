@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { parse } from 'https://deno.land/x/excel@v1.1.2/mod.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import * as XLSX from 'https://deno.land/x/sheetjs@v0.18.3/xlsx.mjs'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,22 +29,29 @@ serve(async (req) => {
 
     // Convert base64 to array buffer
     const base64Data = fileContent.split(',')[1];
-    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    
-    // Parse Excel data
-    const workbook = parse(binaryData);
-    const worksheet = workbook.sheets[0];
+    const binaryString = atob(base64Data);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
 
-    if (!worksheet) {
+    // Parse Excel data using XLSX
+    const workbook = XLSX.read(bytes.buffer, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
       throw new Error('El archivo no contiene hojas de cálculo');
     }
+
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
     console.log('📊 Procesando datos del Excel...');
 
     // Process data
     const data = [];
-    for (let i = 1; i < worksheet.rows.length; i++) {
-      const row = worksheet.rows[i];
+    for (let i = 1; i < jsonData.length; i++) {
+      const row = jsonData[i];
       if (!row[0]) continue;
 
       const fecha = new Date(row[0]);
