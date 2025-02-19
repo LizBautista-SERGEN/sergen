@@ -32,16 +32,16 @@ export const useAuth = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (_event === 'SIGNED_OUT' || _event === 'TOKEN_REFRESHED') {
-        console.log('Auth state changed:', _event);
+      if (_event === 'SIGNED_OUT') {
+        console.log('Auth state changed: SIGNED_OUT');
+        setSession(null);
+        navigate('/login');
+      } else if (_event === 'TOKEN_REFRESHED') {
+        console.log('Auth state changed: TOKEN_REFRESHED');
       }
       
       setSession(session);
       setLoading(false);
-      
-      if (!session) {
-        navigate('/login');
-      }
     });
 
     return () => subscription.unsubscribe();
