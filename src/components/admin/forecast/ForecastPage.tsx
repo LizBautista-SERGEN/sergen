@@ -10,7 +10,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { startOfDay, addDays, setHours, setMinutes } from "date-fns";
+import { startOfDay, endOfDay, setHours, setMinutes } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -21,19 +21,23 @@ export const ForecastPage = () => {
     try {
       setLoading(true);
       const today = startOfDay(new Date());
-      today.setHours(0, 30, 0, 0); // Establecer a 00:30
       
-      const tomorrow = startOfDay(addDays(today, 1));
-      tomorrow.setHours(0, 0, 0, 0); // Establecer a 00:00
+      // Configurar el inicio del día a las 00:30
+      const startTime = new Date(today);
+      startTime.setHours(0, 30, 0, 0);
+      
+      // Configurar el fin del día a las 00:00 del día siguiente
+      const endTime = endOfDay(today);
+      endTime.setHours(24, 0, 0, 0);
 
-      console.log('Consultando datos desde:', today.toISOString());
-      console.log('Hasta:', tomorrow.toISOString());
+      console.log('Consultando datos desde:', startTime.toISOString());
+      console.log('Hasta:', endTime.toISOString());
 
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
-        .gte('fecha', today.toISOString())
-        .lt('fecha', tomorrow.toISOString())
+        .gte('fecha', startTime.toISOString())
+        .lte('fecha', endTime.toISOString())
         .order('fecha', { ascending: true });
 
       if (error) {
@@ -48,12 +52,11 @@ export const ForecastPage = () => {
         return;
       }
 
-      // Verificar la primera hora de los datos
-      const primeraHora = new Date(forecastData[0].fecha).getHours();
-      const primeroMinutos = new Date(forecastData[0].fecha).getMinutes();
-      console.log('Primera hora en los datos:', `${primeraHora}:${primeroMinutos}`);
-
-      console.log('Datos obtenidos de Supabase:', forecastData);
+      // Verificar la cantidad de datos y las horas
+      console.log('Cantidad de datos recuperados:', forecastData.length);
+      console.log('Primera hora:', new Date(forecastData[0].fecha).toLocaleTimeString());
+      console.log('Última hora:', new Date(forecastData[forecastData.length - 1].fecha).toLocaleTimeString());
+      
       setData(forecastData);
 
     } catch (error) {
@@ -97,7 +100,7 @@ export const ForecastPage = () => {
     
     const interval = setInterval(() => {
       refreshData();
-    }, 15 * 60 * 1000); // 15 minutos en milisegundos
+    }, 15 * 60 * 1000); // 15 minutos
 
     return () => clearInterval(interval);
   }, []);
