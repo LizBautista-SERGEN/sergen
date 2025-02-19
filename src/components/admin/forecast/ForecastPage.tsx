@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ForecastChart } from "./ForecastChart";
@@ -10,7 +9,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { addDays, startOfDay } from "date-fns";
+import { addDays, startOfDay, endOfDay } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -21,20 +20,19 @@ export const ForecastPage = () => {
     try {
       setLoading(true);
       
-      // Obtener el inicio del día actual
-      const today = startOfDay(new Date());
-      
-      // Obtener el inicio del día siguiente
-      const tomorrow = addDays(today, 1);
+      // Obtener fecha actual y siguiente
+      const currentDate = new Date();
+      const startDate = startOfDay(currentDate);
+      const endDate = endOfDay(currentDate);
 
-      console.log('Consultando datos desde:', today.toISOString());
-      console.log('Hasta:', tomorrow.toISOString());
+      console.log('Consultando datos desde:', startDate.toISOString());
+      console.log('Hasta:', endDate.toISOString());
 
       let { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
-        .gte('fecha', today.toISOString())
-        .lt('fecha', tomorrow.toISOString())
+        .gte('fecha', startDate.toISOString())
+        .lte('fecha', endDate.toISOString())
         .order('fecha', { ascending: true });
 
       if (error) {
@@ -54,15 +52,6 @@ export const ForecastPage = () => {
       forecastData.forEach((item, index) => {
         console.log(`Registro ${index + 1}:`, new Date(item.fecha).toLocaleString());
       });
-      
-      // Verificar si tenemos todos los registros esperados
-      if (forecastData.length !== 48) {
-        console.warn(`Se esperaban 48 registros pero se encontraron ${forecastData.length}`);
-        console.warn('Rango de horas encontrado:', {
-          primera: new Date(forecastData[0].fecha).toLocaleTimeString(),
-          ultima: new Date(forecastData[forecastData.length - 1].fecha).toLocaleTimeString()
-        });
-      }
       
       setData(forecastData);
 

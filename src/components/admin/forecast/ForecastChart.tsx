@@ -40,11 +40,6 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
     hora: new Date(item.fecha).getHours(),
   }));
 
-  // Debugging
-  console.log('Índice del último dato real:', chartData.findIndex(d => d["Demanda Real"] === null) - 1);
-  console.log('Fecha del último dato real:', data.find(d => d.demanda_real !== null)?.fecha);
-  console.log('Datos procesados del gráfico:', chartData);
-
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
@@ -53,7 +48,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
       >
         <XAxis
           dataKey="time"
-          interval={2}
+          interval={1}
           angle={-45}
           textAnchor="end"
           height={60}
@@ -77,7 +72,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <Line
           type="monotone"
           dataKey="Demanda Real"
-          stroke="#156082"
+          stroke="#C00000"
           strokeWidth={2}
           dot={false}
         />
