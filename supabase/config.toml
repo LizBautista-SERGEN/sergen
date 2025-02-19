@@ -3,3 +3,4 @@ project_id = "zbixjkgwperxqrdhvtoy"
 
 [functions.get-coes-historical]
 verify_jwt = false
+

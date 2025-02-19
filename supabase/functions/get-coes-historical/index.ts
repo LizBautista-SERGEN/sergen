@@ -8,7 +8,20 @@ interface DateRange {
   endDate: string;
 }
 
+// Define CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: corsHeaders
+    })
+  }
+
   try {
     // Extraer fechas del body
     const { startDate, endDate }: DateRange = await req.json()
@@ -16,7 +29,13 @@ serve(async (req) => {
     if (!startDate || !endDate) {
       return new Response(
         JSON.stringify({ error: 'Se requieren fechas de inicio y fin' }),
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            ...corsHeaders
+          }
+        }
       )
     }
 
@@ -87,7 +106,10 @@ serve(async (req) => {
         count: data.length 
       }),
       { 
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        },
         status: 200 
       }
     )
@@ -99,7 +121,10 @@ serve(async (req) => {
         details: error.message 
       }),
       { 
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        },
         status: 500 
       }
     )
