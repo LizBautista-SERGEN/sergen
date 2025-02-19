@@ -1,6 +1,5 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from "date-fns";
 
 interface HistoricalChartProps {
   data: any[];
@@ -9,6 +8,25 @@ interface HistoricalChartProps {
 }
 
 export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartProps) => {
+  // Función para formatear la fecha manualmente sin conversiones
+  const formatTime = (isoString: string): string => {
+    const fecha = new Date(isoString);
+    const hora = fecha.getUTCHours().toString().padStart(2, '0');
+    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    return `${hora}:${minutos}`;
+  };
+
+  const formatFullDate = (isoString: string): string => {
+    const fecha = new Date(isoString);
+    const dia = fecha.getUTCDate().toString().padStart(2, '0');
+    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+    const año = fecha.getUTCFullYear();
+    const hora = fecha.getUTCHours().toString().padStart(2, '0');
+    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    
+    return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+  };
+
   // Filtrar datos según el rango de fechas seleccionado
   const filteredData = data.filter(item => {
     const itemDate = new Date(item.fecha);
@@ -18,12 +36,18 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
     return true;
   });
 
+  const chartData = filteredData.map(item => ({
+    time: formatTime(item.fecha),
+    fecha_completa: formatFullDate(item.fecha),
+    "Reprogramación Diaria": item.reprogramacion_diaria,
+    "Ejecutado": item.ejecutado
+  }));
+
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={filteredData}>
+      <LineChart data={chartData}>
         <XAxis 
-          dataKey="fecha" 
-          tickFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')}
+          dataKey="time" 
           hide={true}
         />
         <YAxis 
@@ -31,12 +55,17 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
-          labelFormatter={(label) => format(new Date(label), 'dd/MM/yyyy HH:mm')}
+          labelFormatter={(label, payload) => {
+            if (payload && payload[0]) {
+              return payload[0].payload.fecha_completa;
+            }
+            return label;
+          }}
           formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
         />
         <Line
           type="monotone"
-          dataKey="reprogramacion_diaria"
+          dataKey="Reprogramación Diaria"
           stroke="#f39200"
           strokeWidth={2}
           dot={false}
@@ -44,7 +73,7 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
         />
         <Line
           type="monotone"
-          dataKey="ejecutado"
+          dataKey="Ejecutado"
           stroke="#156082"
           strokeWidth={2}
           dot={false}
