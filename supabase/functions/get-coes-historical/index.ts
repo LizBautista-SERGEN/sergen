@@ -3,14 +3,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-interface DateRange {
-  startDate: string;
-  endDate: string;
-}
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+function getFormattedDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 serve(async (req) => {
@@ -23,29 +25,26 @@ serve(async (req) => {
   }
 
   try {
-    const { startDate, endDate }: DateRange = await req.json();
-    console.log('Fechas recibidas:', { startDate, endDate });
+    // Calcular fechas automáticamente (últimos 3 días)
+    const currentDate = new Date();
+    const initialDate = new Date(currentDate);
+    initialDate.setDate(currentDate.getDate() - 3);
+    const finalDate = new Date(currentDate);
+    finalDate.setDate(currentDate.getDate() - 1);
 
-    if (!startDate || !endDate) {
-      console.error('Fechas faltantes');
-      return new Response(
-        JSON.stringify({ error: 'Se requieren fechas de inicio y fin' }),
-        { 
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders
-          }
-        }
-      );
-    }
+    const startDate = getFormattedDate(initialDate);
+    const endDate = getFormattedDate(finalDate);
+
+    console.log('Fechas calculadas:', { startDate, endDate });
 
     console.log('Realizando petición al COES...');
     const coesResponse = await fetch('https://www.coes.org.pe/Portal/portalinformacion/demanda/demandamaximadiaria', {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        'Accept': 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
+        'Origin': 'https://www.coes.org.pe',
+        'Referer': 'https://www.coes.org.pe/Portal/portalinformacion/demanda',
       },
       body: JSON.stringify({
         fechaInicial: startDate,
@@ -96,7 +95,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: 'Datos históricos obtenidos y guardados correctamente',
-        count: formattedData.length 
+        count: formattedData.length,
+        data: formattedData
       }),
       { 
         headers: {
