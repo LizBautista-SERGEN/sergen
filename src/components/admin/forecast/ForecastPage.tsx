@@ -10,7 +10,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { startOfDay, endOfDay, setHours, setMinutes } from "date-fns";
+import { addDays } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -20,24 +20,20 @@ export const ForecastPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const today = startOfDay(new Date());
+      const today = new Date();
+      today.setHours(0, 30, 0, 0); // Establecer a 00:30:00
       
-      // Configurar el inicio del día a las 00:30
-      const startTime = new Date(today);
-      startTime.setHours(0, 30, 0, 0);
-      
-      // Configurar el fin del día a las 00:00 del día siguiente
-      const endTime = endOfDay(today);
-      endTime.setHours(24, 0, 0, 0);
+      const tomorrow = addDays(new Date(today), 1);
+      tomorrow.setHours(0, 0, 0, 0); // Establecer a 00:00:00 del día siguiente
 
-      console.log('Consultando datos desde:', startTime.toISOString());
-      console.log('Hasta:', endTime.toISOString());
+      console.log('Consultando datos desde:', today.toISOString());
+      console.log('Hasta:', tomorrow.toISOString());
 
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
-        .gte('fecha', startTime.toISOString())
-        .lte('fecha', endTime.toISOString())
+        .gte('fecha', today.toISOString())
+        .lt('fecha', tomorrow.toISOString())
         .order('fecha', { ascending: true });
 
       if (error) {
@@ -56,6 +52,11 @@ export const ForecastPage = () => {
       console.log('Cantidad de datos recuperados:', forecastData.length);
       console.log('Primera hora:', new Date(forecastData[0].fecha).toLocaleTimeString());
       console.log('Última hora:', new Date(forecastData[forecastData.length - 1].fecha).toLocaleTimeString());
+      
+      // Verificar que tengamos todos los datos esperados (48 intervalos de media hora)
+      if (forecastData.length !== 48) {
+        console.warn(`Se esperaban 48 registros pero se encontraron ${forecastData.length}`);
+      }
       
       setData(forecastData);
 
