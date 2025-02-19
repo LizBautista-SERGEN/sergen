@@ -39,7 +39,7 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
   const chartData = filteredData.map(item => ({
     time: formatTime(item.fecha),
     fecha_completa: formatFullDate(item.fecha),
-    "Reprogramación Diaria": item.reprogramacion_diaria,
+    "Prog. Diaria": item.reprogramacion_diaria,
     "Ejecutado": item.ejecutado
   }));
 
@@ -65,11 +65,11 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
         />
         <Line
           type="monotone"
-          dataKey="Reprogramación Diaria"
+          dataKey="Prog. Diaria"
           stroke="#f39200"
           strokeWidth={2}
           dot={false}
-          name="Reprogramación Diaria"
+          name="Prog. Diaria"
         />
         <Line
           type="monotone"

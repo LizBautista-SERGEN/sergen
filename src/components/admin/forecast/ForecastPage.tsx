@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ForecastChart } from "./ForecastChart";
@@ -23,9 +22,8 @@ export const ForecastPage = () => {
       const today = new Date();
       const tomorrow = addDays(today, 1);
       
-      // Configurar la hora inicial a las 00:30 del día actual
+      // Configurar la hora inicial a las 00:00 del día actual
       const startTime = startOfDay(today);
-      startTime.setMinutes(30);
       
       // Configurar la hora final a las 00:00 del día siguiente
       const endTime = startOfDay(tomorrow);
