@@ -19,9 +19,9 @@ export const PowerChart = ({ data }: PowerChartProps) => {
     value: item.peak_value,
     hora: item.peak_time,
     // Determinar el color de la barra
-    color: item.peak_value === maxValues[0] ? '#ea384c' : // rojo para el más alto
-           item.peak_value === maxValues[1] ? '#F97316' : // naranja para el segundo más alto
-           '#0FA0CE' // azul para el resto
+    color: item.peak_value === maxValues[0] ? '#C00000' : // rojo para el más alto
+           item.peak_value === maxValues[1] ? '#FFC000' : // naranja para el segundo más alto
+           '#1F497D' // azul para el resto
   }));
 
   const CustomBar = (props: any) => {
@@ -35,10 +35,7 @@ export const PowerChart = ({ data }: PowerChartProps) => {
       <BarChart data={chartData}>
         <XAxis
           dataKey="date"
-          interval={0}
-          angle={-45}
-          textAnchor="end"
-          height={60}
+          hide={true}
         />
         <YAxis
           domain={[5000, 8500]}
@@ -46,7 +43,12 @@ export const PowerChart = ({ data }: PowerChartProps) => {
         />
         <Tooltip
           formatter={(value: any) => [`${value.toLocaleString()} MW`, 'Potencia']}
-          labelFormatter={(label) => `Fecha: ${label}`}
+          labelFormatter={(label, payload) => {
+            if (payload && payload[0]) {
+              return `Fecha: ${payload[0].payload.date}\nHora: ${payload[0].payload.hora}`;
+            }
+            return label;
+          }}
         />
         <Bar 
           dataKey="value" 

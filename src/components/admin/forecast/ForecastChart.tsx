@@ -1,6 +1,5 @@
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format } from 'date-fns';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ReferenceArea } from 'recharts';
 
 interface ForecastChartProps {
   data: any[];
@@ -10,15 +9,18 @@ interface ForecastChartProps {
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   const chartData = [...data]
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
-    .map(item => ({
-      fecha: item.fecha,
-      fecha_formateada: format(new Date(item.fecha), 'dd/MM/yyyy HH:mm'),
-      "Reprogramación": item.reprogramacion || null,
-      "Pronóstico Diario": item.pronostico_diario || null,
-      "Rango Inferior": item.rango_inferior || null,
-      "Rango Superior": item.rango_superior || null,
-      "Demanda Real": item.demanda_real || null,
-    }));
+    .map(item => {
+      const hora = new Date(item.fecha).getHours();
+      return {
+        fecha: item.fecha,
+        "Reprogramación": item.reprogramacion || null,
+        "Pronóstico Diario": item.pronostico_diario || null,
+        "Rango Inferior": item.rango_inferior || null,
+        "Rango Superior": item.rango_superior || null,
+        "Demanda Real": item.demanda_real || null,
+        isPeakHour: hora >= 18 && hora <= 23
+      };
+    });
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -28,27 +30,35 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
       >
         <XAxis
           dataKey="fecha"
-          interval={1}
           hide={true}
         />
         <YAxis
           domain={[5000, 8500]}
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
+        {chartData.map((entry, index) => {
+          if (entry.isPeakHour && index < chartData.length - 1) {
+            return (
+              <ReferenceArea
+                key={`peak-${index}`}
+                x1={entry.fecha}
+                x2={chartData[index + 1].fecha}
+                fill="#F2F2F2"
+                fillOpacity={0.5}
+              />
+            );
+          }
+          return null;
+        })}
         <Tooltip
-          labelFormatter={(label, payload) => {
-            if (payload && payload[0]) {
-              return payload[0].payload.fecha_formateada;
-            }
-            return '';
-          }}
+          labelFormatter={(label) => label}
           formatter={(value: any) => [`${value?.toLocaleString() || '-'} MW`, '']}
         />
         <Legend verticalAlign="top" height={36} />
         <Line
           type="monotone"
           dataKey="Demanda Real"
-          stroke="#0FA0CE"
+          stroke="#1F497D"
           strokeWidth={2}
           dot={false}
           connectNulls
@@ -56,7 +66,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <Line
           type="monotone"
           dataKey="Reprogramación"
-          stroke="#ea384c"
+          stroke="#C00000"
           strokeWidth={2}
           dot={false}
           connectNulls

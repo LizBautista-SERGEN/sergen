@@ -1,6 +1,5 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
 
 interface HistoricalChartProps {
   data: any[];
@@ -20,7 +19,6 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .map(item => ({
       fecha: item.fecha,
-      fecha_formateada: format(new Date(item.fecha), 'dd/MM/yyyy HH:mm'),
       "Ejecutado": item.ejecutado,
     }));
 
@@ -36,12 +34,7 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
-          labelFormatter={(label, payload) => {
-            if (payload && payload[0]) {
-              return payload[0].payload.fecha_formateada;
-            }
-            return '';
-          }}
+          labelFormatter={(label) => label}
           formatter={(value: any) => [
             `${value.toLocaleString()} MW`,
             'Ejecutado'
@@ -50,7 +43,7 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
         <Line
           type="monotone"
           dataKey="Ejecutado"
-          stroke="#0FA0CE"
+          stroke="#1F497D"
           strokeWidth={2}
           dot={false}
         />
