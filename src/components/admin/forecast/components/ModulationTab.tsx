@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 export const ModulationTab = () => {
   const [modulatedDates, setModulatedDates] = useState<{ [key: string]: boolean }>({});
@@ -23,7 +24,8 @@ export const ModulationTab = () => {
         .from('power_peaks')
         .select('date, is_modulated')
         .gte('date', startOfMonth.toISOString())
-        .lte('date', endOfMonth.toISOString());
+        .lte('date', endOfMonth.toISOString())
+        .order('date', { ascending: true });
 
       if (error) throw error;
 
@@ -64,10 +66,10 @@ export const ModulationTab = () => {
   useEffect(() => {
     fetchModulatedDates();
     
-    // Actualizar cada 12 horas
+    // Actualizar cada 15 minutos
     const interval = setInterval(() => {
       fetchModulatedDates();
-    }, 12 * 60 * 60 * 1000);
+    }, 15 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -80,16 +82,30 @@ export const ModulationTab = () => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Gestión de Modulación</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.entries(modulatedDates).map(([date, isModulated]) => (
-          <div key={date} className="flex items-center justify-between p-4 bg-white rounded-lg shadow">
-            <span>{formatDateUTC(date)}</span>
-            <Switch
-              checked={isModulated}
-              onCheckedChange={(checked) => handleModulationChange(date, checked)}
-            />
-          </div>
-        ))}
+      <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha</TableHead>
+              <TableHead className="text-center">Estado de Modulación</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Object.entries(modulatedDates).map(([date, isModulated]) => (
+              <TableRow key={date}>
+                <TableCell>{formatDateUTC(date)}</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <Switch
+                      checked={isModulated}
+                      onCheckedChange={(checked) => handleModulationChange(date, checked)}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
