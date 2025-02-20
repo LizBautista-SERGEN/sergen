@@ -11,8 +11,12 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
     if (!isoString) return '';
     try {
       const fecha = new Date(isoString);
-      const hora = fecha.getUTCHours().toString().padStart(2, '0');
-      const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+      if (isNaN(fecha.getTime())) {
+        console.error('Fecha inválida:', isoString);
+        return '';
+      }
+      const hora = fecha.getHours().toString().padStart(2, '0');
+      const minutos = fecha.getMinutes().toString().padStart(2, '0');
       return `${hora}:${minutos}`;
     } catch (error) {
       console.error('Error formatting time:', error, isoString);
@@ -22,16 +26,31 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
 
   const formatFullDate = (isoString: string): string => {
     if (!isoString) return '';
-    return isoString;
+    try {
+      const fecha = new Date(isoString);
+      if (isNaN(fecha.getTime())) {
+        console.error('Fecha inválida para formato completo:', isoString);
+        return isoString;
+      }
+      const dia = fecha.getDate().toString().padStart(2, '0');
+      const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+      const año = fecha.getFullYear();
+      const hora = fecha.getHours().toString().padStart(2, '0');
+      const minutos = fecha.getMinutes().toString().padStart(2, '0');
+      return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+    } catch (error) {
+      console.error('Error formatting full date:', error, isoString);
+      return isoString;
+    }
   };
-
-  console.log('Data recibida en ForecastChart:', data);
 
   // Procesamos los datos para el gráfico, reemplazando valores 0 por null
   const chartData = data.map(item => {
-    console.log('Procesando item:', item);
+    const timeStr = formatTime(item.fecha);
+    console.log('Procesando fecha:', item.fecha, 'resultado:', timeStr);
+    
     return {
-      time: formatTime(item.fecha),
+      time: timeStr,
       fecha_completa: formatFullDate(item.fecha),
       "Reprogramación": item.reprogramacion === 0 ? null : item.reprogramacion,
       "Pronóstico Diario": item.pronostico_diario === 0 ? null : item.pronostico_diario,

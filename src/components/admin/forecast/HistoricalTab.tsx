@@ -8,7 +8,7 @@ import { HistoricalChart } from "./HistoricalChart";
 import { useState } from "react";
 import { ConsoleOutput } from "./ConsoleOutput";
 import { UploadHistoricalData } from "./UploadHistoricalData";
-import { HistoricalDatePicker } from "./components/HistoricalDatePicker"; // Agregamos esta importación
+import { HistoricalDatePicker } from "./components/HistoricalDatePicker";
 import { HistoricalDataTable } from "./components/HistoricalDataTable";
 import { Button } from "@/components/ui/button";
 
@@ -32,14 +32,8 @@ export const HistoricalTab = () => {
         throw error;
       }
 
-      // Asegurarse de que las fechas se procesen correctamente
-      const processedData = data.map(row => ({
-        ...row,
-        fecha: new Date(row.fecha).toISOString()
-      }));
-
-      console.log('Datos cargados:', processedData);
-      return processedData;
+      console.log('Datos históricos cargados:', data);
+      return data;
     }
   });
 
@@ -99,7 +93,9 @@ export const HistoricalTab = () => {
                 endDate={endDate}
               />
             </div>
-            <HistoricalDataTable data={historicalData} />
+            <div className="bg-white p-4 rounded-lg shadow">
+              <HistoricalDataTable data={historicalData} />
+            </div>
           </>
         ) : (
           <div className="text-center py-8">
