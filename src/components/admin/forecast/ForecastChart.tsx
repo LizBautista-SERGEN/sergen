@@ -1,5 +1,6 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { format } from 'date-fns';
 
 interface ForecastChartProps {
   data: any[];
@@ -7,24 +8,17 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
-  // Procesamos y ordenamos los datos por fecha
   const chartData = [...data]
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .map(item => ({
       fecha: item.fecha,
+      fecha_formateada: format(new Date(item.fecha), 'dd/MM/yyyy HH:mm'),
       "Reprogramación": item.reprogramacion || null,
       "Pronóstico Diario": item.pronostico_diario || null,
       "Rango Inferior": item.rango_inferior || null,
       "Rango Superior": item.rango_superior || null,
       "Demanda Real": item.demanda_real || null,
     }));
-
-  console.log('Datos ordenados para el gráfico:', chartData);
-
-  if (chartData.length === 0) {
-    console.warn('No hay datos para mostrar en el gráfico');
-    return <div>No hay datos disponibles</div>;
-  }
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -35,25 +29,26 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <XAxis
           dataKey="fecha"
           interval={1}
-          angle={-45}
-          textAnchor="end"
-          height={60}
-          scale="point"
-          padding={{ left: 0, right: 0 }}
+          hide={true}
         />
         <YAxis
           domain={[5000, 8500]}
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
-          labelFormatter={(label) => label}
+          labelFormatter={(label, payload) => {
+            if (payload && payload[0]) {
+              return payload[0].payload.fecha_formateada;
+            }
+            return '';
+          }}
           formatter={(value: any) => [`${value?.toLocaleString() || '-'} MW`, '']}
         />
         <Legend verticalAlign="top" height={36} />
         <Line
           type="monotone"
           dataKey="Demanda Real"
-          stroke="#C00000"
+          stroke="#0FA0CE"
           strokeWidth={2}
           dot={false}
           connectNulls
@@ -61,7 +56,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <Line
           type="monotone"
           dataKey="Reprogramación"
-          stroke="#f39200"
+          stroke="#ea384c"
           strokeWidth={2}
           dot={false}
           connectNulls
@@ -69,7 +64,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <Line
           type="monotone"
           dataKey="Pronóstico Diario"
-          stroke="#82ca9d"
+          stroke="#F97316"
           strokeWidth={2}
           dot={false}
           connectNulls
@@ -77,7 +72,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <Line
           type="monotone"
           dataKey="Rango Superior"
-          stroke="#d9d9d9"
+          stroke="#82ca9d"
           strokeWidth={1}
           strokeDasharray="3 3"
           dot={false}
@@ -86,7 +81,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <Line
           type="monotone"
           dataKey="Rango Inferior"
-          stroke="#d9d9d9"
+          stroke="#82ca9d"
           strokeWidth={1}
           strokeDasharray="3 3"
           dot={false}
