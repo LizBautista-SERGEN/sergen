@@ -175,20 +175,7 @@ const LoginPage = () => {
       }
 
       if (data.user) {
-        // Enviar correos de notificación
-        try {
-          const { error: emailError } = await supabase.functions.invoke('send-activation-email', {
-            body: { email: trimmedEmail, businessName }
-          });
-
-          if (emailError) {
-            console.error('Error sending activation email:', emailError);
-          }
-        } catch (emailError) {
-          console.error('Error invoking email function:', emailError);
-        }
-
-        toast.success("Cuenta creada exitosamente. Por favor espere la activación de su cuenta. Se le ha enviado un correo de confirmación.");
+        toast.success("Cuenta creada exitosamente. Por favor espere la activación de su cuenta.");
         setEmail("");
         setPassword("");
         setConfirmPassword("");

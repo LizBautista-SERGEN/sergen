@@ -3,11 +3,9 @@ import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Bar, BarChart } from 'recharts';
-import { PowerChart } from "@/components/admin/forecast/components/PowerChart";
-import { ForecastChart } from "@/components/admin/forecast/ForecastChart";
-import { HistoricalChart } from "@/components/admin/forecast/HistoricalChart";
 
 interface DemoData {
   hora: string;
@@ -23,7 +21,6 @@ interface PowerData {
 const UserDemo = () => {
   const [demoData, setDemoData] = useState<DemoData[]>([]);
   const [powerData, setPowerData] = useState<PowerData[]>([]);
-  const [forecastData, setForecastData] = useState<any[]>([]);
   
   useEffect(() => {
     // Generar datos de demostración para el gráfico de líneas
@@ -62,13 +59,13 @@ const UserDemo = () => {
     <SidebarProvider>
       <div className="min-h-screen bg-gray-50 flex w-full">
         <DashboardSidebar />
-        <div className="flex-1 pt-16"> {/* Añadido pt-16 para dar espacio al header */}
+        <div className="flex-1">
           <div className="container mx-auto px-4 py-8">
             <div className="grid grid-cols-12 gap-6">
               {/* Columna izquierda */}
               <div className="col-span-3">
                 <Card>
-                  <CardHeader className="text-center"> {/* Añadido text-center */}
+                  <CardHeader>
                     <CardTitle className="text-lg">Información de Cliente</CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -93,7 +90,7 @@ const UserDemo = () => {
                 </Card>
 
                 <Card className="mt-6">
-                  <CardHeader className="text-center"> {/* Añadido text-center */}
+                  <CardHeader>
                     <CardTitle className="text-lg">Gestión de riesgo</CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -129,7 +126,26 @@ const UserDemo = () => {
                       </CardHeader>
                       <CardContent>
                         <div className="h-[300px]">
-                          <ForecastChart data={demoData} />
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={demoData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="hora" />
+                              <YAxis domain={[5000, 8000]} />
+                              <Tooltip />
+                              <Line 
+                                type="monotone" 
+                                dataKey="potencia" 
+                                stroke="#2563eb" 
+                                name="Train"
+                              />
+                              <Line 
+                                type="monotone" 
+                                dataKey="demanda" 
+                                stroke="#dc2626" 
+                                name="Test"
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
                         </div>
                       </CardContent>
                     </Card>
@@ -141,7 +157,15 @@ const UserDemo = () => {
                       </CardHeader>
                       <CardContent>
                         <div className="h-[300px]">
-                          <HistoricalChart data={demoData} />
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={powerData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="fecha" />
+                              <YAxis domain={[6000, 8000]} />
+                              <Tooltip />
+                              <Bar dataKey="valor" fill="#2563eb" />
+                            </BarChart>
+                          </ResponsiveContainer>
                         </div>
                       </CardContent>
                     </Card>
@@ -155,7 +179,20 @@ const UserDemo = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="h-[200px]">
-                      <PowerChart data={powerData} />
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={demoData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="hora" />
+                          <YAxis domain={[5000, 8000]} />
+                          <Tooltip />
+                          <Line 
+                            type="monotone" 
+                            dataKey="potencia" 
+                            stroke="#2563eb" 
+                            name="Potencia"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </CardContent>
                 </Card>
@@ -164,7 +201,7 @@ const UserDemo = () => {
               {/* Columna derecha */}
               <div className="col-span-3">
                 <Card>
-                  <CardHeader className="text-center"> {/* Añadido text-center */}
+                  <CardHeader>
                     <CardTitle className="text-lg">Información de servicio</CardTitle>
                   </CardHeader>
                   <CardContent>
