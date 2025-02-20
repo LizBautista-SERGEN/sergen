@@ -1,5 +1,6 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { parse, format } from 'date-fns';
 
 interface ForecastChartProps {
   data: any[];
@@ -7,66 +8,53 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
-  const formatTime = (isoString: string): string => {
-    if (!isoString) return '';
+  const parseDate = (dateStr: string) => {
     try {
-      const fecha = new Date(isoString);
-      if (isNaN(fecha.getTime())) {
-        console.error('Fecha inválida:', isoString);
-        return '';
-      }
-      const hora = fecha.getHours().toString().padStart(2, '0');
-      const minutos = fecha.getMinutes().toString().padStart(2, '0');
-      return `${hora}:${minutos}`;
+      return new Date(dateStr);
     } catch (error) {
-      console.error('Error formatting time:', error, isoString);
-      return '';
+      console.error('Error parsing date:', dateStr, error);
+      return null;
     }
   };
 
-  const formatFullDate = (isoString: string): string => {
-    if (!isoString) return '';
-    try {
-      const fecha = new Date(isoString);
-      if (isNaN(fecha.getTime())) {
-        console.error('Fecha inválida para formato completo:', isoString);
-        return isoString;
-      }
-      const dia = fecha.getDate().toString().padStart(2, '0');
-      const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-      const año = fecha.getFullYear();
-      const hora = fecha.getHours().toString().padStart(2, '0');
-      const minutos = fecha.getMinutes().toString().padStart(2, '0');
-      return `${dia}/${mes}/${año} ${hora}:${minutos}`;
-    } catch (error) {
-      console.error('Error formatting full date:', error, isoString);
-      return isoString;
-    }
+  const formatTime = (dateStr: string): string => {
+    const date = parseDate(dateStr);
+    if (!date) return '';
+    return format(date, 'HH:mm');
   };
 
-  // Procesamos los datos para el gráfico, reemplazando valores 0 por null
-  const chartData = data.map(item => {
-    const timeStr = formatTime(item.fecha);
-    console.log('Procesando fecha:', item.fecha, 'resultado:', timeStr);
-    
-    return {
-      time: timeStr,
+  const formatFullDate = (dateStr: string): string => {
+    const date = parseDate(dateStr);
+    if (!date) return '';
+    return format(date, 'dd/MM/yyyy HH:mm');
+  };
+
+  // Procesamos y ordenamos los datos por fecha
+  const chartData = data
+    .map(item => ({
+      time: formatTime(item.fecha),
       fecha_completa: formatFullDate(item.fecha),
-      "Reprogramación": item.reprogramacion === 0 ? null : item.reprogramacion,
-      "Pronóstico Diario": item.pronostico_diario === 0 ? null : item.pronostico_diario,
-      "Rango Inferior": item.rango_inferior === 0 ? null : item.rango_inferior,
-      "Rango Superior": item.rango_superior === 0 ? null : item.rango_superior,
-      "Demanda Real": item.demanda_real === 0 ? null : item.demanda_real,
-    };
-  });
+      fecha: new Date(item.fecha), // para ordenar
+      "Reprogramación": item.reprogramacion || null,
+      "Pronóstico Diario": item.pronostico_diario || null,
+      "Rango Inferior": item.rango_inferior || null,
+      "Rango Superior": item.rango_superior || null,
+      "Demanda Real": item.demanda_real || null,
+    }))
+    .sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
 
   console.log('Datos procesados para el gráfico:', chartData);
+
+  if (chartData.length === 0) {
+    console.warn('No hay datos para mostrar en el gráfico');
+    return <div>No hay datos disponibles</div>;
+  }
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
         data={chartData}
-        margin={forPDF ? { top: 20, right: 30, left: 20, bottom: 5 } : undefined}
+        margin={forPDF ? { top: 20, right: 30, left: 20, bottom: 5 } : { top: 5, right: 30, left: 20, bottom: 25 }}
       >
         <XAxis
           dataKey="time"

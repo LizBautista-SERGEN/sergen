@@ -9,17 +9,35 @@ import html2canvas from 'html2canvas';
 import ReactDOMServer from 'react-dom/server';
 
 export const exportToExcel = (data: any[], filename: string) => {
-  const ws = utils.json_to_sheet(data.map(item => ({
-    Fecha: format(new Date(item.fecha), 'dd/MM/yyyy HH:mm'),
-    'Reprogramación Diaria': item.reprogramacion_diaria,
-    'Pronóstico': item.pronostico,
-    'Rango Mínimo': item.rango_minimo,
-    'Rango Máximo': item.rango_maximo,
-    'Ejecutado': item.ejecutado
-  })));
+  // Asegurarse de que los datos estén ordenados por fecha
+  const sortedData = [...data].sort((a, b) => 
+    new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+  );
 
+  const excelData = sortedData.map(item => ({
+    Fecha: format(new Date(item.fecha), 'dd/MM/yyyy HH:mm:ss'),
+    'Reprogramación': item.reprogramacion || '',
+    'Pronóstico Diario': item.pronostico_diario || '',
+    'Rango Inferior': item.rango_inferior || '',
+    'Rango Superior': item.rango_superior || '',
+    'Demanda Real': item.demanda_real || ''
+  }));
+
+  const ws = utils.json_to_sheet(excelData);
   const wb = utils.book_new();
   utils.book_append_sheet(wb, ws, 'Datos');
+  
+  // Ajustar el ancho de las columnas
+  const wscols = [
+    {wch: 20}, // Fecha
+    {wch: 15}, // Reprogramación
+    {wch: 15}, // Pronóstico Diario
+    {wch: 15}, // Rango Inferior
+    {wch: 15}, // Rango Superior
+    {wch: 15}  // Demanda Real
+  ];
+  ws['!cols'] = wscols;
+
   const excelBuffer = write(wb, { bookType: 'xlsx', type: 'array' });
   const data_blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
   saveAs(data_blob, `${filename}.xlsx`);
@@ -71,14 +89,19 @@ export const exportToPDF = async (data: any[], filename: string, chartComponent?
     }
   }
 
-  const tableColumn = ["Fecha", "Programado", "Pronóstico", "Rango Mínimo", "Rango Máximo", "Ejecutado"];
-  const tableRows = data.map(item => [
-    format(new Date(item.fecha), 'dd/MM/yyyy HH:mm'),
-    item.reprogramacion_diaria?.toLocaleString() || '-',
-    item.pronostico?.toLocaleString() || '-',
-    item.rango_minimo?.toLocaleString() || '-',
-    item.rango_maximo?.toLocaleString() || '-',
-    item.ejecutado?.toLocaleString() || '-'
+  // Ordenar los datos por fecha
+  const sortedData = [...data].sort((a, b) => 
+    new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+  );
+
+  const tableColumn = ["Fecha", "Reprogramación", "Pronóstico Diario", "Rango Inferior", "Rango Superior", "Demanda Real"];
+  const tableRows = sortedData.map(item => [
+    format(new Date(item.fecha), 'dd/MM/yyyy HH:mm:ss'),
+    item.reprogramacion?.toLocaleString() || '-',
+    item.pronostico_diario?.toLocaleString() || '-',
+    item.rango_inferior?.toLocaleString() || '-',
+    item.rango_superior?.toLocaleString() || '-',
+    item.demanda_real?.toLocaleString() || '-'
   ]);
 
   autoTable(doc, {
