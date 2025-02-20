@@ -1,10 +1,9 @@
-
 import { StrictMode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -21,6 +20,7 @@ import ServiceDemanda from "./pages/ServiceDemanda";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProfilePage from "./pages/ProfilePage";
 import InformesPage from "./pages/InformesPage";
+import UserDemo from "./pages/UserDemo";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -32,11 +32,11 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+function App() {
   return (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+        <Router>
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <main className="flex-1">
@@ -55,6 +55,7 @@ const App = () => {
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
                   <Route path="/perfil" element={<ProfilePage />} />
                   <Route path="/informes" element={<InformesPage />} />
+                  <Route path="/demo" element={<UserDemo />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </TooltipProvider>
@@ -63,10 +64,10 @@ const App = () => {
             <Toaster />
             <Sonner />
           </div>
-        </BrowserRouter>
+        </Router>
       </QueryClientProvider>
     </StrictMode>
   );
-};
+}
 
 export default App;
