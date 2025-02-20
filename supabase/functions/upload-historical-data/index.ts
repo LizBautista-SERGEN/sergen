@@ -48,8 +48,6 @@ serve(async (req) => {
       return {
         fecha: fecha.toISOString(),
         ejecutado: row['EJECUTADO'] || null,
-        demanda_programada: row['PROG. DIARIA'] || null,
-        prog_semanal: row['PROG. SEMANAL'] || null,
       };
     }).filter(row => row !== null);
 
@@ -72,7 +70,7 @@ serve(async (req) => {
       throw new Error('Error al insertar datos: ' + insertError.message);
     }
 
-    // Procesar picos de potencia (18:00 - 23:00)
+    // Procesar y almacenar picos de potencia (18:00 - 23:00)
     const powerPeaks = processedData.reduce((peaks: any[], row: any) => {
       const fecha = new Date(row.fecha);
       const hora = fecha.getHours();
@@ -82,13 +80,14 @@ serve(async (req) => {
         const fechaKey = fecha.toISOString().split('T')[0]; // Obtener solo la fecha
         const existingPeak = peaks.find(p => p.date === fechaKey);
         
-        if (!existingPeak) {
+        if (!existingPeak && row.ejecutado) {
           peaks.push({
             date: fechaKey,
             peak_time: `${hora.toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`,
             peak_value: row.ejecutado,
+            is_modulated: false
           });
-        } else if (row.ejecutado > existingPeak.peak_value) {
+        } else if (existingPeak && row.ejecutado && row.ejecutado > existingPeak.peak_value) {
           existingPeak.peak_time = `${hora.toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
           existingPeak.peak_value = row.ejecutado;
         }
@@ -107,12 +106,14 @@ serve(async (req) => {
     }
 
     // Insertar nuevos picos de potencia
-    const { error: insertPeaksError } = await supabase
-      .from('power_peaks')
-      .insert(powerPeaks);
+    if (powerPeaks.length > 0) {
+      const { error: insertPeaksError } = await supabase
+        .from('power_peaks')
+        .insert(powerPeaks);
 
-    if (insertPeaksError) {
-      throw new Error('Error al insertar picos de potencia: ' + insertPeaksError.message);
+      if (insertPeaksError) {
+        throw new Error('Error al insertar picos de potencia: ' + insertPeaksError.message);
+      }
     }
 
     return new Response(

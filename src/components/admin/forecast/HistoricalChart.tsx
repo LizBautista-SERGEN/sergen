@@ -1,5 +1,5 @@
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface HistoricalChartProps {
   data: any[];
@@ -41,11 +41,7 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
   const chartData = filteredData.map(item => ({
     time: formatTime(item.fecha),
     fecha_completa: formatFullDate(item.fecha),
-    "Prog. Semanal": item.prog_semanal,
-    "Reprog. Diaria": item.reprogramacion_diaria,
-    "Demanda Prog.": item.demanda_programada,
     "Ejecutado": item.ejecutado,
-    "Error %": item.error_porcentual
   }));
 
   return (
@@ -53,11 +49,11 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
       <LineChart data={chartData}>
         <XAxis 
           dataKey="time" 
-          interval={4}
+          interval={8}  // Aumentado el intervalo para reducir superposición
           angle={-45}
           textAnchor="end"
           height={60}
-          tickFormatter={(value) => value}
+          hide  // Ocultando las etiquetas del eje X
         />
         <YAxis 
           domain={[5000, 8500]}
@@ -70,37 +66,15 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
             }
             return label;
           }}
-          formatter={(value: any, name: string) => [
-            `${value.toLocaleString()} ${name === "Error %" ? "%" : "MW"}`,
-            name
+          formatter={(value: any) => [
+            `${value.toLocaleString()} MW`,
+            'Ejecutado'
           ]}
         />
-        <Legend verticalAlign="top" height={36} />
         <Line
           type="monotone"
           dataKey="Ejecutado"
-          stroke="#C00000"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line
-          type="monotone"
-          dataKey="Reprog. Diaria"
-          stroke="#f39200"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line
-          type="monotone"
-          dataKey="Prog. Semanal"
-          stroke="#82ca9d"
-          strokeWidth={2}
-          dot={false}
-        />
-        <Line
-          type="monotone"
-          dataKey="Error %"
-          stroke="#ff7300"
+          stroke="#0000FF"  // Cambiado a azul
           strokeWidth={2}
           dot={false}
         />
