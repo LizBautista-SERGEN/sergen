@@ -17,18 +17,10 @@ export const PowerTab = () => {
       const { data, error } = await supabase
         .from('power_peaks')
         .select('*')
-        .order('date', { ascending: true });
+        .order('date', { ascending: false });
 
       if (error) throw error;
-      
-      // Asegurarnos de usar las fechas exactamente como vienen de la base de datos
-      const processedData = (data || []).map(item => ({
-        ...item,
-        date: item.date, // Mantener la fecha original sin conversión
-        peak_time: item.peak_time // Mantener la hora original sin conversión
-      }));
-      
-      setData(processedData);
+      setData(data || []);
     } catch (error) {
       console.error('Error fetching power peaks:', error);
       toast.error('Error al cargar los datos de potencia');
@@ -39,12 +31,6 @@ export const PowerTab = () => {
 
   useEffect(() => {
     fetchData();
-    
-    const interval = setInterval(() => {
-      fetchData();
-    }, 900 * 1000);
-
-    return () => clearInterval(interval);
   }, []);
 
   return (

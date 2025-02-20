@@ -6,13 +6,7 @@ interface PowerChartProps {
 }
 
 export const PowerChart = ({ data }: PowerChartProps) => {
-  // Usar las fechas exactamente como vienen de la base de datos
-  const sortedData = [...data]
-    .sort((a, b) => {
-      const dateA = new Date(a.date + 'T' + a.peak_time);
-      const dateB = new Date(b.date + 'T' + b.peak_time);
-      return dateA.getTime() - dateB.getTime();
-    });
+  const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
   // Encontrar los dos valores más altos
   const maxValues = [...sortedData]
@@ -24,9 +18,10 @@ export const PowerChart = ({ data }: PowerChartProps) => {
     date: item.date,
     value: item.peak_value,
     hora: item.peak_time,
-    color: item.peak_value === maxValues[0] ? '#C00000' : // rojo para el más alto
-           item.peak_value === maxValues[1] ? '#FFC000' : // naranja para el segundo más alto
-           '#4BACC6' // azul para el resto
+    // Determinar el color de la barra
+    color: item.peak_value === maxValues[0] ? '#ea384c' : // rojo para el más alto
+           item.peak_value === maxValues[1] ? '#F97316' : // naranja para el segundo más alto
+           '#0FA0CE' // azul para el resto
   }));
 
   const CustomBar = (props: any) => {
@@ -40,7 +35,10 @@ export const PowerChart = ({ data }: PowerChartProps) => {
       <BarChart data={chartData}>
         <XAxis
           dataKey="date"
-          hide={true}
+          interval={0}
+          angle={-45}
+          textAnchor="end"
+          height={60}
         />
         <YAxis
           domain={[5000, 8500]}
@@ -48,12 +46,7 @@ export const PowerChart = ({ data }: PowerChartProps) => {
         />
         <Tooltip
           formatter={(value: any) => [`${value.toLocaleString()} MW`, 'Potencia']}
-          labelFormatter={(label, payload) => {
-            if (payload && payload[0]) {
-              return `Fecha: ${payload[0].payload.date}\nHora: ${payload[0].payload.hora}`;
-            }
-            return label;
-          }}
+          labelFormatter={(label) => `Fecha: ${label}`}
         />
         <Bar 
           dataKey="value" 

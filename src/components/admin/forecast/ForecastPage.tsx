@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ForecastChart } from "./ForecastChart";
@@ -21,6 +20,7 @@ export const ForecastPage = () => {
     try {
       setLoading(true);
       
+      // Obtenemos todos los datos sin filtrar por fecha
       let { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
@@ -38,14 +38,13 @@ export const ForecastPage = () => {
         return;
       }
 
-      // Limpiar datos antiguos y mantener solo los más recientes
-      const currentDate = new Date();
-      const filteredData = forecastData.filter(item => {
-        const itemDate = new Date(item.fecha);
-        return itemDate >= currentDate;
+      // Debugging de los datos obtenidos
+      console.log('Cantidad de datos recuperados:', forecastData.length);
+      forecastData.forEach((item, index) => {
+        console.log(`Registro ${index + 1}:`, new Date(item.fecha).toLocaleString());
       });
       
-      setData(filteredData);
+      setData(forecastData);
 
     } catch (error) {
       console.error('Error fetching forecast data:', error);
@@ -86,10 +85,9 @@ export const ForecastPage = () => {
   useEffect(() => {
     fetchData();
     
-    // Actualizar cada 900 segundos (15 minutos)
     const interval = setInterval(() => {
       refreshData();
-    }, 900 * 1000);
+    }, 15 * 60 * 1000); // 15 minutos
 
     return () => clearInterval(interval);
   }, []);
