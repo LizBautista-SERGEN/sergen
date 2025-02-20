@@ -1,7 +1,6 @@
 
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -30,6 +29,13 @@ export const PowerTable = ({ data, onDataChange }: PowerTableProps) => {
     }
   };
 
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    return `${d.getUTCDate().toString().padStart(2, '0')}/${(d.getUTCMonth() + 1).toString().padStart(2, '0')}/${d.getUTCFullYear()}`;
+  };
+
+  const formatTime = (time: string) => time;
+
   return (
     <Table>
       <TableHeader>
@@ -43,8 +49,8 @@ export const PowerTable = ({ data, onDataChange }: PowerTableProps) => {
       <TableBody>
         {data.map((row) => (
           <TableRow key={row.id}>
-            <TableCell>{format(new Date(row.date), 'dd/MM/yyyy')}</TableCell>
-            <TableCell>{format(new Date(`2000-01-01T${row.peak_time}`), 'HH:mm')}</TableCell>
+            <TableCell>{formatDate(row.date)}</TableCell>
+            <TableCell>{formatTime(row.peak_time)}</TableCell>
             <TableCell>{row.peak_value.toLocaleString()}</TableCell>
             {isSuperUser && (
               <TableCell>

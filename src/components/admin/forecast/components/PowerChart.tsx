@@ -8,7 +8,6 @@ interface PowerChartProps {
 export const PowerChart = ({ data }: PowerChartProps) => {
   const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
-  // Encontrar los dos valores más altos
   const maxValues = [...sortedData]
     .sort((a, b) => b.peak_value - a.peak_value)
     .slice(0, 2)
@@ -18,14 +17,13 @@ export const PowerChart = ({ data }: PowerChartProps) => {
     date: item.date,
     value: item.peak_value,
     hora: item.peak_time,
-    // Determinar el color de la barra
-    color: item.peak_value === maxValues[0] ? '#ea384c' : // rojo para el más alto
-           item.peak_value === maxValues[1] ? '#F97316' : // naranja para el segundo más alto
-           '#0FA0CE' // azul para el resto
+    color: item.peak_value === maxValues[0] ? '#C00000' : 
+           item.peak_value === maxValues[1] ? '#FFC000' : 
+           '#4BACC6'
   }));
 
   const CustomBar = (props: any) => {
-    const { fill, x, y, width, height } = props;
+    const { x, y, width, height } = props;
     const color = props.payload.color;
     return <rect x={x} y={y} width={width} height={height} fill={color} />;
   };
@@ -35,10 +33,7 @@ export const PowerChart = ({ data }: PowerChartProps) => {
       <BarChart data={chartData}>
         <XAxis
           dataKey="date"
-          interval={0}
-          angle={-45}
-          textAnchor="end"
-          height={60}
+          hide={true}
         />
         <YAxis
           domain={[5000, 8500]}
@@ -46,7 +41,14 @@ export const PowerChart = ({ data }: PowerChartProps) => {
         />
         <Tooltip
           formatter={(value: any) => [`${value.toLocaleString()} MW`, 'Potencia']}
-          labelFormatter={(label) => `Fecha: ${label}`}
+          labelFormatter={(label, payload) => {
+            if (payload && payload[0]) {
+              const date = new Date(payload[0].payload.date);
+              const formattedDate = `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()}`;
+              return `Fecha: ${formattedDate}\nHora: ${payload[0].payload.hora}`;
+            }
+            return '';
+          }}
         />
         <Bar 
           dataKey="value" 

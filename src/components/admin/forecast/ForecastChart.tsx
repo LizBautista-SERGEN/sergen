@@ -1,6 +1,5 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format } from 'date-fns';
 
 interface ForecastChartProps {
   data: any[];
@@ -8,11 +7,18 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
   const chartData = [...data]
+    .filter(item => {
+      const itemDate = new Date(item.fecha);
+      itemDate.setUTCHours(0, 0, 0, 0);
+      return itemDate.getTime() === today.getTime();
+    })
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .map(item => ({
       fecha: item.fecha,
-      fecha_formateada: format(new Date(item.fecha), 'dd/MM/yyyy HH:mm'),
       "Reprogramación": item.reprogramacion || null,
       "Pronóstico Diario": item.pronostico_diario || null,
       "Rango Inferior": item.rango_inferior || null,
@@ -28,7 +34,6 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
       >
         <XAxis
           dataKey="fecha"
-          interval={1}
           hide={true}
         />
         <YAxis
@@ -36,11 +41,14 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
-          labelFormatter={(label, payload) => {
-            if (payload && payload[0]) {
-              return payload[0].payload.fecha_formateada;
-            }
-            return '';
+          labelFormatter={(label) => {
+            const date = new Date(label);
+            const day = date.getUTCDate().toString().padStart(2, '0');
+            const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+            const year = date.getUTCFullYear();
+            const hours = date.getUTCHours().toString().padStart(2, '0');
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
           }}
           formatter={(value: any) => [`${value?.toLocaleString() || '-'} MW`, '']}
         />
@@ -48,7 +56,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <Line
           type="monotone"
           dataKey="Demanda Real"
-          stroke="#0FA0CE"
+          stroke="#1F497D"
           strokeWidth={2}
           dot={false}
           connectNulls
@@ -56,7 +64,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         <Line
           type="monotone"
           dataKey="Reprogramación"
-          stroke="#ea384c"
+          stroke="#C00000"
           strokeWidth={2}
           dot={false}
           connectNulls
