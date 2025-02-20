@@ -4,12 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { PowerChart } from "./PowerChart";
 import { PowerTable } from "./PowerTable";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
 
 export const PowerTab = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
-  const { session } = useAuth();
 
   const fetchData = async () => {
     try {
@@ -17,7 +15,7 @@ export const PowerTab = () => {
       const { data, error } = await supabase
         .from('power_peaks')
         .select('*')
-        .order('date', { ascending: false });
+        .order('date', { ascending: true });
 
       if (error) throw error;
       setData(data || []);
@@ -31,6 +29,13 @@ export const PowerTab = () => {
 
   useEffect(() => {
     fetchData();
+    
+    // Actualizar cada 30 segundos
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -41,7 +46,7 @@ export const PowerTab = () => {
           <PowerChart data={data} />
         </div>
         <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
-          <PowerTable data={data} onDataChange={fetchData} />
+          <PowerTable data={data} />
         </div>
       </div>
     </div>

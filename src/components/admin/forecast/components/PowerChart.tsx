@@ -19,7 +19,7 @@ export const PowerChart = ({ data }: PowerChartProps) => {
     hora: item.peak_time,
     color: item.peak_value === maxValues[0] ? '#C00000' : 
            item.peak_value === maxValues[1] ? '#FFC000' : 
-           '#4BACC6'
+           '#1F497D'  // Nuevo color azul
   }));
 
   const CustomBar = (props: any) => {
@@ -44,8 +44,7 @@ export const PowerChart = ({ data }: PowerChartProps) => {
           labelFormatter={(label, payload) => {
             if (payload && payload[0]) {
               const date = new Date(payload[0].payload.date);
-              const formattedDate = `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()}`;
-              return `Fecha: ${formattedDate}\nHora: ${payload[0].payload.hora}`;
+              return `Fecha: ${payload[0].payload.date}\nHora: ${payload[0].payload.hora}`;
             }
             return '';
           }}
