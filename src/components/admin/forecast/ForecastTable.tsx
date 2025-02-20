@@ -12,18 +12,19 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
   };
 
   const formatDate = (isoString: string): string => {
+    if (!isoString) return '';
     const fecha = new Date(isoString);
-    // Ajustamos para la zona horaria local
-    const dia = fecha.getDate().toString().padStart(2, '0');
-    const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const año = fecha.getFullYear();
-    const hora = fecha.getHours().toString().padStart(2, '0');
-    const minutos = fecha.getMinutes().toString().padStart(2, '0');
+    // No realizamos ajustes de zona horaria, usamos la fecha y hora tal como está
+    const dia = fecha.getUTCDate().toString().padStart(2, '0');
+    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+    const año = fecha.getUTCFullYear();
+    const hora = fecha.getUTCHours().toString().padStart(2, '0');
+    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
     
     return `${dia}/${mes}/${año} ${hora}:${minutos}`;
   };
 
-  // Ordenamos los datos por fecha
+  // Ordenamos los datos por fecha ascendente para mostrar primero los más antiguos
   const sortedData = [...data].sort((a, b) => 
     new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
   );

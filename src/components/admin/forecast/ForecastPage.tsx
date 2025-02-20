@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ForecastChart } from "./ForecastChart";
@@ -11,7 +10,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
 import { PowerTab } from "./components/PowerTab";
-import { endOfDay, startOfDay } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -22,19 +20,10 @@ export const ForecastPage = () => {
     try {
       setLoading(true);
       
-      // Obtener fecha actual y siguiente
-      const currentDate = new Date();
-      const startDate = startOfDay(currentDate);
-      const endDate = endOfDay(currentDate);
-
-      console.log('Consultando datos desde:', startDate.toISOString());
-      console.log('Hasta:', endDate.toISOString());
-
+      // Obtenemos todos los datos sin filtrar por fecha
       let { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
-        .gte('fecha', startDate.toISOString())
-        .lte('fecha', endDate.toISOString())
         .order('fecha', { ascending: true });
 
       if (error) {
@@ -43,8 +32,8 @@ export const ForecastPage = () => {
       }
 
       if (!forecastData || forecastData.length === 0) {
-        console.log('No hay datos disponibles para hoy');
-        toast.info('No hay datos disponibles para hoy');
+        console.log('No hay datos disponibles');
+        toast.info('No hay datos disponibles');
         setData([]);
         return;
       }
