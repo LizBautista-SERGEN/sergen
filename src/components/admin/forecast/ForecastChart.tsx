@@ -1,6 +1,5 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { parse, format } from 'date-fns';
 
 interface ForecastChartProps {
   data: any[];
@@ -8,42 +7,19 @@ interface ForecastChartProps {
 }
 
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
-  const parseDate = (dateStr: string) => {
-    try {
-      return new Date(dateStr);
-    } catch (error) {
-      console.error('Error parsing date:', dateStr, error);
-      return null;
-    }
-  };
-
-  const formatTime = (dateStr: string): string => {
-    const date = parseDate(dateStr);
-    if (!date) return '';
-    return format(date, 'HH:mm');
-  };
-
-  const formatFullDate = (dateStr: string): string => {
-    const date = parseDate(dateStr);
-    if (!date) return '';
-    return format(date, 'dd/MM/yyyy HH:mm');
-  };
-
   // Procesamos y ordenamos los datos por fecha
-  const chartData = data
+  const chartData = [...data]
+    .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .map(item => ({
-      time: formatTime(item.fecha),
-      fecha_completa: formatFullDate(item.fecha),
-      fecha: new Date(item.fecha), // para ordenar
+      fecha: item.fecha,
       "Reprogramación": item.reprogramacion || null,
       "Pronóstico Diario": item.pronostico_diario || null,
       "Rango Inferior": item.rango_inferior || null,
       "Rango Superior": item.rango_superior || null,
       "Demanda Real": item.demanda_real || null,
-    }))
-    .sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
+    }));
 
-  console.log('Datos procesados para el gráfico:', chartData);
+  console.log('Datos ordenados para el gráfico:', chartData);
 
   if (chartData.length === 0) {
     console.warn('No hay datos para mostrar en el gráfico');
@@ -57,7 +33,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
         margin={forPDF ? { top: 20, right: 30, left: 20, bottom: 5 } : { top: 5, right: 30, left: 20, bottom: 25 }}
       >
         <XAxis
-          dataKey="time"
+          dataKey="fecha"
           interval={1}
           angle={-45}
           textAnchor="end"
@@ -70,12 +46,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
-          labelFormatter={(label, payload) => {
-            if (payload && payload[0]) {
-              return payload[0].payload.fecha_completa;
-            }
-            return label;
-          }}
+          labelFormatter={(label) => label}
           formatter={(value: any) => [`${value?.toLocaleString() || '-'} MW`, '']}
         />
         <Legend verticalAlign="top" height={36} />

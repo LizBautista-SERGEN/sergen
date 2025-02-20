@@ -1,17 +1,18 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
 
 interface PowerChartProps {
   data: any[];
 }
 
 export const PowerChart = ({ data }: PowerChartProps) => {
-  const chartData = data.map(item => ({
-    date: format(new Date(item.date), 'dd/MM/yyyy'),
-    value: item.peak_value,
-    hora: format(new Date(`2000-01-01T${item.peak_time}`), 'HH:mm'),
-  }));
+  const chartData = [...data]
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .map(item => ({
+      date: item.date,
+      value: item.peak_value,
+      hora: item.peak_time,
+    }));
 
   return (
     <ResponsiveContainer width="100%" height="100%">
