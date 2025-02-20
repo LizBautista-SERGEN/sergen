@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar } from "@/components/ui/calendar";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
@@ -73,9 +72,10 @@ export const ModulationTab = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const today = new Date();
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const formatDateUTC = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -83,7 +83,7 @@ export const ModulationTab = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {Object.entries(modulatedDates).map(([date, isModulated]) => (
           <div key={date} className="flex items-center justify-between p-4 bg-white rounded-lg shadow">
-            <span>{new Date(date).toLocaleDateString('es-ES')}</span>
+            <span>{formatDateUTC(date)}</span>
             <Switch
               checked={isModulated}
               onCheckedChange={(checked) => handleModulationChange(date, checked)}
