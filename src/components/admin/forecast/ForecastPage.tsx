@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ForecastChart } from "./ForecastChart";
@@ -9,7 +10,8 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { addDays, startOfDay, endOfDay } from "date-fns";
+import { PowerTab } from "./components/PowerTab";
+import { endOfDay, startOfDay } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -104,9 +106,10 @@ export const ForecastPage = () => {
   return (
     <div>
       <Tabs defaultValue="forecast" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="forecast">Diario</TabsTrigger>
           <TabsTrigger value="historical">Histórico</TabsTrigger>
+          <TabsTrigger value="power">Potencia</TabsTrigger>
         </TabsList>
         
         <TabsContent value="forecast">
@@ -149,6 +152,10 @@ export const ForecastPage = () => {
         
         <TabsContent value="historical">
           <HistoricalTab />
+        </TabsContent>
+
+        <TabsContent value="power">
+          <PowerTab />
         </TabsContent>
       </Tabs>
     </div>

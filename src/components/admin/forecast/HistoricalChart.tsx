@@ -48,23 +48,16 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
     "Error %": item.error_porcentual
   }));
 
-  const lineColors = {
-    "Prog. Semanal": "#8884d8",
-    "Reprog. Diaria": "#f39200",
-    "Demanda Prog.": "#82ca9d",
-    "Ejecutado": "#156082",
-    "Error %": "#ff7300"
-  };
-
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={chartData}>
         <XAxis 
           dataKey="time" 
-          interval={2}
+          interval={4}
           angle={-45}
           textAnchor="end"
           height={60}
+          tickFormatter={(value) => value}
         />
         <YAxis 
           domain={[5000, 8500]}
@@ -83,16 +76,34 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
           ]}
         />
         <Legend verticalAlign="top" height={36} />
-        {Object.entries(lineColors).map(([key, color]) => (
-          <Line
-            key={key}
-            type="monotone"
-            dataKey={key}
-            stroke={color}
-            strokeWidth={2}
-            dot={false}
-          />
-        ))}
+        <Line
+          type="monotone"
+          dataKey="Ejecutado"
+          stroke="#C00000"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="Reprog. Diaria"
+          stroke="#f39200"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="Prog. Semanal"
+          stroke="#82ca9d"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="Error %"
+          stroke="#ff7300"
+          strokeWidth={2}
+          dot={false}
+        />
       </LineChart>
     </ResponsiveContainer>
   );

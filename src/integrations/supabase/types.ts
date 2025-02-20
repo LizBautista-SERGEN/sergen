@@ -308,6 +308,36 @@ export type Database = {
         }
         Relationships: []
       }
+      power_peaks: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_modulated: boolean | null
+          peak_time: string
+          peak_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_modulated?: boolean | null
+          peak_time: string
+          peak_value: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_modulated?: boolean | null
+          peak_time?: string
+          peak_value?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity: string | null
