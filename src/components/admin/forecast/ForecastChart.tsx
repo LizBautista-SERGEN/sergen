@@ -10,22 +10,22 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   const formatTime = (isoString: string): string => {
     if (!isoString) return '';
     const fecha = new Date(isoString);
-    const hora = fecha.getHours().toString().padStart(2, '0');
-    const minutos = fecha.getMinutes().toString().padStart(2, '0');
+    const hora = fecha.getUTCHours().toString().padStart(2, '0');
+    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
     return `${hora}:${minutos}`;
   };
 
   const formatFullDate = (isoString: string): string => {
     if (!isoString) return '';
     const fecha = new Date(isoString);
-    return new Intl.DateTimeFormat('es-PE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).format(fecha);
+    const dia = fecha.getUTCDate().toString().padStart(2, '0');
+    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+    const año = fecha.getUTCFullYear();
+    const hora = fecha.getUTCHours().toString().padStart(2, '0');
+    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+    const segundos = fecha.getUTCSeconds().toString().padStart(2, '0');
+    
+    return `${dia}/${mes}/${año} ${hora}:${minutos}:${segundos}`;
   };
 
   // Procesamos los datos para el gráfico, reemplazando valores 0 por null
@@ -37,7 +37,6 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
     "Rango Inferior": item.rango_inferior === 0 ? null : item.rango_inferior,
     "Rango Superior": item.rango_superior === 0 ? null : item.rango_superior,
     "Demanda Real": item.demanda_real === 0 ? null : item.demanda_real,
-    hora: new Date(item.fecha).getHours(),
   }));
 
   return (
