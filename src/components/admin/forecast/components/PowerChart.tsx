@@ -21,7 +21,7 @@ export const PowerChart = ({ data }: PowerChartProps) => {
     // Determinar el color de la barra
     color: item.peak_value === maxValues[0] ? '#C00000' : // rojo para el más alto
            item.peak_value === maxValues[1] ? '#FFC000' : // naranja para el segundo más alto
-           '#1F497D' // azul para el resto
+           '#4BACC6' // nuevo color azul para el resto
   }));
 
   const CustomBar = (props: any) => {

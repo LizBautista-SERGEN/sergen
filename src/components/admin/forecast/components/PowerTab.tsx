@@ -17,7 +17,7 @@ export const PowerTab = () => {
       const { data, error } = await supabase
         .from('power_peaks')
         .select('*')
-        .order('date', { ascending: false });
+        .order('date', { ascending: true });
 
       if (error) throw error;
       setData(data || []);
@@ -31,6 +31,13 @@ export const PowerTab = () => {
 
   useEffect(() => {
     fetchData();
+    
+    // Actualizar cada 900 segundos (15 minutos)
+    const interval = setInterval(() => {
+      fetchData();
+    }, 900 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
