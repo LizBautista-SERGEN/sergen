@@ -13,15 +13,7 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
 
   const formatDate = (isoString: string): string => {
     if (!isoString) return '';
-    const fecha = new Date(isoString);
-    const dia = fecha.getUTCDate().toString().padStart(2, '0');
-    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
-    const año = fecha.getUTCFullYear();
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
-    const segundos = fecha.getUTCSeconds().toString().padStart(2, '0');
-    
-    return `${dia}/${mes}/${año} ${hora}:${minutos}:${segundos}`;
+    return isoString;
   };
 
   // Ordenamos los datos por fecha ascendente

@@ -9,35 +9,39 @@ interface ForecastChartProps {
 export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   const formatTime = (isoString: string): string => {
     if (!isoString) return '';
-    const fecha = new Date(isoString);
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
-    return `${hora}:${minutos}`;
+    try {
+      const fecha = new Date(isoString);
+      const hora = fecha.getUTCHours().toString().padStart(2, '0');
+      const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+      return `${hora}:${minutos}`;
+    } catch (error) {
+      console.error('Error formatting time:', error, isoString);
+      return '';
+    }
   };
 
   const formatFullDate = (isoString: string): string => {
     if (!isoString) return '';
-    const fecha = new Date(isoString);
-    const dia = fecha.getUTCDate().toString().padStart(2, '0');
-    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
-    const año = fecha.getUTCFullYear();
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
-    const segundos = fecha.getUTCSeconds().toString().padStart(2, '0');
-    
-    return `${dia}/${mes}/${año} ${hora}:${minutos}:${segundos}`;
+    return isoString;
   };
 
+  console.log('Data recibida en ForecastChart:', data);
+
   // Procesamos los datos para el gráfico, reemplazando valores 0 por null
-  const chartData = data.map(item => ({
-    time: formatTime(item.fecha),
-    fecha_completa: formatFullDate(item.fecha),
-    "Reprogramación": item.reprogramacion === 0 ? null : item.reprogramacion,
-    "Pronóstico Diario": item.pronostico_diario === 0 ? null : item.pronostico_diario,
-    "Rango Inferior": item.rango_inferior === 0 ? null : item.rango_inferior,
-    "Rango Superior": item.rango_superior === 0 ? null : item.rango_superior,
-    "Demanda Real": item.demanda_real === 0 ? null : item.demanda_real,
-  }));
+  const chartData = data.map(item => {
+    console.log('Procesando item:', item);
+    return {
+      time: formatTime(item.fecha),
+      fecha_completa: formatFullDate(item.fecha),
+      "Reprogramación": item.reprogramacion === 0 ? null : item.reprogramacion,
+      "Pronóstico Diario": item.pronostico_diario === 0 ? null : item.pronostico_diario,
+      "Rango Inferior": item.rango_inferior === 0 ? null : item.rango_inferior,
+      "Rango Superior": item.rango_superior === 0 ? null : item.rango_superior,
+      "Demanda Real": item.demanda_real === 0 ? null : item.demanda_real,
+    };
+  });
+
+  console.log('Datos procesados para el gráfico:', chartData);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
