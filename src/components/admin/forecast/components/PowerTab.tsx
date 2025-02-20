@@ -20,7 +20,15 @@ export const PowerTab = () => {
         .order('date', { ascending: true });
 
       if (error) throw error;
-      setData(data || []);
+      
+      // Asegurarnos de usar las fechas exactamente como vienen de la base de datos
+      const processedData = (data || []).map(item => ({
+        ...item,
+        date: item.date, // Mantener la fecha original sin conversión
+        peak_time: item.peak_time // Mantener la hora original sin conversión
+      }));
+      
+      setData(processedData);
     } catch (error) {
       console.error('Error fetching power peaks:', error);
       toast.error('Error al cargar los datos de potencia');
@@ -32,7 +40,6 @@ export const PowerTab = () => {
   useEffect(() => {
     fetchData();
     
-    // Actualizar cada 900 segundos (15 minutos)
     const interval = setInterval(() => {
       fetchData();
     }, 900 * 1000);

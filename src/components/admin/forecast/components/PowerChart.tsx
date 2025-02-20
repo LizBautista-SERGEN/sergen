@@ -6,7 +6,13 @@ interface PowerChartProps {
 }
 
 export const PowerChart = ({ data }: PowerChartProps) => {
-  const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Usar las fechas exactamente como vienen de la base de datos
+  const sortedData = [...data]
+    .sort((a, b) => {
+      const dateA = new Date(a.date + 'T' + a.peak_time);
+      const dateB = new Date(b.date + 'T' + b.peak_time);
+      return dateA.getTime() - dateB.getTime();
+    });
   
   // Encontrar los dos valores más altos
   const maxValues = [...sortedData]
@@ -18,10 +24,9 @@ export const PowerChart = ({ data }: PowerChartProps) => {
     date: item.date,
     value: item.peak_value,
     hora: item.peak_time,
-    // Determinar el color de la barra
     color: item.peak_value === maxValues[0] ? '#C00000' : // rojo para el más alto
            item.peak_value === maxValues[1] ? '#FFC000' : // naranja para el segundo más alto
-           '#4BACC6' // nuevo color azul para el resto
+           '#4BACC6' // azul para el resto
   }));
 
   const CustomBar = (props: any) => {

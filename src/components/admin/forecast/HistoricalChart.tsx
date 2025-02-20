@@ -10,11 +10,14 @@ interface HistoricalChartProps {
 export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartProps) => {
   const filteredData = [...data]
     .filter(item => {
+      if (!startDate || !endDate) return true;
+      
+      // Usar las fechas exactas sin modificaciones
       const itemDate = new Date(item.fecha);
-      if (startDate && endDate) {
-        return itemDate >= startDate && itemDate <= endDate;
-      }
-      return true;
+      const start = new Date(startDate.setHours(0, 0, 0, 0));
+      const end = new Date(endDate.setHours(23, 59, 59, 999));
+      
+      return itemDate >= start && itemDate <= end;
     })
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .map(item => ({
