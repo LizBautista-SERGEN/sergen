@@ -5,32 +5,33 @@ import { PowerChart } from "./PowerChart";
 import { PowerTable } from "./PowerTable";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
 
 export const PowerTab = () => {
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any[]>([]);
   const { session } = useAuth();
 
-  const { data = [], isLoading: loading } = useQuery({
-    queryKey: ['power-peaks'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('power_peaks')
-          .select('*')
-          .order('date', { ascending: false });
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('power_peaks')
+        .select('*')
+        .order('date', { ascending: false });
 
-        if (error) throw error;
-        return data || [];
-      } catch (error) {
-        console.error('Error fetching power peaks:', error);
-        toast.error('Error al cargar los datos de potencia');
-        return [];
-      }
-    },
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    staleTime: 0 // Esto fuerza a que siempre se recarguen los datos al montar el componente
-  });
+      if (error) throw error;
+      setData(data || []);
+    } catch (error) {
+      console.error('Error fetching power peaks:', error);
+      toast.error('Error al cargar los datos de potencia');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -40,14 +41,7 @@ export const PowerTab = () => {
           <PowerChart data={data} />
         </div>
         <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
-          <PowerTable 
-            data={data} 
-            onDataChange={() => {
-              // Esta función se llamará cuando se actualice un registro en la tabla
-              // Ahora usamos React Query, así que solo necesitamos invalidar la consulta
-              queryClient.invalidateQueries({ queryKey: ['power-peaks'] });
-            }} 
-          />
+          <PowerTable data={data} onDataChange={fetchData} />
         </div>
       </div>
     </div>
