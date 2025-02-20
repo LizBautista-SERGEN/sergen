@@ -28,15 +28,15 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
     }).format(fecha);
   };
 
-  // Procesamos los datos para el gráfico
+  // Procesamos los datos para el gráfico, reemplazando valores 0 por null
   const chartData = data.map(item => ({
     time: formatTime(item.fecha),
     fecha_completa: formatFullDate(item.fecha),
-    "Reprogramación": item.reprogramacion,
-    "Pronóstico Diario": item.pronostico_diario,
-    "Rango Inferior": item.rango_inferior,
-    "Rango Superior": item.rango_superior,
-    "Demanda Real": item.demanda_real,
+    "Reprogramación": item.reprogramacion === 0 ? null : item.reprogramacion,
+    "Pronóstico Diario": item.pronostico_diario === 0 ? null : item.pronostico_diario,
+    "Rango Inferior": item.rango_inferior === 0 ? null : item.rango_inferior,
+    "Rango Superior": item.rango_superior === 0 ? null : item.rango_superior,
+    "Demanda Real": item.demanda_real === 0 ? null : item.demanda_real,
     hora: new Date(item.fecha).getHours(),
   }));
 
@@ -66,7 +66,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
             }
             return label;
           }}
-          formatter={(value: any) => [`${value.toLocaleString()} MW`, '']}
+          formatter={(value: any) => [`${value?.toLocaleString() || '-'} MW`, '']}
         />
         <Legend verticalAlign="top" height={36} />
         <Line
@@ -75,6 +75,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           stroke="#C00000"
           strokeWidth={2}
           dot={false}
+          connectNulls
         />
         <Line
           type="monotone"
@@ -82,6 +83,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           stroke="#f39200"
           strokeWidth={2}
           dot={false}
+          connectNulls
         />
         <Line
           type="monotone"
@@ -89,6 +91,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           stroke="#82ca9d"
           strokeWidth={2}
           dot={false}
+          connectNulls
         />
         <Line
           type="monotone"
@@ -97,6 +100,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           strokeWidth={1}
           strokeDasharray="3 3"
           dot={false}
+          connectNulls
         />
         <Line
           type="monotone"
@@ -105,6 +109,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           strokeWidth={1}
           strokeDasharray="3 3"
           dot={false}
+          connectNulls
         />
       </LineChart>
     </ResponsiveContainer>
