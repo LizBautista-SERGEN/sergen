@@ -12,15 +12,24 @@ export const PowerTab = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('power_peaks')
-        .select('*')
-        .order('date', { ascending: true });
+      // Obtener los últimos datos de coes_historical
+      const { data: historicalData, error: historicalError } = await supabase
+        .from('coes_historical')
+        .select('fecha, ejecutado')
+        .order('fecha', { ascending: false })
+        .limit(24); // Últimas 24 horas
 
-      if (error) throw error;
-      setData(data || []);
+      if (historicalError) throw historicalError;
+
+      // Transformar los datos al formato esperado
+      const transformedData = historicalData?.map(item => ({
+        date: item.fecha,
+        peak_value: item.ejecutado
+      })) || [];
+
+      setData(transformedData);
     } catch (error) {
-      console.error('Error fetching power peaks:', error);
+      console.error('Error fetching power data:', error);
       toast.error('Error al cargar los datos de potencia');
     } finally {
       setLoading(false);
@@ -30,10 +39,10 @@ export const PowerTab = () => {
   useEffect(() => {
     fetchData();
     
-    // Actualizar cada 30 segundos
+    // Actualizar cada 12 horas
     const interval = setInterval(() => {
       fetchData();
-    }, 30 * 1000);
+    }, 12 * 60 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);

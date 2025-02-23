@@ -28,43 +28,78 @@ export const UserManagement = () => {
   const [newUserPassword, setNewUserPassword] = useState("");
 
   const fetchUsers = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user.id) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) {
+        toast.error('Debes iniciar sesión');
+        return;
+      }
 
-    const { data: currentUserProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
+      const { data: currentUserProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
 
-    if (profileError || currentUserProfile?.role !== 'superuser') {
-      toast.error('No tienes permisos para ver usuarios');
-      return;
-    }
+      if (currentUserProfile?.role !== 'superuser') {
+        toast.error('No tienes permisos para gestionar usuarios');
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (error) throw error;
+      setUsers(data || []);
+
+    } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Error al cargar usuarios');
-      return;
     }
-
-    setUsers(data || []);
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Debes iniciar sesión');
+        return;
+      }
+
+      const { data: currentUserProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (currentUserProfile?.role !== 'superuser') {
+        toast.error('No tienes permisos para crear usuarios');
+        return;
+      }
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUserEmail,
         password: newUserPassword,
+        options: {
+          data: {
+            role: 'user'
+          }
+        }
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      if (authData?.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ has_access: true })
+          .eq('id', authData.user.id);
+
+        if (profileError) throw profileError;
+      }
 
       toast.success('Usuario creado exitosamente');
       setIsDialogOpen(false);

@@ -30,7 +30,6 @@ export const HistoricalTab = () => {
         throw error;
       }
 
-      console.log('Datos históricos cargados:', data);
       return data;
     }
   });

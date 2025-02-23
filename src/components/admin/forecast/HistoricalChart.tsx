@@ -17,7 +17,6 @@ interface HistoricalChartProps {
 }
 
 export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartProps) => {
-  // Filtrar y ordenar los datos
   const filteredData = [...data]
     .filter(item => {
       if (!startDate || !endDate) return true;
@@ -28,8 +27,6 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
     .map(item => ({
       fecha: item.fecha,
       "Ejecutado": item.ejecutado || null,
-      "Programado": item.demanda_programada || null,
-      "Reprogramación": item.reprogramacion_diaria || null,
     }));
 
   return (
@@ -71,22 +68,6 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
           type="monotone"
           dataKey="Ejecutado"
           stroke="#1F497D"
-          strokeWidth={2}
-          dot={false}
-          connectNulls
-        />
-        <Line
-          type="monotone"
-          dataKey="Programado"
-          stroke="#F97316"
-          strokeWidth={2}
-          dot={false}
-          connectNulls
-        />
-        <Line
-          type="monotone"
-          dataKey="Reprogramación"
-          stroke="#C00000"
           strokeWidth={2}
           dot={false}
           connectNulls
