@@ -13,92 +13,98 @@ export const useAuth = () => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const navigate = useNavigate();
 
+  const checkUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role, has_access')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      if (!profile || !profile.has_access) {
+        return null;
+      }
+
+      return profile.role as UserRole;
+    } catch (err) {
+      console.error('Error in checkUserProfile:', err);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    const getInitialSession = async () => {
+    const setupAuth = async () => {
       try {
+        // Obtener sesión inicial
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session:', session); // Debug log
+        console.log('Initial session check:', session ? 'Session exists' : 'No session');
 
-        if (!session) {
-          console.log('No session found'); // Debug log
-          setLoading(false);
-          return;
+        if (session) {
+          const role = await checkUserProfile(session.user.id);
+          if (role) {
+            setSession(session);
+            setUserRole(role);
+            console.log('User role set:', role);
+          } else {
+            console.log('No valid profile found');
+            await supabase.auth.signOut();
+            setSession(null);
+            setUserRole(null);
+          }
         }
-
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role, has_access')
-          .eq('id', session.user.id)
-          .single();
-
-        console.log('Profile data:', profile); // Debug log
-
-        if (profileError) {
-          console.error('Profile error:', profileError);
-          setLoading(false);
-          return;
-        }
-
-        if (!profile?.has_access) {
-          toast.error('Su cuenta está pendiente de activación');
-          await supabase.auth.signOut();
-          setLoading(false);
-          return;
-        }
-
-        setSession(session);
-        setUserRole(profile.role as UserRole);
-        setLoading(false);
       } catch (error) {
-        console.error('Error in getInitialSession:', error);
+        console.error('Error in setupAuth:', error);
+      } finally {
         setLoading(false);
       }
     };
 
-    getInitialSession();
+    setupAuth();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session); // Debug log
+    // Suscribirse a cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
 
       if (event === 'SIGNED_OUT' || !session) {
         setSession(null);
         setUserRole(null);
-        setLoading(false);
+        if (window.location.pathname !== '/login') {
+          navigate('/login');
+        }
         return;
       }
 
-      try {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role, has_access')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError || !profile?.has_access) {
-          console.error('Profile error or no access:', profileError);
+      if (session) {
+        const role = await checkUserProfile(session.user.id);
+        if (role) {
+          setSession(session);
+          setUserRole(role);
+          console.log('User role updated:', role);
+          
+          if (role === 'superuser' && window.location.pathname === '/login') {
+            navigate('/admin/dashboard');
+          } else if (role === 'user' && window.location.pathname === '/login') {
+            navigate('/dashboard');
+          }
+        } else {
+          console.log('Invalid profile after auth change');
+          await supabase.auth.signOut();
           setSession(null);
           setUserRole(null);
-          setLoading(false);
-          return;
+          navigate('/login');
         }
-
-        setSession(session);
-        setUserRole(profile.role as UserRole);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error in auth state change:', error);
-        setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
-  return {
-    session,
-    loading,
-    userRole,
-  };
+  return { session, loading, userRole };
 };
