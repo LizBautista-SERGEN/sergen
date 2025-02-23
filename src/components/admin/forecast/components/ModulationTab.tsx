@@ -45,7 +45,12 @@ export const ModulationTab = () => {
       if (!dateMap.hasOwnProperty(todayStr)) {
         const { error: insertError } = await supabase
           .from('power_peaks')
-          .insert([{ date: todayStr, is_modulated: false }]);
+          .insert([{
+            date: todayStr,
+            is_modulated: false,
+            peak_time: '18:00:00', // Hora por defecto
+            peak_value: 0 // Valor por defecto
+          }]);
 
         if (insertError) throw insertError;
         dateMap[todayStr] = false;
