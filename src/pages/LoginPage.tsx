@@ -42,11 +42,17 @@ const LoginPage = () => {
         .from('profiles')
         .select('role')
         .eq('id', authData.user?.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Profile error:', profileError);
         toast.error("Error al obtener el perfil");
+        return;
+      }
+
+      if (!profileData) {
+        console.error('No profile found for user');
+        toast.error("No se encontró el perfil del usuario");
         return;
       }
 
