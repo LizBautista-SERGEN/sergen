@@ -1,6 +1,17 @@
 
-import { ResponsiveContainer, LineChart, Line, YAxis, Tooltip, Legend } from 'recharts';
+import { useState } from 'react';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid
+} from 'recharts';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface HistoricalChartProps {
   data: any[];
@@ -9,7 +20,35 @@ interface HistoricalChartProps {
 }
 
 export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartProps) => {
-  const filteredData = data
+  const [opacity, setOpacity] = useState({
+    ejecutado: 1,
+    programado: 1,
+    reprogramacion: 1
+  });
+
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return format(date, 'dd/MM/yyyy HH:mm', { locale: es });
+  };
+
+  const handleMouseEnter = (o: any) => {
+    const { dataKey } = o;
+    setOpacity({
+      ...opacity,
+      [dataKey]: 0.5
+    });
+  };
+
+  const handleMouseLeave = (o: any) => {
+    const { dataKey } = o;
+    setOpacity({
+      ...opacity,
+      [dataKey]: 1
+    });
+  };
+
+  // Filtrar y ordenar los datos
+  const filteredData = [...data]
     .filter(item => {
       if (!startDate || !endDate) return true;
       const itemDate = new Date(item.fecha);
@@ -17,35 +56,53 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
     })
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .map(item => ({
-      fecha: item.fecha,
-      "Ejecutado": item.ejecutado || null,
+      ...item,
+      fecha: formatDate(item.fecha)
     }));
 
   return (
-    <ResponsiveContainer width="100%" height={550}>
+    <ResponsiveContainer width="100%" height={400}>
       <LineChart
         data={filteredData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 25 }}
+        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
       >
-        <YAxis
-          domain={['auto', 'auto']}
-          tickFormatter={(value) => `${value.toLocaleString()}`}
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis
+          dataKey="fecha"
+          angle={-45}
+          textAnchor="end"
+          height={80}
+          interval={Math.ceil(filteredData.length / 15)}
         />
-        <Tooltip
-          labelFormatter={(label) => {
-            const date = new Date(label);
-            return format(date, 'dd/MM/yyyy HH:mm:ss');
-          }}
-          formatter={(value: any) => [`${value?.toLocaleString() || '-'} MW`, '']}
+        <YAxis domain={['auto', 'auto']} />
+        <Tooltip />
+        <Legend
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         />
-        <Legend verticalAlign="top" height={36} />
         <Line
           type="monotone"
-          dataKey="Ejecutado"
-          stroke="#1F497D"
-          strokeWidth={2}
+          dataKey="ejecutado"
+          name="Ejecutado"
+          stroke="#8884d8"
+          strokeOpacity={opacity.ejecutado}
           dot={false}
-          connectNulls
+        />
+        <Line
+          type="monotone"
+          dataKey="demanda_programada"
+          name="Programado"
+          stroke="#82ca9d"
+          strokeOpacity={opacity.programado}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="reprogramacion_diaria"
+          name="Reprogramación"
+          stroke="#ffc658"
+          strokeOpacity={opacity.reprogramacion}
+          dot={false}
         />
       </LineChart>
     </ResponsiveContainer>

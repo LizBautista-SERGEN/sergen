@@ -2,12 +2,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, RefreshCw } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { HistoricalChart } from "./HistoricalChart";
 import { useState } from "react";
 import { ConsoleOutput } from "./ConsoleOutput";
 import { UploadHistoricalData } from "./UploadHistoricalData";
 import { HistoricalDatePicker } from "./components/HistoricalDatePicker";
+import { HistoricalDataTable } from "./components/HistoricalDataTable";
 import { Button } from "@/components/ui/button";
 
 export const HistoricalTab = () => {
@@ -30,6 +32,7 @@ export const HistoricalTab = () => {
         throw error;
       }
 
+      console.log('Datos históricos cargados:', data);
       return data;
     }
   });
@@ -82,13 +85,18 @@ export const HistoricalTab = () => {
 
       <div className="grid grid-cols-1 gap-6">
         {historicalData && historicalData.length > 0 ? (
-          <div className="bg-white p-4 rounded-lg shadow h-[600px]">
-            <HistoricalChart 
-              data={historicalData}
-              startDate={startDate}
-              endDate={endDate}
-            />
-          </div>
+          <>
+            <div className="bg-white p-4 rounded-lg shadow h-[400px]">
+              <HistoricalChart 
+                data={historicalData}
+                startDate={startDate}
+                endDate={endDate}
+              />
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow">
+              <HistoricalDataTable data={historicalData} />
+            </div>
+          </>
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500">

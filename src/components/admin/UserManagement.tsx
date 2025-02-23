@@ -1,15 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ContactInfo } from "@/components/profile/ContactInfo";
-import { ProfileInfo } from "@/components/profile/ProfileInfo";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface User {
   id: string;
@@ -21,82 +16,41 @@ interface User {
 
 export const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user.id) {
-        toast.error('Debes iniciar sesión');
-        return;
-      }
+    // Primero, obtenemos el rol del usuario actual
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user.id) return;
 
-      const { data: currentUserProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
+    const { data: currentUserProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
 
-      if (currentUserProfile?.role !== 'superuser') {
-        toast.error('No tienes permisos para gestionar usuarios');
-        return;
-      }
+    if (profileError || currentUserProfile?.role !== 'superuser') {
+      toast.error('No tienes permisos para ver usuarios');
+      return;
+    }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+    // Ahora hacemos la consulta para obtener todos los usuarios
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUsers(data || []);
-
-    } catch (error) {
+    if (error) {
       console.error('Error fetching users:', error);
       toast.error('Error al cargar usuarios');
+      return;
     }
-  };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Debes iniciar sesión');
-        return;
-      }
-
-      const { data: currentUserProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      if (currentUserProfile?.role !== 'superuser') {
-        toast.error('No tienes permisos para crear usuarios');
-        return;
-      }
-
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newUserEmail,
-        password: newUserPassword,
-        email_confirm: true
-      });
-
-      if (authError) throw authError;
-
-      toast.success('Usuario creado exitosamente');
-      setIsDialogOpen(false);
-      setNewUserEmail("");
-      setNewUserPassword("");
-      fetchUsers();
-    } catch (error: any) {
-      console.error('Error creating user:', error);
-      toast.error(error.message || 'Error al crear usuario');
-    }
+    console.log('Usuarios obtenidos:', data); // Para debugging
+    setUsers(data || []);
   };
 
   const handleToggleAccess = async (userId: string, currentAccess: boolean) => {
@@ -126,69 +80,10 @@ export const UserManagement = () => {
     }
   };
 
-  const handleEditProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      toast.error('Error al cargar perfil del usuario');
-      return;
-    }
-
-    setSelectedUser(data);
-    setIsProfileDialogOpen(true);
-  };
-
-  const handleProfileUpdate = async () => {
-    await fetchUsers();
-    setIsProfileDialogOpen(false);
-    toast.success('Perfil actualizado exitosamente');
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle>Gestión de Usuarios</CardTitle>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Crear Usuario</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Usuario</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Contraseña</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={newUserPassword}
-                  onChange={(e) => setNewUserPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit">Crear Usuario</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
       </CardHeader>
       <CardContent>
         <Table>
@@ -219,49 +114,11 @@ export const UserManagement = () => {
                   >
                     Resetear Contraseña
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleEditProfile(user.id)}
-                  >
-                    Editar Perfil
-                  </Button>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-
-        <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Editar Perfil de Usuario</DialogTitle>
-            </DialogHeader>
-            {selectedUser && (
-              <Tabs defaultValue="informacion" className="w-full">
-                <TabsList className="w-full justify-start border-b mb-8">
-                  <TabsTrigger value="informacion" className="text-lg">
-                    Información
-                  </TabsTrigger>
-                  <TabsTrigger value="contacto" className="text-lg">
-                    Contacto
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="informacion">
-                  <ProfileInfo profile={selectedUser} />
-                </TabsContent>
-
-                <TabsContent value="contacto">
-                  <ContactInfo 
-                    profile={selectedUser} 
-                    onProfileUpdate={handleProfileUpdate}
-                    readOnly={false}
-                  />
-                </TabsContent>
-              </Tabs>
-            )}
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );

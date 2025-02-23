@@ -1,27 +1,30 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth } from "date-fns";
-import { ModulationCalendar } from "./modulation/ModulationCalendar";
-import { ModulationTable } from "./modulation/ModulationTable";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 export const ModulationTab = () => {
   const [modulatedDates, setModulatedDates] = useState<{ [key: string]: boolean }>({});
   const [loading, setLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const fetchModulatedDates = async () => {
     try {
       setLoading(true);
-      const startDate = startOfMonth(new Date());
-      const endDate = endOfMonth(new Date());
+      const startOfMonth = new Date();
+      startOfMonth.setUTCDate(1);
+      startOfMonth.setUTCHours(0, 0, 0, 0);
+
+      const endOfMonth = new Date();
+      endOfMonth.setUTCMonth(endOfMonth.getUTCMonth() + 1, 0);
+      endOfMonth.setUTCHours(23, 59, 59, 999);
 
       const { data, error } = await supabase
         .from('power_peaks')
         .select('date, is_modulated')
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .lte('date', format(endDate, 'yyyy-MM-dd'))
+        .gte('date', startOfMonth.toISOString())
+        .lte('date', endOfMonth.toISOString())
         .order('date', { ascending: true });
 
       if (error) throw error;
@@ -30,27 +33,6 @@ export const ModulationTab = () => {
       data?.forEach(item => {
         dateMap[item.date] = item.is_modulated;
       });
-
-      // Asegurar que todos los días del mes tengan un estado
-      let currentDate = startDate;
-      while (currentDate <= endDate) {
-        const dateStr = format(currentDate, 'yyyy-MM-dd');
-        if (!dateMap.hasOwnProperty(dateStr)) {
-          const { error: insertError } = await supabase
-            .from('power_peaks')
-            .insert([{
-              date: dateStr,
-              is_modulated: false,
-              peak_time: '18:00:00',
-              peak_value: 0
-            }]);
-
-          if (insertError) throw insertError;
-          dateMap[dateStr] = false;
-        }
-        currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
-      }
-
       setModulatedDates(dateMap);
     } catch (error) {
       console.error('Error fetching modulated dates:', error);
@@ -84,27 +66,46 @@ export const ModulationTab = () => {
   useEffect(() => {
     fetchModulatedDates();
     
+    // Actualizar cada 15 minutos
     const interval = setInterval(() => {
       fetchModulatedDates();
-    }, 12 * 60 * 60 * 1000); // Cada 12 horas
+    }, 15 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
 
+  const formatDateUTC = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()}`;
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Gestión de Modulación</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ModulationCalendar 
-          selectedDate={selectedDate}
-          onSelectDate={(date) => date && setSelectedDate(date)}
-          modulatedDates={modulatedDates}
-        />
-        <ModulationTable 
-          modulatedDates={modulatedDates}
-          onModulationChange={handleModulationChange}
-        />
+      <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha</TableHead>
+              <TableHead className="text-center">Estado de Modulación</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Object.entries(modulatedDates).map(([date, isModulated]) => (
+              <TableRow key={date}>
+                <TableCell>{formatDateUTC(date)}</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <Switch
+                      checked={isModulated}
+                      onCheckedChange={(checked) => handleModulationChange(date, checked)}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
