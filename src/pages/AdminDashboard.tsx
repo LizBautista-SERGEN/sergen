@@ -14,22 +14,17 @@ const AdminDashboard = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('Checking auth...'); // Debug log
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          toast.error('Error de sesión');
-          navigate('/login');
-          return;
-        }
-
         if (!session) {
-          console.log('No session found, redirecting to login');
+          console.log('No session found'); // Debug log
+          toast.error('Sesión no encontrada');
           navigate('/login');
           return;
         }
 
-        // Verificar el rol del usuario
+        console.log('Session found, checking profile...'); // Debug log
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
@@ -37,21 +32,21 @@ const AdminDashboard = () => {
           .single();
 
         if (profileError) {
-          console.error('Error fetching profile:', profileError);
+          console.error('Profile error:', profileError); // Debug log
           toast.error('Error al verificar permisos');
           navigate('/login');
           return;
         }
 
         if (profile?.role !== 'superuser') {
-          console.log('User is not superuser, redirecting to dashboard');
+          console.log('Not a superuser:', profile?.role); // Debug log
           toast.error('No tienes permisos para acceder a esta página');
           navigate('/dashboard');
           return;
         }
 
+        console.log('Auth check complete, loading dashboard...'); // Debug log
         setLoading(false);
-
       } catch (error) {
         console.error('Auth check error:', error);
         toast.error('Error de autenticación');

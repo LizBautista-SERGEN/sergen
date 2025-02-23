@@ -16,42 +16,33 @@ export const useAuth = () => {
   useEffect(() => {
     const getInitialSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          setSession(null);
-          setUserRole(null);
-          navigate('/login');
-          return;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial session:', session); // Debug log
 
         if (!session) {
-          navigate('/login');
+          console.log('No session found'); // Debug log
+          setLoading(false);
           return;
         }
 
-        // Verificar el rol del usuario
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role, has_access')
           .eq('id', session.user.id)
           .single();
 
+        console.log('Profile data:', profile); // Debug log
+
         if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          setSession(null);
-          setUserRole(null);
-          navigate('/login');
+          console.error('Profile error:', profileError);
+          setLoading(false);
           return;
         }
 
         if (!profile?.has_access) {
           toast.error('Su cuenta está pendiente de activación');
           await supabase.auth.signOut();
-          setSession(null);
-          setUserRole(null);
-          navigate('/login');
+          setLoading(false);
           return;
         }
 
@@ -68,31 +59,38 @@ export const useAuth = () => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!session) {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session); // Debug log
+
+      if (event === 'SIGNED_OUT' || !session) {
         setSession(null);
         setUserRole(null);
-        navigate('/login');
+        setLoading(false);
         return;
       }
 
-      // Verificar el rol del usuario cuando cambia el estado de autenticación
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, has_access')
-        .eq('id', session.user.id)
-        .single();
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, has_access')
+          .eq('id', session.user.id)
+          .single();
 
-      if (profileError || !profile?.has_access) {
-        setSession(null);
-        setUserRole(null);
-        navigate('/login');
-        return;
+        if (profileError || !profile?.has_access) {
+          console.error('Profile error or no access:', profileError);
+          setSession(null);
+          setUserRole(null);
+          setLoading(false);
+          return;
+        }
+
+        setSession(session);
+        setUserRole(profile.role as UserRole);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error in auth state change:', error);
+        setLoading(false);
       }
-
-      setSession(session);
-      setUserRole(profile.role as UserRole);
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
