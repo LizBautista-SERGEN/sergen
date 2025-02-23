@@ -1,4 +1,3 @@
-
 import { StrictMode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -35,7 +34,7 @@ const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.R
     return <Navigate to="/login" replace />;
   }
 
-  // Si se requiere rol de superuser y el usuario no lo tiene, redirigir
+  // Solo redirigir si el usuario intenta acceder a una ruta que requiere superuser
   if (requiredRole === 'superuser' && userRole !== 'superuser') {
     return <Navigate to="/servicios/control" replace />;
   }
