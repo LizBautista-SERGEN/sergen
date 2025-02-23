@@ -5,10 +5,44 @@ import { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+export type UserRole = 'superuser' | 'user' | null;
+
 export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<UserRole>(null);
   const navigate = useNavigate();
+
+  const checkProfile = async (sessionUser: Session) => {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, has_access')
+        .eq('id', sessionUser.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        toast.error('Error al verificar el perfil');
+        return false;
+      }
+
+      if (!profile?.has_access) {
+        toast.error('Su cuenta está pendiente de activación');
+        await supabase.auth.signOut();
+        setSession(null);
+        setUserRole(null);
+        navigate('/login');
+        return false;
+      }
+
+      setUserRole(profile.role as UserRole);
+      return true;
+    } catch (error) {
+      console.error('Error checking profile:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     const getInitialSession = async () => {
@@ -18,6 +52,7 @@ export const useAuth = () => {
         if (error) {
           console.error('Error getting session:', error);
           setSession(null);
+          setUserRole(null);
           if (window.location.pathname !== '/login') {
             navigate('/login');
           }
@@ -32,27 +67,7 @@ export const useAuth = () => {
         }
 
         setSession(session);
-        
-        // Validar el perfil del usuario
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role, has_access')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          toast.error('Error al verificar el perfil');
-          return;
-        }
-
-        if (!profile?.has_access) {
-          toast.error('Su cuenta está pendiente de activación');
-          await supabase.auth.signOut();
-          setSession(null);
-          navigate('/login');
-          return;
-        }
+        await checkProfile(session);
       } catch (error) {
         console.error('Error in getInitialSession:', error);
       } finally {
@@ -69,6 +84,7 @@ export const useAuth = () => {
       
       if (_event === 'SIGNED_OUT') {
         setSession(null);
+        setUserRole(null);
         if (window.location.pathname !== '/login') {
           navigate('/login');
         }
@@ -79,30 +95,13 @@ export const useAuth = () => {
         setSession(session);
         
         if (session) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, has_access')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-            toast.error('Error al verificar el perfil');
-            return;
-          }
-
-          if (!profile?.has_access) {
-            toast.error('Su cuenta está pendiente de activación');
-            await supabase.auth.signOut();
-            setSession(null);
-            navigate('/login');
-            return;
-          }
-
-          if (profile?.role === 'superuser') {
-            navigate('/admin/dashboard');
-          } else {
-            navigate('/dashboard');
+          const profileValid = await checkProfile(session);
+          if (profileValid) {
+            if (userRole === 'superuser') {
+              navigate('/admin/dashboard');
+            } else {
+              navigate('/dashboard');
+            }
           }
         }
       }
@@ -116,5 +115,6 @@ export const useAuth = () => {
   return {
     session,
     loading,
+    userRole,
   };
 };

@@ -25,7 +25,7 @@ import UserDemo from "./pages/UserDemo";
 import { useAuth } from "./hooks/useAuth";
 
 const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.ReactNode, requiredRole?: string }) => {
-  const { session, loading } = useAuth();
+  const { session, loading, userRole } = useAuth();
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -33,6 +33,11 @@ const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.R
 
   if (!session) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Si se requiere rol de superuser y el usuario no lo tiene, redirigir
+  if (requiredRole === 'superuser' && userRole !== 'superuser') {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
