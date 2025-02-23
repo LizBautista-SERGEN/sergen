@@ -19,7 +19,7 @@ export const useAuth = () => {
         .from('profiles')
         .select('role, has_access')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -31,7 +31,6 @@ export const useAuth = () => {
         return null;
       }
 
-      console.log('Profile found:', profile);
       return profile.role as UserRole;
     } catch (err) {
       console.error('Error in checkUserProfile:', err);

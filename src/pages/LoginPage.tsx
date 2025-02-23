@@ -20,40 +20,40 @@ const LoginPage = () => {
 
   useEffect(() => {
     // Al cargar la página de login, aseguramos que no haya sesión activa
-    supabase.auth.signOut().then(() => {
-      checkSession();
-    });
-  }, []);
-
-  const checkSession = async () => {
-    try {
+    const checkSession = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        if (!error.message.includes('Invalid Refresh Token')) {
-          console.error('Error al verificar sesión:', error);
-          toast.error("Error al verificar la sesión");
-        }
+        console.error('Error al verificar sesión:', error);
         return;
       }
       
       if (session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-        if (profile?.role === 'superuser') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/dashboard');
+          if (profileError) {
+            console.error('Error al obtener perfil:', profileError);
+            return;
+          }
+
+          if (profile?.role === 'superuser') {
+            navigate('/admin/dashboard');
+          } else {
+            navigate('/dashboard');
+          }
+        } catch (err) {
+          console.error('Error inesperado:', err);
         }
       }
-    } catch (error) {
-      console.error('Error inesperado al verificar sesión:', error);
-    }
-  };
+    };
+
+    checkSession();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,9 +68,6 @@ const LoginPage = () => {
         return;
       }
 
-      // Aseguramos que no haya sesión activa antes de intentar iniciar sesión
-      await supabase.auth.signOut();
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
@@ -83,7 +80,6 @@ const LoginPage = () => {
         } else {
           toast.error("Error al iniciar sesión");
         }
-        setLoading(false);
         return;
       }
 
@@ -92,19 +88,17 @@ const LoginPage = () => {
           .from('profiles')
           .select('role, has_access')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
-          console.error('Error fetching profile:', profileError);
+          console.error('Error al obtener perfil:', profileError);
           toast.error("Error al cargar el perfil");
-          setLoading(false);
           return;
         }
 
         if (!profile?.has_access) {
           toast.error("Su cuenta está pendiente de activación");
           await supabase.auth.signOut();
-          setLoading(false);
           return;
         }
 
@@ -135,22 +129,20 @@ const LoginPage = () => {
       
       if (!trimmedEmail || !password || !confirmPassword || !businessName || !ruc) {
         toast.error("Por favor complete todos los campos");
-        setLoading(false);
         return;
       }
 
       if (password !== confirmPassword) {
         toast.error("Las contraseñas no coinciden");
-        setLoading(false);
         return;
       }
 
       if (password.length < 6) {
         toast.error("La contraseña debe tener al menos 6 caracteres");
-        setLoading(false);
         return;
       }
 
+      // Primero intentamos crear el usuario
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
@@ -166,8 +158,6 @@ const LoginPage = () => {
         console.error('Signup error:', error);
         if (error.message.includes('already registered')) {
           toast.error("Este correo ya está registrado");
-        } else if (error.message.includes('Signups not allowed')) {
-          toast.error("El registro de usuarios está deshabilitado temporalmente. Por favor, contacte al administrador.");
         } else {
           toast.error("Error al crear la cuenta");
         }
