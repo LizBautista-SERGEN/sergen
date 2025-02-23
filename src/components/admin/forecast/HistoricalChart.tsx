@@ -11,7 +11,6 @@ import {
   CartesianGrid
 } from 'recharts';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 interface HistoricalChartProps {
   data: any[];
@@ -28,7 +27,8 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
-    return format(date, 'dd/MM/yyyy HH:mm', { locale: es });
+    // Formateamos la fecha en UTC
+    return format(date, 'dd/MM/yyyy HH:mm', { timeZone: 'UTC' });
   };
 
   const handleMouseEnter = (o: any) => {
