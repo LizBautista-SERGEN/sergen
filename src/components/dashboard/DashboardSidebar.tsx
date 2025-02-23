@@ -1,5 +1,5 @@
 
-import { User, Plug, Book, FileText } from "lucide-react";
+import { User, Plug } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -15,16 +15,6 @@ const links = [
     label: "Gestión Energética", 
     href: "/servicios/control",
     icon: <Plug className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
-  },
-  { 
-    label: "Cápsulas", 
-    href: "/formativa",
-    icon: <Book className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
-  },
-  { 
-    label: "Informes", 
-    href: "/informes",
-    icon: <FileText className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   }
 ];
 
