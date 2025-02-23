@@ -34,13 +34,15 @@ export const HistoricalDataTable = ({ data }: HistoricalDataTableProps) => {
   const formatDate = (isoString: string): string => {
     if (!isoString) return '';
     const date = new Date(isoString);
-    return date.toLocaleDateString('es-PE', {
+    // Formateamos la fecha en UTC
+    return new Date(isoString).toLocaleString('es-PE', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
-    });
+      minute: '2-digit',
+      timeZone: 'UTC'
+    }) + ' UTC';
   };
 
   // Ordenamos los datos por fecha descendente (más recientes primero)
@@ -109,7 +111,7 @@ export const HistoricalDataTable = ({ data }: HistoricalDataTableProps) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Fecha</TableHead>
+              <TableHead>Fecha (UTC)</TableHead>
               <TableHead>Ejecutado (MW)</TableHead>
               <TableHead>Error (%)</TableHead>
               <TableHead>Programado (MW)</TableHead>
