@@ -12,24 +12,48 @@ export const useAuth = () => {
 
   useEffect(() => {
     // Obtener la sesión actual
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        if (error.message.includes('Invalid Refresh Token')) {
-          console.log('Token de actualización inválido, redirigiendo al login');
-          setSession(null);
-          setLoading(false);
-          // Solo redirigimos al login si no estamos ya en la página de login
-          if (window.location.pathname !== '/login') {
-            navigate('/login');
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          if (error.message.includes('Invalid Refresh Token')) {
+            console.log('Token de actualización inválido');
+            setSession(null);
+            // Solo redirigimos al login si no estamos ya en la página de login
+            if (window.location.pathname !== '/login') {
+              navigate('/login');
+            }
+          } else {
+            console.error('Error getting session:', error);
+            toast.error('Error al verificar la sesión');
           }
-          return;
+        } else {
+          setSession(session);
+          if (session) {
+            // Validar el perfil del usuario
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role, has_access')
+              .eq('id', session.user.id)
+              .single();
+
+            if (!profile?.has_access) {
+              toast.error('Su cuenta está pendiente de activación');
+              await supabase.auth.signOut();
+              setSession(null);
+              navigate('/login');
+            }
+          }
         }
-        console.error('Error getting session:', error);
-        toast.error('Error al verificar la sesión');
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
+      } finally {
+        setLoading(false);
       }
-      setSession(session);
-      setLoading(false);
-    });
+    };
+
+    getInitialSession();
 
     // Escuchar cambios en la autenticación
     const {
@@ -52,6 +76,14 @@ export const useAuth = () => {
             .select('role, has_access')
             .eq('id', session.user.id)
             .single();
+
+          if (!profile?.has_access) {
+            toast.error('Su cuenta está pendiente de activación');
+            await supabase.auth.signOut();
+            setSession(null);
+            navigate('/login');
+            return;
+          }
 
           if (profile?.role === 'superuser') {
             navigate('/admin/dashboard');

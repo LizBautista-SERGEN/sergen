@@ -1,9 +1,10 @@
+
 import { StrictMode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -21,18 +22,32 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ProfilePage from "./pages/ProfilePage";
 import InformesPage from "./pages/InformesPage";
 import UserDemo from "./pages/UserDemo";
+import { useAuth } from "./hooks/useAuth";
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 1,
-    },
-  },
-});
+const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.ReactNode, requiredRole?: string }) => {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return <div>Cargando...</div>;
+  }
+
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 function App() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000,
+        retry: 1,
+      },
+    },
+  });
+
   return (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -52,9 +67,30 @@ function App() {
                   <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
                   <Route path="/contacto" element={<ContactPage />} />
                   <Route path="/login" element={<LoginPage />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                  <Route path="/perfil" element={<ProfilePage />} />
-                  <Route path="/informes" element={<InformesPage />} />
+                  <Route 
+                    path="/admin/dashboard" 
+                    element={
+                      <ProtectedRoute requiredRole="superuser">
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/perfil" 
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/informes" 
+                    element={
+                      <ProtectedRoute>
+                        <InformesPage />
+                      </ProtectedRoute>
+                    } 
+                  />
                   <Route path="/demo" element={<UserDemo />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
