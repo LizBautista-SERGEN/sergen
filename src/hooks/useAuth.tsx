@@ -13,34 +13,29 @@ export const useAuth = () => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const navigate = useNavigate();
 
-  const checkProfile = async (sessionUser: Session) => {
+  const checkProfile = async (session: Session) => {
     try {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, has_access')
-        .eq('id', sessionUser.user.id)
+        .eq('id', session.user.id)
         .single();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
-        toast.error('Error al verificar el perfil');
-        return false;
+        toast.error('Error al cargar el perfil');
+        return null;
       }
 
       if (!profile?.has_access) {
         toast.error('Su cuenta está pendiente de activación');
-        await supabase.auth.signOut();
-        setSession(null);
-        setUserRole(null);
-        navigate('/login');
-        return false;
+        return null;
       }
 
-      setUserRole(profile.role as UserRole);
-      return true;
+      return profile.role as UserRole;
     } catch (error) {
       console.error('Error checking profile:', error);
-      return false;
+      return null;
     }
   };
 
@@ -53,24 +48,36 @@ export const useAuth = () => {
           console.error('Error getting session:', error);
           setSession(null);
           setUserRole(null);
-          if (window.location.pathname !== '/login') {
-            navigate('/login');
-          }
+          navigate('/login');
           return;
         }
 
         if (!session) {
-          if (window.location.pathname !== '/login') {
-            navigate('/login');
-          }
+          navigate('/login');
+          return;
+        }
+
+        const role = await checkProfile(session);
+        if (!role) {
+          await supabase.auth.signOut();
+          setSession(null);
+          setUserRole(null);
+          navigate('/login');
           return;
         }
 
         setSession(session);
-        await checkProfile(session);
+        setUserRole(role);
+        setLoading(false);
+
+        // Redirigir según el rol
+        if (role === 'superuser' && window.location.pathname === '/login') {
+          navigate('/admin/dashboard');
+        } else if (role === 'user' && window.location.pathname === '/login') {
+          navigate('/dashboard');
+        }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
-      } finally {
         setLoading(false);
       }
     };
@@ -85,24 +92,27 @@ export const useAuth = () => {
       if (_event === 'SIGNED_OUT') {
         setSession(null);
         setUserRole(null);
-        if (window.location.pathname !== '/login') {
-          navigate('/login');
-        }
+        navigate('/login');
         return;
       }
 
-      if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
+      if (_event === 'SIGNED_IN' && session) {
+        const role = await checkProfile(session);
+        if (!role) {
+          await supabase.auth.signOut();
+          setSession(null);
+          setUserRole(null);
+          navigate('/login');
+          return;
+        }
+
         setSession(session);
-        
-        if (session) {
-          const profileValid = await checkProfile(session);
-          if (profileValid) {
-            if (userRole === 'superuser') {
-              navigate('/admin/dashboard');
-            } else {
-              navigate('/dashboard');
-            }
-          }
+        setUserRole(role);
+
+        if (role === 'superuser') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
         }
       }
       

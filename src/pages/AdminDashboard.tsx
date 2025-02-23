@@ -18,6 +18,7 @@ const AdminDashboard = () => {
         
         if (sessionError) {
           console.error('Session error:', sessionError);
+          toast.error('Error de sesión');
           navigate('/login');
           return;
         }
@@ -72,15 +73,16 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6">Panel de Administración</h1>
         <Tabs defaultValue="users">
           <TabsList>
             <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
           </TabsList>
-          <TabsContent value="users">
+          <TabsContent value="users" className="mt-6">
             <UserManagement />
           </TabsContent>
-          <TabsContent value="forecast">
+          <TabsContent value="forecast" className="mt-6">
             <ForecastPage />
           </TabsContent>
         </Tabs>
