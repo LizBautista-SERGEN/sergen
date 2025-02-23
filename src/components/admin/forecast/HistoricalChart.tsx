@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -10,7 +9,6 @@ import {
   Legend,
   CartesianGrid
 } from 'recharts';
-import { format, parseISO } from 'date-fns';
 
 interface HistoricalChartProps {
   data: any[];
@@ -19,33 +17,6 @@ interface HistoricalChartProps {
 }
 
 export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartProps) => {
-  const [opacity, setOpacity] = useState({
-    ejecutado: 1,
-    programado: 1,
-    reprogramacion: 1
-  });
-
-  const formatDate = (timestamp: string) => {
-    const date = parseISO(timestamp);
-    return format(date, 'dd/MM/yyyy HH:mm');
-  };
-
-  const handleMouseEnter = (o: any) => {
-    const { dataKey } = o;
-    setOpacity({
-      ...opacity,
-      [dataKey]: 0.5
-    });
-  };
-
-  const handleMouseLeave = (o: any) => {
-    const { dataKey } = o;
-    setOpacity({
-      ...opacity,
-      [dataKey]: 1
-    });
-  };
-
   // Filtrar y ordenar los datos
   const filteredData = [...data]
     .filter(item => {
@@ -55,58 +26,70 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
     })
     .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
     .map(item => ({
-      ...item,
-      fecha: formatDate(item.fecha)
+      fecha: item.fecha,
+      "Ejecutado": item.ejecutado || null,
+      "Programado": item.demanda_programada || null,
+      "Reprogramación": item.reprogramacion_diaria || null,
     }));
 
   return (
     <ResponsiveContainer width="100%" height={550}>
       <LineChart
         data={filteredData}
-        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+        margin={{ top: 20, right: 30, left: 20, bottom: 25 }}
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis
           dataKey="fecha"
+          tickFormatter={(value) => {
+            const date = new Date(value);
+            return `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')} ${date.getUTCHours().toString().padStart(2, '0')}:${date.getUTCMinutes().toString().padStart(2, '0')}`;
+          }}
           angle={-45}
           textAnchor="end"
           height={80}
           interval={Math.ceil(filteredData.length / 15)}
         />
-        <YAxis 
-          domain={['auto', 'auto']}
-          label={{ value: 'Potencia (MW)', angle: -90, position: 'insideLeft' }}
+        <YAxis
+          domain={[5000, 8500]}
+          tickFormatter={(value) => `${value.toLocaleString()}`}
         />
-        <Tooltip />
-        <Legend
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          verticalAlign="top"
-          height={36}
+        <Tooltip
+          labelFormatter={(label) => {
+            const date = new Date(label);
+            const day = date.getUTCDate().toString().padStart(2, '0');
+            const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+            const year = date.getUTCFullYear();
+            const hours = date.getUTCHours().toString().padStart(2, '0');
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes} UTC`;
+          }}
+          formatter={(value: any) => [`${value?.toLocaleString() || '-'} MW`, '']}
+        />
+        <Legend verticalAlign="top" height={36} />
+        <Line
+          type="monotone"
+          dataKey="Ejecutado"
+          stroke="#1F497D"
+          strokeWidth={2}
+          dot={false}
+          connectNulls
         />
         <Line
           type="monotone"
-          dataKey="ejecutado"
-          name="Ejecutado"
-          stroke="#8884d8"
-          strokeOpacity={opacity.ejecutado}
+          dataKey="Programado"
+          stroke="#F97316"
+          strokeWidth={2}
           dot={false}
+          connectNulls
         />
         <Line
           type="monotone"
-          dataKey="demanda_programada"
-          name="Programado"
-          stroke="#82ca9d"
-          strokeOpacity={opacity.programado}
+          dataKey="Reprogramación"
+          stroke="#C00000"
+          strokeWidth={2}
           dot={false}
-        />
-        <Line
-          type="monotone"
-          dataKey="reprogramacion_diaria"
-          name="Reprogramación"
-          stroke="#ffc658"
-          strokeOpacity={opacity.reprogramacion}
-          dot={false}
+          connectNulls
         />
       </LineChart>
     </ResponsiveContainer>
