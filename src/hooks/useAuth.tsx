@@ -11,40 +11,47 @@ export const useAuth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Obtener la sesión actual
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          if (error.message.includes('Invalid Refresh Token')) {
-            console.log('Token de actualización inválido');
-            setSession(null);
-            // Solo redirigimos al login si no estamos ya en la página de login
-            if (window.location.pathname !== '/login') {
-              navigate('/login');
-            }
-          } else {
-            console.error('Error getting session:', error);
-            toast.error('Error al verificar la sesión');
+          console.error('Error getting session:', error);
+          setSession(null);
+          if (window.location.pathname !== '/login') {
+            navigate('/login');
           }
-        } else {
-          setSession(session);
-          if (session) {
-            // Validar el perfil del usuario
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('role, has_access')
-              .eq('id', session.user.id)
-              .single();
+          return;
+        }
 
-            if (!profile?.has_access) {
-              toast.error('Su cuenta está pendiente de activación');
-              await supabase.auth.signOut();
-              setSession(null);
-              navigate('/login');
-            }
+        if (!session) {
+          if (window.location.pathname !== '/login') {
+            navigate('/login');
           }
+          return;
+        }
+
+        setSession(session);
+        
+        // Validar el perfil del usuario
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, has_access')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          toast.error('Error al verificar el perfil');
+          return;
+        }
+
+        if (!profile?.has_access) {
+          toast.error('Su cuenta está pendiente de activación');
+          await supabase.auth.signOut();
+          setSession(null);
+          navigate('/login');
+          return;
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
@@ -55,7 +62,6 @@ export const useAuth = () => {
 
     getInitialSession();
 
-    // Escuchar cambios en la autenticación
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -63,19 +69,27 @@ export const useAuth = () => {
       
       if (_event === 'SIGNED_OUT') {
         setSession(null);
-        // Solo redirigimos al login si no estamos ya en la página de login
         if (window.location.pathname !== '/login') {
           navigate('/login');
         }
-      } else if (_event === 'SIGNED_IN') {
+        return;
+      }
+
+      if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
         setSession(session);
-        // Validamos el perfil del usuario
+        
         if (session) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role, has_access')
             .eq('id', session.user.id)
             .single();
+
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+            toast.error('Error al verificar el perfil');
+            return;
+          }
 
           if (!profile?.has_access) {
             toast.error('Su cuenta está pendiente de activación');
@@ -91,8 +105,6 @@ export const useAuth = () => {
             navigate('/dashboard');
           }
         }
-      } else if (_event === 'TOKEN_REFRESHED') {
-        setSession(session);
       }
       
       setLoading(false);
