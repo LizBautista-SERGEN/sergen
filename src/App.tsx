@@ -1,3 +1,4 @@
+
 import { StrictMode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -17,14 +18,13 @@ import ServiceControl from "./pages/ServiceControl";
 import ServiceContractual from "./pages/ServiceContractual";
 import ServiceEfficiency from "./pages/ServiceEfficiency";
 import ServiceDemanda from "./pages/ServiceDemanda";
-import AdminDashboard from "./pages/AdminDashboard";
 import ProfilePage from "./pages/ProfilePage";
 import InformesPage from "./pages/InformesPage";
 import UserDemo from "./pages/UserDemo";
 import { useAuth } from "./hooks/useAuth";
 
-const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.ReactNode, requiredRole?: string }) => {
-  const { session, loading, userRole } = useAuth();
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { session, loading } = useAuth();
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -32,11 +32,6 @@ const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.R
 
   if (!session) {
     return <Navigate to="/login" replace />;
-  }
-
-  // Solo redirigir si el usuario intenta acceder a una ruta que requiere superuser
-  if (requiredRole === 'superuser' && userRole !== 'superuser') {
-    return <Navigate to="/servicios/control" replace />;
   }
 
   return <>{children}</>;
@@ -71,14 +66,6 @@ function App() {
                   <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
                   <Route path="/contacto" element={<ContactPage />} />
                   <Route path="/login" element={<LoginPage />} />
-                  <Route 
-                    path="/admin/dashboard" 
-                    element={
-                      <ProtectedRoute requiredRole="superuser">
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    } 
-                  />
                   <Route 
                     path="/perfil" 
                     element={

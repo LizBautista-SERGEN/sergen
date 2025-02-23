@@ -26,44 +26,19 @@ const LoginPage = () => {
         return;
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
 
-      if (authError) {
-        console.error('Login error:', authError);
+      if (error) {
+        console.error('Login error:', error);
         toast.error("Error al iniciar sesión");
         return;
       }
 
-      // Obtener el rol del usuario
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', authData.user?.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Profile error:', profileError);
-        toast.error("Error al obtener el perfil");
-        return;
-      }
-
-      if (!profileData) {
-        console.error('No profile found for user');
-        toast.error("No se encontró el perfil del usuario");
-        return;
-      }
-
       toast.success("Inicio de sesión exitoso");
-      
-      // Redirigir según el rol
-      if (profileData.role === 'superuser') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/servicios/control');
-      }
+      navigate('/servicios/control');
       
     } catch (error) {
       console.error('Auth error:', error);
