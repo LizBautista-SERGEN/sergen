@@ -1,12 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { format, isSameDay, isAfter, isFuture, isPast, startOfMonth, endOfMonth, isBefore } from "date-fns";
-import { es } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format, startOfMonth, endOfMonth } from "date-fns";
+import { ModulationCalendar } from "./modulation/ModulationCalendar";
+import { ModulationTable } from "./modulation/ModulationTable";
 
 export const ModulationTab = () => {
   const [modulatedDates, setModulatedDates] = useState<{ [key: string]: boolean }>({});
@@ -33,6 +31,7 @@ export const ModulationTab = () => {
         dateMap[item.date] = item.is_modulated;
       });
 
+      // Asegurar que todos los días del mes tengan un estado
       let currentDate = startDate;
       while (currentDate <= endDate) {
         const dateStr = format(currentDate, 'yyyy-MM-dd');
@@ -87,107 +86,25 @@ export const ModulationTab = () => {
     
     const interval = setInterval(() => {
       fetchModulatedDates();
-    }, 12 * 60 * 60 * 1000);
+    }, 12 * 60 * 60 * 1000); // Cada 12 horas
 
     return () => clearInterval(interval);
   }, []);
-
-  const formatDateUTC = (dateString: string) => {
-    const date = new Date(dateString);
-    return `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCFullYear()}`;
-  };
-
-  const isDateModulated = (date: Date): boolean => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return modulatedDates[dateStr] || false;
-  };
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Gestión de Modulación</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Calendario de Modulación</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              className="rounded-md border"
-              locale={es}
-              fixedWeeks
-              modifiers={{
-                modulated: (date) => isDateModulated(date),
-                notModulated: (date) => !isDateModulated(date),
-                current: (date) => isSameDay(date, new Date())
-              }}
-              modifiersStyles={{
-                modulated: { 
-                  color: "#C00000",
-                  backgroundColor: "transparent"
-                },
-                notModulated: { 
-                  color: "#34D399",
-                  backgroundColor: "transparent"
-                },
-                current: {
-                  fontWeight: "bold",
-                  border: "2px solid #FEC6A1",
-                  backgroundColor: "transparent"
-                }
-              }}
-            />
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="text-[#C00000]">●</div>
-                <span className="text-sm">Con modulación</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-[#34D399]">●</div>
-                <span className="text-sm">Sin modulación</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Tabla de Modulación</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead className="text-center">Estado de Modulación</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Object.entries(modulatedDates)
-                    .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
-                    .map(([date, isModulated]) => (
-                      <TableRow key={date}>
-                        <TableCell>{formatDateUTC(date)}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex justify-center">
-                            <Switch
-                              checked={isModulated}
-                              onCheckedChange={(checked) => handleModulationChange(date, checked)}
-                              disabled={isFuture(new Date(date))}
-                            />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <ModulationCalendar 
+          selectedDate={selectedDate}
+          onSelectDate={(date) => date && setSelectedDate(date)}
+          modulatedDates={modulatedDates}
+        />
+        <ModulationTable 
+          modulatedDates={modulatedDates}
+          onModulationChange={handleModulationChange}
+        />
       </div>
     </div>
   );
