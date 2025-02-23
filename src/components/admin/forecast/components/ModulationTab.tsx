@@ -16,19 +16,14 @@ export const ModulationTab = () => {
   const fetchModulatedDates = async () => {
     try {
       setLoading(true);
-      const startOfMonth = new Date();
-      startOfMonth.setUTCDate(1);
-      startOfMonth.setUTCHours(0, 0, 0, 0);
-
-      const endOfMonth = new Date();
-      endOfMonth.setUTCMonth(endOfMonth.getUTCMonth() + 1, 0);
-      endOfMonth.setUTCHours(23, 59, 59, 999);
+      const startDate = startOfMonth(new Date());
+      const endDate = endOfMonth(new Date());
 
       const { data, error } = await supabase
         .from('power_peaks')
         .select('date, is_modulated')
-        .gte('date', startOfMonth.toISOString())
-        .lte('date', endOfMonth.toISOString())
+        .gte('date', format(startDate, 'yyyy-MM-dd'))
+        .lte('date', format(endDate, 'yyyy-MM-dd'))
         .order('date', { ascending: true });
 
       if (error) throw error;
@@ -38,20 +33,23 @@ export const ModulationTab = () => {
         dateMap[item.date] = item.is_modulated;
       });
 
-      const today = new Date();
-      const todayStr = format(today, 'yyyy-MM-dd');
-      if (!dateMap.hasOwnProperty(todayStr)) {
-        const { error: insertError } = await supabase
-          .from('power_peaks')
-          .insert([{
-            date: todayStr,
-            is_modulated: false,
-            peak_time: '18:00:00',
-            peak_value: 0
-          }]);
+      let currentDate = startDate;
+      while (currentDate <= endDate) {
+        const dateStr = format(currentDate, 'yyyy-MM-dd');
+        if (!dateMap.hasOwnProperty(dateStr)) {
+          const { error: insertError } = await supabase
+            .from('power_peaks')
+            .insert([{
+              date: dateStr,
+              is_modulated: false,
+              peak_time: '18:00:00',
+              peak_value: 0
+            }]);
 
-        if (insertError) throw insertError;
-        dateMap[todayStr] = false;
+          if (insertError) throw insertError;
+          dateMap[dateStr] = false;
+        }
+        currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
       }
 
       setModulatedDates(dateMap);
@@ -120,14 +118,13 @@ export const ModulationTab = () => {
               onSelect={(date) => date && setSelectedDate(date)}
               className="rounded-md border"
               locale={es}
+              fixedWeeks
               modifiers={{
-                future: (date) => isFuture(date),
-                modulated: (date) => !isFuture(date) && isDateModulated(date),
-                notModulated: (date) => !isFuture(date) && !isDateModulated(date),
+                modulated: (date) => isDateModulated(date),
+                notModulated: (date) => !isDateModulated(date),
                 current: (date) => isSameDay(date, new Date())
               }}
               modifiersStyles={{
-                future: { color: "#8E9196", backgroundColor: "transparent" },
                 modulated: { 
                   color: "#C00000",
                   backgroundColor: "transparent"
@@ -151,10 +148,6 @@ export const ModulationTab = () => {
               <div className="flex items-center gap-2">
                 <div className="text-[#34D399]">●</div>
                 <span className="text-sm">Sin modulación</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-[#8E9196]">●</div>
-                <span className="text-sm">Días futuros</span>
               </div>
             </div>
           </CardContent>

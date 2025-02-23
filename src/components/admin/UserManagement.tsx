@@ -80,26 +80,13 @@ export const UserManagement = () => {
         return;
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUserEmail,
         password: newUserPassword,
-        options: {
-          data: {
-            role: 'user'
-          }
-        }
+        email_confirm: true
       });
 
       if (authError) throw authError;
-
-      if (authData?.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ has_access: true })
-          .eq('id', authData.user.id);
-
-        if (profileError) throw profileError;
-      }
 
       toast.success('Usuario creado exitosamente');
       setIsDialogOpen(false);

@@ -1,12 +1,6 @@
 
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  YAxis,
-  Tooltip,
-  Legend
-} from 'recharts';
+import { ResponsiveContainer, LineChart, Line, YAxis, Tooltip, Legend } from 'recharts';
+import { format } from 'date-fns';
 
 interface HistoricalChartProps {
   data: any[];
@@ -15,7 +9,7 @@ interface HistoricalChartProps {
 }
 
 export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartProps) => {
-  const filteredData = [...data]
+  const filteredData = data
     .filter(item => {
       if (!startDate || !endDate) return true;
       const itemDate = new Date(item.fecha);
@@ -34,18 +28,13 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
         margin={{ top: 20, right: 30, left: 20, bottom: 25 }}
       >
         <YAxis
-          domain={[5000, 8500]}
+          domain={['auto', 'auto']}
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
           labelFormatter={(label) => {
             const date = new Date(label);
-            const day = date.getUTCDate().toString().padStart(2, '0');
-            const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-            const year = date.getUTCFullYear();
-            const hours = date.getUTCHours().toString().padStart(2, '0');
-            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-            return `${day}/${month}/${year} ${hours}:${minutes} UTC`;
+            return format(date, 'dd/MM/yyyy HH:mm:ss');
           }}
           formatter={(value: any) => [`${value?.toLocaleString() || '-'} MW`, '']}
         />
