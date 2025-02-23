@@ -1,6 +1,5 @@
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { UserManagement } from "@/components/admin/UserManagement";
@@ -9,37 +8,24 @@ import { ForecastPage } from "@/components/admin/forecast/ForecastPage";
 import { useAuth } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { userRole, session } = useAuth();
+  const { userRole, loading, session } = useAuth();
 
   useEffect(() => {
-    const verifyAccess = async () => {
-      try {
-        if (!session) {
-          console.log('No session found, redirecting to login');
-          navigate('/login');
-          return;
-        }
-
-        if (userRole !== 'superuser') {
-          console.log('Not a superuser, redirecting to dashboard');
-          toast.error('No tienes permisos para acceder a esta página');
-          navigate('/dashboard');
-          return;
-        }
-
-        console.log('Access verified, user is superuser');
-        setLoading(false);
-      } catch (error) {
-        console.error('Access verification error:', error);
-        toast.error('Error al verificar acceso');
+    if (!loading) {
+      if (!session) {
+        console.log('No session, redirecting to login');
         navigate('/login');
+        return;
       }
-    };
 
-    verifyAccess();
-  }, [session, userRole, navigate]);
+      if (userRole !== 'superuser') {
+        console.log('Not a superuser, redirecting to dashboard');
+        toast.error('No tienes permisos para acceder a esta página');
+        navigate('/dashboard');
+      }
+    }
+  }, [loading, session, userRole, navigate]);
 
   if (loading) {
     return (
@@ -49,6 +35,10 @@ const AdminDashboard = () => {
         </div>
       </div>
     );
+  }
+
+  if (!session || userRole !== 'superuser') {
+    return null;
   }
 
   return (

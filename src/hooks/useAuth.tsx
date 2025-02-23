@@ -19,17 +19,19 @@ export const useAuth = () => {
         .from('profiles')
         .select('role, has_access')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
-        return null;
+        throw error;
       }
 
       if (!profile || !profile.has_access) {
+        console.log('No profile or access denied');
         return null;
       }
 
+      console.log('Profile found:', profile);
       return profile.role as UserRole;
     } catch (err) {
       console.error('Error in checkUserProfile:', err);
@@ -37,74 +39,51 @@ export const useAuth = () => {
     }
   };
 
-  useEffect(() => {
-    const setupAuth = async () => {
-      try {
-        // Obtener sesión inicial
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session check:', session ? 'Session exists' : 'No session');
+  const handleAuthChange = async (session: Session | null) => {
+    if (!session) {
+      console.log('No session, clearing state');
+      setSession(null);
+      setUserRole(null);
+      return;
+    }
 
-        if (session) {
-          const role = await checkUserProfile(session.user.id);
-          if (role) {
-            setSession(session);
-            setUserRole(role);
-            console.log('User role set:', role);
-          } else {
-            console.log('No valid profile found');
-            await supabase.auth.signOut();
-            setSession(null);
-            setUserRole(null);
-          }
-        }
-      } catch (error) {
-        console.error('Error in setupAuth:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    setupAuth();
-
-    // Suscribirse a cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
-
-      if (event === 'SIGNED_OUT' || !session) {
+    try {
+      const role = await checkUserProfile(session.user.id);
+      if (role) {
+        console.log('Setting session and role:', role);
+        setSession(session);
+        setUserRole(role);
+      } else {
+        console.log('No valid role found, signing out');
+        await supabase.auth.signOut();
         setSession(null);
         setUserRole(null);
-        if (window.location.pathname !== '/login') {
-          navigate('/login');
-        }
-        return;
+        toast.error('No tienes acceso a esta aplicación');
       }
+    } catch (error) {
+      console.error('Error handling auth change:', error);
+      toast.error('Error al verificar el perfil');
+    }
+  };
 
-      if (session) {
-        const role = await checkUserProfile(session.user.id);
-        if (role) {
-          setSession(session);
-          setUserRole(role);
-          console.log('User role updated:', role);
-          
-          if (role === 'superuser' && window.location.pathname === '/login') {
-            navigate('/admin/dashboard');
-          } else if (role === 'user' && window.location.pathname === '/login') {
-            navigate('/dashboard');
-          }
-        } else {
-          console.log('Invalid profile after auth change');
-          await supabase.auth.signOut();
-          setSession(null);
-          setUserRole(null);
-          navigate('/login');
-        }
-      }
+  useEffect(() => {
+    // Verificar sesión inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session ? 'Session exists' : 'No session');
+      handleAuthChange(session);
+      setLoading(false);
+    });
+
+    // Suscribirse a cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed, session:', session ? 'exists' : 'none');
+      handleAuthChange(session);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   return { session, loading, userRole };
 };
