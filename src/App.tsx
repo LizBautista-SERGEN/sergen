@@ -37,7 +37,7 @@ const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.R
 
   // Si se requiere rol de superuser y el usuario no lo tiene, redirigir
   if (requiredRole === 'superuser' && userRole !== 'superuser') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/servicios/control" replace />;
   }
 
   return <>{children}</>;

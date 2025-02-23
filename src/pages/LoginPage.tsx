@@ -38,7 +38,7 @@ const LoginPage = () => {
       }
 
       toast.success("Inicio de sesión exitoso");
-      navigate('/dashboard');
+      navigate('/servicios/control');
       
     } catch (error) {
       console.error('Auth error:', error);
