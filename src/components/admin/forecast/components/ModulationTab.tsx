@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
@@ -39,7 +38,6 @@ export const ModulationTab = () => {
         dateMap[item.date] = item.is_modulated;
       });
 
-      // Asegurarse de que el día actual esté en la tabla
       const today = new Date();
       const todayStr = format(today, 'yyyy-MM-dd');
       if (!dateMap.hasOwnProperty(todayStr)) {
@@ -48,8 +46,8 @@ export const ModulationTab = () => {
           .insert([{
             date: todayStr,
             is_modulated: false,
-            peak_time: '18:00:00', // Hora por defecto
-            peak_value: 0 // Valor por defecto
+            peak_time: '18:00:00',
+            peak_value: 0
           }]);
 
         if (insertError) throw insertError;
@@ -89,10 +87,9 @@ export const ModulationTab = () => {
   useEffect(() => {
     fetchModulatedDates();
     
-    // Actualizar cada 15 minutos
     const interval = setInterval(() => {
       fetchModulatedDates();
-    }, 15 * 60 * 1000);
+    }, 12 * 60 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -130,34 +127,33 @@ export const ModulationTab = () => {
                 current: (date) => isSameDay(date, new Date())
               }}
               modifiersStyles={{
-                future: { color: "#8E9196" },
+                future: { color: "#8E9196", backgroundColor: "transparent" },
                 modulated: { 
-                  color: "white",
-                  backgroundColor: "#C00000"
+                  color: "#C00000",
+                  backgroundColor: "transparent"
                 },
                 notModulated: { 
-                  color: "white",
-                  backgroundColor: "#34D399"
+                  color: "#34D399",
+                  backgroundColor: "transparent"
                 },
                 current: {
                   fontWeight: "bold",
-                  border: "2px solid #FEC6A1"
+                  border: "2px solid #FEC6A1",
+                  backgroundColor: "transparent"
                 }
               }}
-              fromDate={startOfMonth(new Date())}
-              toDate={endOfMonth(new Date())}
             />
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#C00000]"></div>
+                <div className="text-[#C00000]">●</div>
                 <span className="text-sm">Con modulación</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#34D399]"></div>
+                <div className="text-[#34D399]">●</div>
                 <span className="text-sm">Sin modulación</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#8E9196]"></div>
+                <div className="text-[#8E9196]">●</div>
                 <span className="text-sm">Días futuros</span>
               </div>
             </div>

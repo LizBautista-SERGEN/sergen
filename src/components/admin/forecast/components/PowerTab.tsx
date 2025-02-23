@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PowerChart } from "./PowerChart";
 import { PowerTable } from "./PowerTable";
 import { toast } from "sonner";
+import { format, parse } from "date-fns";
 
 export const PowerTab = () => {
   const [loading, setLoading] = useState(false);
@@ -12,22 +13,38 @@ export const PowerTab = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Obtener los últimos datos de coes_historical
       const { data: historicalData, error: historicalError } = await supabase
         .from('coes_historical')
         .select('fecha, ejecutado')
-        .order('fecha', { ascending: false })
-        .limit(24); // Últimas 24 horas
+        .gte('fecha', format(new Date().setHours(18, 0, 0, 0), "yyyy-MM-dd HH:mm:ss"))
+        .lte('fecha', format(new Date().setHours(23, 0, 0, 0), "yyyy-MM-dd HH:mm:ss"))
+        .order('ejecutado', { ascending: false });
 
       if (historicalError) throw historicalError;
 
-      // Transformar los datos al formato esperado
-      const transformedData = historicalData?.map(item => ({
-        date: item.fecha,
-        peak_value: item.ejecutado
-      })) || [];
+      // Agrupar por día y encontrar el máximo
+      const dailyPeaks = historicalData?.reduce((acc: any[], current) => {
+        const date = format(new Date(current.fecha), 'yyyy-MM-dd');
+        const time = format(new Date(current.fecha), 'HH:mm:ss');
+        const existingDay = acc.find(item => format(new Date(item.date), 'yyyy-MM-dd') === date);
+        
+        if (!existingDay || current.ejecutado > existingDay.peak_value) {
+          if (existingDay) {
+            existingDay.peak_value = current.ejecutado;
+            existingDay.peak_time = time;
+          } else {
+            acc.push({
+              date: current.fecha,
+              peak_value: current.ejecutado,
+              peak_time: time
+            });
+          }
+        }
+        
+        return acc;
+      }, []);
 
-      setData(transformedData);
+      setData(dailyPeaks || []);
     } catch (error) {
       console.error('Error fetching power data:', error);
       toast.error('Error al cargar los datos de potencia');

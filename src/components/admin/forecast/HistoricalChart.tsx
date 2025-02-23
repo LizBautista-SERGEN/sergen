@@ -3,11 +3,9 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-  XAxis,
   YAxis,
   Tooltip,
-  Legend,
-  CartesianGrid
+  Legend
 } from 'recharts';
 
 interface HistoricalChartProps {
@@ -35,18 +33,6 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
         data={filteredData}
         margin={{ top: 20, right: 30, left: 20, bottom: 25 }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis
-          dataKey="fecha"
-          tickFormatter={(value) => {
-            const date = new Date(value);
-            return `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getUTCMonth() + 1).toString().padStart(2, '0')} ${date.getUTCHours().toString().padStart(2, '0')}:${date.getUTCMinutes().toString().padStart(2, '0')}`;
-          }}
-          angle={-45}
-          textAnchor="end"
-          height={80}
-          interval={Math.ceil(filteredData.length / 15)}
-        />
         <YAxis
           domain={[5000, 8500]}
           tickFormatter={(value) => `${value.toLocaleString()}`}
