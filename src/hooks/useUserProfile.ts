@@ -6,42 +6,41 @@ import { toast } from "sonner";
 export const useUserProfile = () => {
   const [isSuperUser, setIsSuperUser] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkUserRole();
+    const fetchProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+          toast.error("Error al cargar la información del perfil");
+          return;
+        }
+
+        setProfile(data);
+        setIsSuperUser(data?.role === 'superuser');
+      } catch (err) {
+        console.error('Error in useUserProfile:', err);
+        toast.error("Error al cargar el perfil");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProfile();
   }, []);
 
-  const checkUserRole = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-      
-      setIsSuperUser(profile?.role === 'superuser');
-    }
-  };
-
-  const fetchProfile = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) {
-        toast.error("Error al cargar la información del perfil");
-        return;
-      }
-
-      setProfile(data);
-    }
-  };
-
-  return { isSuperUser, profile };
+  return { isSuperUser, profile, loading };
 };
