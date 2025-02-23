@@ -10,7 +10,7 @@ import {
   Legend,
   CartesianGrid
 } from 'recharts';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface HistoricalChartProps {
   data: any[];
@@ -26,9 +26,8 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
   });
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    // Formateamos la fecha en UTC
-    return format(date, 'dd/MM/yyyy HH:mm', { timeZone: 'UTC' });
+    const date = parseISO(timestamp);
+    return format(date, 'dd/MM/yyyy HH:mm');
   };
 
   const handleMouseEnter = (o: any) => {
@@ -61,7 +60,7 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
     }));
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
+    <ResponsiveContainer width="100%" height={550}>
       <LineChart
         data={filteredData}
         margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -74,11 +73,16 @@ export const HistoricalChart = ({ data, startDate, endDate }: HistoricalChartPro
           height={80}
           interval={Math.ceil(filteredData.length / 15)}
         />
-        <YAxis domain={['auto', 'auto']} />
+        <YAxis 
+          domain={['auto', 'auto']}
+          label={{ value: 'Potencia (MW)', angle: -90, position: 'insideLeft' }}
+        />
         <Tooltip />
         <Legend
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          verticalAlign="top"
+          height={36}
         />
         <Line
           type="monotone"
