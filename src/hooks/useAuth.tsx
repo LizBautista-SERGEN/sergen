@@ -13,32 +13,6 @@ export const useAuth = () => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const navigate = useNavigate();
 
-  const checkProfile = async (session: Session) => {
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, has_access')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        toast.error('Error al cargar el perfil');
-        return null;
-      }
-
-      if (!profile?.has_access) {
-        toast.error('Su cuenta está pendiente de activación');
-        return null;
-      }
-
-      return profile.role as UserRole;
-    } catch (error) {
-      console.error('Error checking profile:', error);
-      return null;
-    }
-  };
-
   useEffect(() => {
     const getInitialSession = async () => {
       try {
@@ -57,8 +31,23 @@ export const useAuth = () => {
           return;
         }
 
-        const role = await checkProfile(session);
-        if (!role) {
+        // Verificar el rol del usuario
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, has_access')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          setSession(null);
+          setUserRole(null);
+          navigate('/login');
+          return;
+        }
+
+        if (!profile?.has_access) {
+          toast.error('Su cuenta está pendiente de activación');
           await supabase.auth.signOut();
           setSession(null);
           setUserRole(null);
@@ -67,15 +56,8 @@ export const useAuth = () => {
         }
 
         setSession(session);
-        setUserRole(role);
+        setUserRole(profile.role as UserRole);
         setLoading(false);
-
-        // Redirigir según el rol
-        if (role === 'superuser' && window.location.pathname === '/login') {
-          navigate('/admin/dashboard');
-        } else if (role === 'user' && window.location.pathname === '/login') {
-          navigate('/dashboard');
-        }
       } catch (error) {
         console.error('Error in getInitialSession:', error);
         setLoading(false);
@@ -87,35 +69,29 @@ export const useAuth = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('Auth state changed:', _event);
-      
-      if (_event === 'SIGNED_OUT') {
+      if (!session) {
         setSession(null);
         setUserRole(null);
         navigate('/login');
         return;
       }
 
-      if (_event === 'SIGNED_IN' && session) {
-        const role = await checkProfile(session);
-        if (!role) {
-          await supabase.auth.signOut();
-          setSession(null);
-          setUserRole(null);
-          navigate('/login');
-          return;
-        }
+      // Verificar el rol del usuario cuando cambia el estado de autenticación
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, has_access')
+        .eq('id', session.user.id)
+        .single();
 
-        setSession(session);
-        setUserRole(role);
-
-        if (role === 'superuser') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
+      if (profileError || !profile?.has_access) {
+        setSession(null);
+        setUserRole(null);
+        navigate('/login');
+        return;
       }
-      
+
+      setSession(session);
+      setUserRole(profile.role as UserRole);
       setLoading(false);
     });
 
