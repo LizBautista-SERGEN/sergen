@@ -72,7 +72,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
 
       const { error } = await supabase
         .from('profiles')
-        .update({ profile: null })
+        .update({ avatar_url: null })
         .eq('id', session.user.id);
 
       if (error) throw error;
@@ -100,7 +100,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
       <Card className="w-72 h-72 overflow-hidden bg-gradient-to-b from-sergen-100 to-sergen-50">
         <div className="relative w-full h-full">
           <Avatar className="w-full h-full rounded-lg">
-            <AvatarImage src={profile?.profile} className="object-cover w-full h-full" />
+            <AvatarImage src={profile?.avatar_url} className="object-cover w-full h-full" />
             <AvatarFallback className="text-4xl w-full h-full">{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
           <input
@@ -121,7 +121,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
                 <Upload className="w-4 h-4 text-gray-600" />
               )}
             </label>
-            {profile?.profile && (
+            {profile?.avatar_url && (
               <button
                 onClick={handleDeleteAvatar}
                 className="bg-white rounded-full p-2 shadow-lg hover:bg-gray-50"

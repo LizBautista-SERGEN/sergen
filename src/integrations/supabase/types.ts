@@ -38,118 +38,136 @@ export type Database = {
           created_at: string
           daily_forecast: number | null
           date: string
-          demanda_mw: number | null
           executed_power: number | null
           id: string
-          margen_reserva_porcentaje: number | null
           maximum_power: number | null
-          potencia_efectiva_mw: number | null
-          prog_diaria_mw: number | null
-          prog_semanal_mw: number | null
-          reserva_mw: number | null
           weekly_forecast: number | null
         }
         Insert: {
           created_at?: string
           daily_forecast?: number | null
           date: string
-          demanda_mw?: number | null
           executed_power?: number | null
           id?: string
-          margen_reserva_porcentaje?: number | null
           maximum_power?: number | null
-          potencia_efectiva_mw?: number | null
-          prog_diaria_mw?: number | null
-          prog_semanal_mw?: number | null
-          reserva_mw?: number | null
           weekly_forecast?: number | null
         }
         Update: {
           created_at?: string
           daily_forecast?: number | null
           date?: string
-          demanda_mw?: number | null
           executed_power?: number | null
           id?: string
-          margen_reserva_porcentaje?: number | null
           maximum_power?: number | null
-          potencia_efectiva_mw?: number | null
-          prog_diaria_mw?: number | null
-          prog_semanal_mw?: number | null
-          reserva_mw?: number | null
           weekly_forecast?: number | null
         }
         Relationships: []
       }
-      coes_forecast: {
+      course_access: {
+        Row: {
+          course_id: string
+          created_at: string
+          granted_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_access_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_units: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          order_index: number
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_units_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
         Row: {
           created_at: string
-          demanda_real: number | null
-          fecha: string
+          description: string | null
+          explanation_videos: Json | null
           id: string
-          pronostico_diario: number | null
-          rango_inferior: number | null
-          rango_superior: number | null
-          reprogramacion: number | null
-          updated_at: string | null
+          image_url: string | null
+          title: string
+          video_url: string | null
         }
         Insert: {
           created_at?: string
-          demanda_real?: number | null
-          fecha: string
+          description?: string | null
+          explanation_videos?: Json | null
           id?: string
-          pronostico_diario?: number | null
-          rango_inferior?: number | null
-          rango_superior?: number | null
-          reprogramacion?: number | null
-          updated_at?: string | null
+          image_url?: string | null
+          title: string
+          video_url?: string | null
         }
         Update: {
           created_at?: string
-          demanda_real?: number | null
-          fecha?: string
+          description?: string | null
+          explanation_videos?: Json | null
           id?: string
-          pronostico_diario?: number | null
-          rango_inferior?: number | null
-          rango_superior?: number | null
-          reprogramacion?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      coes_historical: {
-        Row: {
-          created_at: string | null
-          demanda_programada: number | null
-          ejecutado: number | null
-          error_porcentual: number | null
-          fecha: string
-          id: string
-          prog_semanal: number | null
-          reprogramacion_diaria: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          demanda_programada?: number | null
-          ejecutado?: number | null
-          error_porcentual?: number | null
-          fecha: string
-          id?: string
-          prog_semanal?: number | null
-          reprogramacion_diaria?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          demanda_programada?: number | null
-          ejecutado?: number | null
-          error_porcentual?: number | null
-          fecha?: string
-          id?: string
-          prog_semanal?: number | null
-          reprogramacion_diaria?: number | null
-          updated_at?: string | null
+          image_url?: string | null
+          title?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -254,117 +272,51 @@ export type Database = {
           },
         ]
       }
-      historical_demand: {
+      lessons: {
         Row: {
           created_at: string
-          daily_schedule: number | null
-          date: string
-          executed_power: number | null
-          id: number
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string
-          daily_schedule?: number | null
-          date: string
-          executed_power?: number | null
-          id?: never
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string
-          daily_schedule?: number | null
-          date?: string
-          executed_power?: number | null
-          id?: never
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      modulation_days: {
-        Row: {
-          created_at: string | null
-          date: string
+          duration: string | null
           id: string
-          is_modulated: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          date: string
-          id?: string
-          is_modulated?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          date?: string
-          id?: string
-          is_modulated?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      peak_power: {
-        Row: {
-          created_at: string
-          date: string
-          id: number
-          is_modulated: boolean | null
-          max_power: number
-          updated_at: string | null
+          order_index: number
+          title: string
+          type: string
+          unit_id: string
+          video_url: string | null
         }
         Insert: {
           created_at?: string
-          date: string
-          id?: never
-          is_modulated?: boolean | null
-          max_power: number
-          updated_at?: string | null
+          duration?: string | null
+          id?: string
+          order_index?: number
+          title: string
+          type: string
+          unit_id: string
+          video_url?: string | null
         }
         Update: {
           created_at?: string
-          date?: string
-          id?: never
-          is_modulated?: boolean | null
-          max_power?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      power_peaks: {
-        Row: {
-          created_at: string
-          date: string
-          id: string
-          is_modulated: boolean | null
-          peak_time: string
-          peak_value: number
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string
-          date: string
+          duration?: string | null
           id?: string
-          is_modulated?: boolean | null
-          peak_time: string
-          peak_value: number
-          updated_at?: string | null
+          order_index?: number
+          title?: string
+          type?: string
+          unit_id?: string
+          video_url?: string | null
         }
-        Update: {
-          created_at?: string
-          date?: string
-          id?: string
-          is_modulated?: boolean | null
-          peak_time?: string
-          peak_value?: number
-          updated_at?: string | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lessons_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "course_units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
           activity: string | null
+          avatar_url: string | null
           business_name: string | null
           contact_name: string | null
           contract_expiration: string | null
@@ -385,6 +337,7 @@ export type Database = {
         }
         Insert: {
           activity?: string | null
+          avatar_url?: string | null
           business_name?: string | null
           contact_name?: string | null
           contract_expiration?: string | null
@@ -405,6 +358,7 @@ export type Database = {
         }
         Update: {
           activity?: string | null
+          avatar_url?: string | null
           business_name?: string | null
           contact_name?: string | null
           contract_expiration?: string | null
@@ -490,6 +444,111 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      user_course_progress: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          id: string
+          last_watched_at: string | null
+          progress: number | null
+          user_id: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          last_watched_at?: string | null
+          progress?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          last_watched_at?: string | null
+          progress?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_course_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_lesson_progress: {
+        Row: {
+          completed: boolean
+          created_at: string
+          id: string
+          lesson_id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          lesson_id: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_video_progress: {
+        Row: {
+          completed: boolean | null
+          course_id: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string | null
+          video_index: number
+        }
+        Insert: {
+          completed?: boolean | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          video_index: number
+        }
+        Update: {
+          completed?: boolean | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+          video_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_video_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -1,6 +1,5 @@
 
 import AnimatedSection from "./AnimatedSection";
-import { FileText, Coins } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -30,22 +29,16 @@ const About = () => {
               Expertos en eficiencia energética
             </h2>
             <p className="mb-6 text-lg text-gray-600">
-              En SERGEN, nos especializamos en ayudar a empresas industriales a optimizar su producción con la máxima eficiencia energética. Como expertos en soluciones energéticas para el sector industrial, ofrecemos soluciones integrales que combinan innovación, sostenibilidad y rentabilidad. Nuestro compromiso es impulsar la productividad de tu negocio mientras reducimos el impacto ambiental.
+              En SERGEN nos especializamos en ayudar a las empresas industriales a optimizar su producción con la máxima eficiencia energética. Como expertos en soluciones para el sector energético, ofrecemos servicios integrales que garantizan el cumplimiento de objetivos. Nuestro compromiso es impulsar la productividad y sostenibilidad de tu negocio.
             </p>
             <div className="grid grid-cols-2 gap-8">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="h-6 w-6 text-sergen-600" />
-                  <h4 className="text-2xl font-bold text-sergen-600">+40 Proyectos Completados</h4>
-                </div>
-                <p className="text-gray-600">Soluciones personalizadas para cada cliente.</p>
+                <h4 className="mb-2 text-2xl font-bold text-sergen-600">+40</h4>
+                <p className="text-gray-600">Proyectos Completados</p>
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Coins className="h-6 w-6 text-sergen-600" />
-                  <h4 className="text-2xl font-bold text-sergen-600">37% de Ahorro Promedio</h4>
-                </div>
-                <p className="text-gray-600">Reducción comprobada en costos energéticos.</p>
+                <h4 className="mb-2 text-2xl font-bold text-sergen-600">37%</h4>
+                <p className="text-gray-600">Ahorro Promedio</p>
               </div>
             </div>
           </AnimatedSection>
