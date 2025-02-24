@@ -1,7 +1,6 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format, parseISO } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 import { CoesData } from '@/types/forecast';
 
 interface DailyForecastChartProps {
@@ -9,18 +8,14 @@ interface DailyForecastChartProps {
 }
 
 export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
-  const timeZone = 'America/Lima';
-
-  const formatToLocalTime = (dateStr: string) => {
+  const formatTime = (dateStr: string) => {
     const date = parseISO(dateStr);
-    const zonedDate = toZonedTime(date, timeZone);
-    return format(zonedDate, 'HH:mm');
+    return format(date, 'HH:mm');
   };
 
-  const formatToLocalDateTime = (dateStr: string) => {
+  const formatDateTime = (dateStr: string) => {
     const date = parseISO(dateStr);
-    const zonedDate = toZonedTime(date, timeZone);
-    return format(zonedDate, 'dd/MM/yyyy HH:mm');
+    return format(date, 'dd/MM/yyyy HH:mm');
   };
 
   return (
@@ -29,11 +24,11 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
         <LineChart data={data}>
           <XAxis 
             dataKey="fecha" 
-            tickFormatter={formatToLocalTime}
+            tickFormatter={formatTime}
           />
           <YAxis domain={['auto', 'auto']} />
           <Tooltip 
-            labelFormatter={(value) => formatToLocalDateTime(value as string)}
+            labelFormatter={(value) => formatDateTime(value as string)}
             formatter={(value: any) => value ? `${value} MW` : '-'}
           />
           <Legend />

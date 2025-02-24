@@ -1,7 +1,6 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 import { CoesData } from '@/types/forecast';
 
 interface DailyForecastTableProps {
@@ -9,12 +8,9 @@ interface DailyForecastTableProps {
 }
 
 export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
-  const timeZone = 'America/Lima';
-
-  const formatToLocalTime = (dateStr: string) => {
+  const formatTime = (dateStr: string) => {
     const date = parseISO(dateStr);
-    const zonedDate = toZonedTime(date, timeZone);
-    return format(zonedDate, 'HH:mm');
+    return format(date, 'HH:mm');
   };
 
   return (
@@ -22,7 +18,7 @@ export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Hora</TableHead>
+            <TableHead>Hora (UTC)</TableHead>
             <TableHead>Pronóstico Diario (MW)</TableHead>
             <TableHead>Demanda Real (MW)</TableHead>
             <TableHead>Rango Superior (MW)</TableHead>
@@ -33,7 +29,7 @@ export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
         <TableBody>
           {data.map((row, index) => (
             <TableRow key={index}>
-              <TableCell>{formatToLocalTime(row.fecha)}</TableCell>
+              <TableCell>{formatTime(row.fecha)}</TableCell>
               <TableCell>{row.pronostico_diario || '-'}</TableCell>
               <TableCell>{row.demanda_real || '-'}</TableCell>
               <TableCell>{row.rango_superior || '-'}</TableCell>

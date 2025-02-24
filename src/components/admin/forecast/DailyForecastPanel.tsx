@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DailyForecastChart } from "./DailyForecastChart";
@@ -12,16 +11,14 @@ import { CoesData } from "@/types/forecast";
 export const DailyForecastPanel = () => {
   const [forecastData, setForecastData] = useState<CoesData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const timeZone = 'America/Lima';
 
   const fetchCoesData = async () => {
     try {
       setIsLoading(true);
       
       const now = new Date();
-      const localDate = toZonedTime(now, timeZone);
-      const today = startOfDay(localDate);
-      const tomorrow = endOfDay(localDate);
+      const today = startOfDay(now);
+      const tomorrow = endOfDay(now);
 
       console.log('Consultando datos entre:', today.toISOString(), 'y', tomorrow.toISOString());
 
@@ -100,16 +97,11 @@ export const DailyForecastPanel = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const formatToLocalDate = (date: Date) => {
-    const zonedDate = toZonedTime(date, timeZone);
-    return format(zonedDate, 'dd/MM/yyyy');
-  };
-
   return (
     <Card className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">
-          Pronóstico COES - {formatToLocalDate(new Date())}
+          Pronóstico COES - {format(new Date(), 'dd/MM/yyyy')} (UTC)
         </h3>
         {isLoading && (
           <div className="text-sm text-gray-500">
