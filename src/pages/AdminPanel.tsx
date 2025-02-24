@@ -48,6 +48,18 @@ const AdminPanel = () => {
         return;
       }
 
+      // Procesar los datos para convertir 0 a null
+      const processedData = existingData?.map(row => ({
+        ...row,
+        pronostico_diario: row.pronostico_diario === 0 ? null : row.pronostico_diario,
+        demanda_real: row.demanda_real === 0 ? null : row.demanda_real,
+        rango_inferior: row.rango_inferior === 0 ? null : row.rango_inferior,
+        rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
+        reprogramacion: row.reprogramacion === 0 ? null : row.reprogramacion
+      })) || [];
+
+      setForecastData(processedData);
+
       // Luego intentar actualizar los datos desde COES
       try {
         const { error: functionError } = await supabase.functions.invoke('get-coes-forecast');
@@ -68,19 +80,19 @@ const AdminPanel = () => {
         if (freshError) {
           console.error('Error al obtener datos actualizados:', freshError);
         } else if (freshData && freshData.length > 0) {
-          setForecastData(freshData);
-          return;
+          // Procesar los datos frescos para convertir 0 a null
+          const processedFreshData = freshData.map(row => ({
+            ...row,
+            pronostico_diario: row.pronostico_diario === 0 ? null : row.pronostico_diario,
+            demanda_real: row.demanda_real === 0 ? null : row.demanda_real,
+            rango_inferior: row.rango_inferior === 0 ? null : row.rango_inferior,
+            rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
+            reprogramacion: row.reprogramacion === 0 ? null : row.reprogramacion
+          }));
+          setForecastData(processedFreshData);
         }
       } catch (functionError) {
         console.error('Error al llamar función COES:', functionError);
-      }
-
-      // Si no se pudieron obtener datos frescos, usar los datos existentes
-      if (existingData && existingData.length > 0) {
-        setForecastData(existingData);
-      } else {
-        console.log('No hay datos disponibles para hoy');
-        setForecastData([]);
       }
     } catch (error) {
       console.error('Error en fetchCoesData:', error);
@@ -122,7 +134,7 @@ const AdminPanel = () => {
                 <Card className="p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">
-                      Pronóstico COES - {format(new Date(), 'dd/MM/yyyy')} (UTC)
+                      Pronóstico COES - {format(new Date(), 'dd/MM/yyyy')}
                     </h3>
                     {isLoading && (
                       <div className="text-sm text-gray-500">
@@ -143,10 +155,7 @@ const AdminPanel = () => {
                             <YAxis domain={['auto', 'auto']} />
                             <Tooltip 
                               labelFormatter={(value) => format(parseISO(value as string), 'dd/MM/yyyy HH:mm')}
-                              formatter={(value: any, name: string) => [
-                                `${Number(value).toFixed(2)} MW`,
-                                name
-                              ]}
+                              formatter={(value: any) => value ? `${value} MW` : '-'}
                             />
                             <Legend />
                             <Line 
@@ -156,6 +165,7 @@ const AdminPanel = () => {
                               stroke="#156082" 
                               strokeWidth={2}
                               dot={false}
+                              connectNulls
                             />
                             <Line 
                               type="monotone" 
@@ -164,6 +174,7 @@ const AdminPanel = () => {
                               stroke="#f39200" 
                               strokeWidth={2}
                               dot={false}
+                              connectNulls
                             />
                             <Line 
                               type="monotone" 
@@ -173,6 +184,7 @@ const AdminPanel = () => {
                               strokeWidth={1}
                               strokeDasharray="5 5"
                               dot={false}
+                              connectNulls
                             />
                             <Line 
                               type="monotone" 
@@ -182,6 +194,7 @@ const AdminPanel = () => {
                               strokeWidth={1}
                               strokeDasharray="5 5"
                               dot={false}
+                              connectNulls
                             />
                             <Line 
                               type="monotone" 
@@ -190,6 +203,7 @@ const AdminPanel = () => {
                               stroke="#00C000" 
                               strokeWidth={2}
                               dot={false}
+                              connectNulls
                             />
                           </LineChart>
                         </ResponsiveContainer>
@@ -199,7 +213,7 @@ const AdminPanel = () => {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Hora (UTC)</TableHead>
+                              <TableHead>Hora</TableHead>
                               <TableHead>Pronóstico Diario (MW)</TableHead>
                               <TableHead>Demanda Real (MW)</TableHead>
                               <TableHead>Rango Superior (MW)</TableHead>
@@ -211,11 +225,11 @@ const AdminPanel = () => {
                             {forecastData.map((row, index) => (
                               <TableRow key={index}>
                                 <TableCell>{format(parseISO(row.fecha), 'HH:mm')}</TableCell>
-                                <TableCell>{row.pronostico_diario?.toFixed(2) ?? '-'}</TableCell>
-                                <TableCell>{row.demanda_real?.toFixed(2) ?? '-'}</TableCell>
-                                <TableCell>{row.rango_superior?.toFixed(2) ?? '-'}</TableCell>
-                                <TableCell>{row.rango_inferior?.toFixed(2) ?? '-'}</TableCell>
-                                <TableCell>{row.reprogramacion?.toFixed(2) ?? '-'}</TableCell>
+                                <TableCell>{row.pronostico_diario || '-'}</TableCell>
+                                <TableCell>{row.demanda_real || '-'}</TableCell>
+                                <TableCell>{row.rango_superior || '-'}</TableCell>
+                                <TableCell>{row.rango_inferior || '-'}</TableCell>
+                                <TableCell>{row.reprogramacion || '-'}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
