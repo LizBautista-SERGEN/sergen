@@ -25,8 +25,8 @@ import AdminPanel from "./pages/AdminPanel";
 import { useAuth } from "./hooks/useAuth";
 import { toast } from "sonner";
 
-const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.ReactNode, requiredRole?: string }) => {
-  const { session, loading, userRole } = useAuth();
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { session, loading } = useAuth();
 
   if (loading) {
     return <div>Cargando...</div>;
@@ -34,11 +34,6 @@ const ProtectedRoute = ({ children, requiredRole = "user" }: { children: React.R
 
   if (!session) {
     return <Navigate to="/login" replace />;
-  }
-
-  if (requiredRole === 'superuser' && userRole !== 'superuser') {
-    toast.error("No tienes permisos para acceder a esta página");
-    return <Navigate to="/servicios/control" replace />;
   }
 
   return <>{children}</>;
@@ -73,14 +68,7 @@ function App() {
                   <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
                   <Route path="/contacto" element={<ContactPage />} />
                   <Route path="/login" element={<LoginPage />} />
-                  <Route 
-                    path="/admin/panel" 
-                    element={
-                      <ProtectedRoute requiredRole="superuser">
-                        <AdminPanel />
-                      </ProtectedRoute>
-                    } 
-                  />
+                  <Route path="/admin/panel" element={<AdminPanel />} />
                   <Route 
                     path="/perfil" 
                     element={
