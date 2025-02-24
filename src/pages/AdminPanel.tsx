@@ -29,16 +29,24 @@ const AdminPanel = () => {
     try {
       setIsLoading(true);
       
-      // Primero, actualizar datos desde COES
-      const response = await supabase.functions.invoke('get-coes-forecast');
-      if (!response.data.success) {
-        console.error('Error updating COES data:', response.data.error);
-        toast.error('Error al actualizar datos del COES');
-      } else {
-        console.log('COES data updated successfully:', response.data.count, 'records');
+      try {
+        // Primero, actualizar datos desde COES
+        const { data: response, error: functionError } = await supabase.functions.invoke('get-coes-forecast');
+        
+        if (functionError) {
+          console.error('Error invoking COES function:', functionError);
+          toast.error('Error al actualizar datos del COES');
+        } else if (response?.success) {
+          console.log('COES data updated successfully:', response.count, 'records');
+        } else {
+          console.error('Error updating COES data:', response?.error || 'Unknown error');
+          toast.error('Error al actualizar datos del COES');
+        }
+      } catch (functionCallError) {
+        console.error('Error calling COES function:', functionCallError);
       }
 
-      // Luego, obtener todos los datos
+      // Luego, obtener todos los datos independientemente del resultado de la actualización
       const { data, error } = await supabase
         .from('coes_forecast')
         .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
@@ -50,7 +58,11 @@ const AdminPanel = () => {
         return;
       }
 
-      setForecastData(data || []);
+      if (data && data.length > 0) {
+        setForecastData(data);
+      } else {
+        console.log('No forecast data available');
+      }
     } catch (error) {
       console.error('Error in fetchCoesData:', error);
       toast.error('Error al cargar los datos del pronóstico');
@@ -61,7 +73,7 @@ const AdminPanel = () => {
 
   useEffect(() => {
     fetchCoesData();
-    const interval = setInterval(fetchCoesData, 15 * 60 * 1000); // Actualizar cada 15 minutos
+    const interval = setInterval(fetchCoesData, 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
