@@ -1,6 +1,6 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { CoesData } from '@/types/forecast';
 
 interface DailyForecastChartProps {
@@ -9,12 +9,12 @@ interface DailyForecastChartProps {
 
 export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
   const formatTime = (dateStr: string) => {
-    const date = parseISO(dateStr);
+    const date = new Date(dateStr);
     return format(date, 'HH:mm');
   };
 
   const formatDateTime = (dateStr: string) => {
-    const date = parseISO(dateStr);
+    const date = new Date(dateStr);
     return format(date, 'dd/MM/yyyy HH:mm');
   };
 
