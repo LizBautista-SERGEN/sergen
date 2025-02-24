@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { HistoricalChart } from "./HistoricalChart";
 
 export const HistoricalDataUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -58,31 +59,35 @@ export const HistoricalDataUpload = () => {
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <input
-        type="file"
-        accept=".xlsx,.xls"
-        onChange={handleFileUpload}
-        className="hidden"
-        id="excel-upload"
-        disabled={isUploading}
-      />
-      <label htmlFor="excel-upload">
-        <Button 
-          variant="outline" 
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <input
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={handleFileUpload}
+          className="hidden"
+          id="excel-upload"
           disabled={isUploading}
-          className="cursor-pointer"
-          asChild
-        >
-          <span>
-            <Upload className="mr-2 h-4 w-4" />
-            {isUploading ? 'Subiendo...' : 'Seleccionar Excel'}
-          </span>
-        </Button>
-      </label>
-      <p className="text-sm text-gray-500">
-        Formatos soportados: .xlsx, .xls
-      </p>
+        />
+        <label htmlFor="excel-upload">
+          <Button 
+            variant="outline" 
+            disabled={isUploading}
+            className="cursor-pointer"
+            asChild
+          >
+            <span>
+              <Upload className="mr-2 h-4 w-4" />
+              {isUploading ? 'Subiendo...' : 'Seleccionar Excel'}
+            </span>
+          </Button>
+        </label>
+        <p className="text-sm text-gray-500">
+          Formatos soportados: .xlsx, .xls
+        </p>
+      </div>
+
+      <HistoricalChart />
     </div>
   );
 };

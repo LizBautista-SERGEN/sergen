@@ -22,7 +22,7 @@ export const ModulationCalendar = () => {
     const endDate = endOfMonth(selectedDate);
 
     const { data, error } = await supabase
-      .from('power_peaks')
+      .from('modulation_days')
       .select('date, is_modulated')
       .gte('date', format(startDate, 'yyyy-MM-dd'))
       .lte('date', format(endDate, 'yyyy-MM-dd'));
@@ -40,15 +40,11 @@ export const ModulationCalendar = () => {
   }, [selectedDate]);
 
   const handleToggleModulation = async (date: string, currentValue: boolean) => {
-    const currentTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
-    
     const { error } = await supabase
-      .from('power_peaks')
+      .from('modulation_days')
       .upsert({
         date,
-        is_modulated: !currentValue,
-        peak_time: currentTime,
-        peak_value: 0 // Valor por defecto, ajustar según necesidades
+        is_modulated: !currentValue
       });
 
     if (error) {
