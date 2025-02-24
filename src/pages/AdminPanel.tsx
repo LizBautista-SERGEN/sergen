@@ -1,11 +1,10 @@
-
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
@@ -26,13 +25,14 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchTodayForecast = async () => {
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const start = startOfDay(today);
+      const end = endOfDay(today);
 
       const { data, error } = await supabase
         .from('coes_forecast')
         .select('*')
-        .gte('fecha', today.toISOString())
-        .lt('fecha', new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString())
+        .gte('fecha', start.toISOString())
+        .lte('fecha', end.toISOString())
         .order('fecha', { ascending: true });
 
       if (error) {
@@ -44,6 +44,8 @@ const AdminPanel = () => {
     };
 
     fetchTodayForecast();
+    const interval = setInterval(fetchTodayForecast, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -136,7 +138,7 @@ const AdminPanel = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Fecha</TableHead>
+                          <TableHead>Hora</TableHead>
                           <TableHead>Pronóstico Diario (MW)</TableHead>
                           <TableHead>Demanda Real (MW)</TableHead>
                           <TableHead>Rango Superior (MW)</TableHead>
