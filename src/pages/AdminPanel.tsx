@@ -1,10 +1,11 @@
+
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
@@ -24,52 +25,34 @@ const AdminPanel = () => {
   const [forecastData, setForecastData] = useState<CoesData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchTodayForecast = async () => {
+  const fetchCoesData = async () => {
     try {
       setIsLoading(true);
-      const today = new Date();
-      const todayStart = startOfDay(today);
-      const todayEnd = endOfDay(today);
+      
+      // Primero, actualizar datos desde COES
+      const response = await supabase.functions.invoke('get-coes-forecast');
+      if (!response.data.success) {
+        console.error('Error updating COES data:', response.data.error);
+        toast.error('Error al actualizar datos del COES');
+      } else {
+        console.log('COES data updated successfully:', response.data.count, 'records');
+      }
 
-      const { data: existingData, error: dbError } = await supabase
+      // Luego, obtener todos los datos
+      const { data, error } = await supabase
         .from('coes_forecast')
         .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-        .gte('fecha', todayStart.toISOString())
-        .lte('fecha', todayEnd.toISOString())
         .order('fecha', { ascending: true });
 
-      if (dbError) {
-        console.error('Error fetching forecast data:', dbError);
+      if (error) {
+        console.error('Error fetching forecast data:', error);
         toast.error('Error al cargar los datos del pronóstico');
         return;
       }
 
-      try {
-        const response = await supabase.functions.invoke('get-coes-forecast');
-        if (!response.data.success) {
-          console.error('Error updating COES data:', response.data.error);
-        } else {
-          console.log('COES data updated successfully:', response.data.count, 'records');
-          
-          const { data: freshData, error: freshError } = await supabase
-            .from('coes_forecast')
-            .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-            .gte('fecha', todayStart.toISOString())
-            .lte('fecha', todayEnd.toISOString())
-            .order('fecha', { ascending: true });
-
-          if (!freshError && freshData) {
-            setForecastData(freshData);
-            return;
-          }
-        }
-      } catch (updateError) {
-        console.error('Error invoking get-coes-forecast:', updateError);
-      }
-
-      setForecastData(existingData || []);
+      setForecastData(data || []);
     } catch (error) {
-      console.error('Error in fetchTodayForecast:', error);
+      console.error('Error in fetchCoesData:', error);
       toast.error('Error al cargar los datos del pronóstico');
     } finally {
       setIsLoading(false);
@@ -77,8 +60,8 @@ const AdminPanel = () => {
   };
 
   useEffect(() => {
-    fetchTodayForecast();
-    const interval = setInterval(fetchTodayForecast, 15 * 60 * 1000);
+    fetchCoesData();
+    const interval = setInterval(fetchCoesData, 15 * 60 * 1000); // Actualizar cada 15 minutos
     return () => clearInterval(interval);
   }, []);
 
@@ -108,7 +91,7 @@ const AdminPanel = () => {
                 <Card className="p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">
-                      Pronóstico del Día {format(new Date(), 'dd/MM/yyyy')} (UTC)
+                      Pronóstico COES (UTC)
                     </h3>
                     {isLoading && (
                       <div className="text-sm text-gray-500">
@@ -124,7 +107,7 @@ const AdminPanel = () => {
                           <LineChart data={forecastData}>
                             <XAxis 
                               dataKey="fecha" 
-                              tickFormatter={(value) => format(parseISO(value), 'HH:mm')}
+                              tickFormatter={(value) => format(parseISO(value), 'dd/MM HH:mm')}
                             />
                             <YAxis domain={['auto', 'auto']} />
                             <Tooltip 
@@ -185,7 +168,7 @@ const AdminPanel = () => {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Hora (UTC)</TableHead>
+                              <TableHead>Fecha y Hora (UTC)</TableHead>
                               <TableHead>Pronóstico Diario (MW)</TableHead>
                               <TableHead>Demanda Real (MW)</TableHead>
                               <TableHead>Rango Superior (MW)</TableHead>
@@ -196,7 +179,7 @@ const AdminPanel = () => {
                           <TableBody>
                             {forecastData.map((row, index) => (
                               <TableRow key={index}>
-                                <TableCell>{format(parseISO(row.fecha), 'HH:mm')}</TableCell>
+                                <TableCell>{format(parseISO(row.fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
                                 <TableCell>{row.pronostico_diario?.toFixed(2) ?? '-'}</TableCell>
                                 <TableCell>{row.demanda_real?.toFixed(2) ?? '-'}</TableCell>
                                 <TableCell>{row.rango_superior?.toFixed(2) ?? '-'}</TableCell>
@@ -210,7 +193,7 @@ const AdminPanel = () => {
                     </>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      No hay datos disponibles para el día de hoy
+                      No hay datos disponibles
                     </div>
                   )}
                 </Card>

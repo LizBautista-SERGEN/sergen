@@ -49,14 +49,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // First, delete old data for today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Delete all existing data
     const { error: deleteError } = await supabaseAdmin
       .from('coes_forecast')
       .delete()
-      .gte('fecha', today.toISOString())
-      .lt('fecha', new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString());
+      .not('id', 'is', null); // This deletes all records
 
     if (deleteError) {
       console.error('Error deleting old data:', deleteError);
