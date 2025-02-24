@@ -15,7 +15,12 @@ serve(async (req) => {
 
   try {
     console.log("Iniciando descarga de archivo Excel del COES...");
-    const response = await fetch('https://www.coes.org.pe/Portal/portalinformacion/ExportarPronosticoTiempoReal');
+    const response = await fetch('https://www.coes.org.pe/Portal/portalinformacion/ExportarPronosticoTiempoReal', {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     
     if (!response.ok) {
       throw new Error(`Error al descargar el archivo: ${response.status}`);
@@ -31,20 +36,43 @@ serve(async (req) => {
     for (let i = 2; i < jsonData.length; i++) {
       const row = jsonData[i];
       if (row && row[0]) {
-        // Asegurarnos de que la fecha se mantenga en UTC
-        const fecha = new Date(row[0]);
-        processedData.push({
-          fecha: fecha.toISOString(),
-          pronostico_diario: parseFloat(row[1]) || 0,
-          demanda_real: parseFloat(row[2]) || 0,
-          rango_superior: parseFloat(row[3]) || 0,
-          rango_inferior: parseFloat(row[4]) || 0,
-          reprogramacion: parseFloat(row[5]) || 0
-        });
+        try {
+          // Asegurarnos de que la fecha se mantenga en UTC
+          let fecha = row[0];
+          if (typeof fecha === 'number') {
+            // Si es un número Excel, convertirlo a fecha
+            fecha = new Date((fecha - 25569) * 86400 * 1000);
+          } else if (typeof fecha === 'string') {
+            fecha = new Date(fecha);
+          }
+          
+          if (isNaN(fecha.getTime())) {
+            console.error('Fecha inválida en fila:', i + 1, row[0]);
+            continue;
+          }
+
+          const data = {
+            fecha: fecha.toISOString(),
+            pronostico_diario: parseFloat(row[1]) || 0,
+            demanda_real: parseFloat(row[2]) || 0,
+            rango_superior: parseFloat(row[3]) || 0,
+            rango_inferior: parseFloat(row[4]) || 0,
+            reprogramacion: parseFloat(row[5]) || 0
+          };
+          
+          processedData.push(data);
+          console.log(`Procesado registro: ${data.fecha}`);
+        } catch (parseError) {
+          console.error('Error procesando fila:', i + 1, parseError);
+        }
       }
     }
 
     console.log(`Procesados ${processedData.length} registros`);
+
+    if (processedData.length === 0) {
+      throw new Error('No se encontraron datos para procesar');
+    }
 
     // Update database
     const supabaseAdmin = createClient(
@@ -72,13 +100,20 @@ serve(async (req) => {
     }
 
     // Insert new data
-    const { error: insertError } = await supabaseAdmin
-      .from('coes_forecast')
-      .insert(processedData);
+    for (let i = 0; i < processedData.length; i += 100) {
+      const batch = processedData.slice(i, i + 100);
+      const { error: insertError } = await supabaseAdmin
+        .from('coes_forecast')
+        .upsert(batch, { 
+          onConflict: 'fecha',
+          ignoreDuplicates: false
+        });
 
-    if (insertError) {
-      console.error('Error insertando nuevos datos:', insertError);
-      throw insertError;
+      if (insertError) {
+        console.error(`Error insertando batch ${i/100 + 1}:`, insertError);
+        throw insertError;
+      }
+      console.log(`Batch ${i/100 + 1} insertado correctamente`);
     }
 
     console.log('Datos actualizados correctamente');
