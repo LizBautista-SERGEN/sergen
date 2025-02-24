@@ -31,7 +31,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Legend />
           <Line 
             type="monotone" 
-            dataKey="pronostico_diario" 
+            dataKey="demanda_real" 
             name="Pronóstico"
             stroke="#F97316" 
             strokeWidth={2}
@@ -40,7 +40,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           />
           <Line 
             type="monotone" 
-            dataKey="demanda_real" 
+            dataKey="reprogramacion" 
             name="Ejecutado"
             stroke="#0036A2" 
             strokeWidth={2}
@@ -69,7 +69,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           />
           <Line 
             type="monotone" 
-            dataKey="reprogramacion" 
+            dataKey="pronostico_diario" 
             name="Reprogramado"
             stroke="#C00000" 
             strokeWidth={2}

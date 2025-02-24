@@ -28,11 +28,11 @@ export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
           {data.map((row, index) => (
             <TableRow key={index}>
               <TableCell>{formatTime(row.fecha)}</TableCell>
-              <TableCell>{row.pronostico_diario || '-'}</TableCell>
               <TableCell>{row.demanda_real || '-'}</TableCell>
+              <TableCell>{row.reprogramacion || '-'}</TableCell>
               <TableCell>{row.rango_superior || '-'}</TableCell>
               <TableCell>{row.rango_inferior || '-'}</TableCell>
-              <TableCell>{row.reprogramacion || '-'}</TableCell>
+              <TableCell>{row.pronostico_diario || '-'}</TableCell>
             </TableRow>
           ))}
         </TableBody>
