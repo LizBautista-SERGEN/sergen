@@ -1,7 +1,7 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format, parseISO } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import { CoesData } from '@/types/forecast';
 
 interface DailyForecastChartProps {
@@ -13,13 +13,13 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
 
   const formatToLocalTime = (dateStr: string) => {
     const date = parseISO(dateStr);
-    const zonedDate = utcToZonedTime(date, timeZone);
+    const zonedDate = toZonedTime(date, timeZone);
     return format(zonedDate, 'HH:mm');
   };
 
   const formatToLocalDateTime = (dateStr: string) => {
     const date = parseISO(dateStr);
-    const zonedDate = utcToZonedTime(date, timeZone);
+    const zonedDate = toZonedTime(date, timeZone);
     return format(zonedDate, 'dd/MM/yyyy HH:mm');
   };
 

@@ -1,7 +1,7 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import { CoesData } from '@/types/forecast';
 
 interface DailyForecastTableProps {
@@ -13,7 +13,7 @@ export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
 
   const formatToLocalTime = (dateStr: string) => {
     const date = parseISO(dateStr);
-    const zonedDate = utcToZonedTime(date, timeZone);
+    const zonedDate = toZonedTime(date, timeZone);
     return format(zonedDate, 'HH:mm');
   };
 

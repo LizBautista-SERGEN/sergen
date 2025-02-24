@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DailyForecastChart } from "./DailyForecastChart";
@@ -19,7 +19,7 @@ export const DailyForecastPanel = () => {
       setIsLoading(true);
       
       const now = new Date();
-      const localDate = utcToZonedTime(now, timeZone);
+      const localDate = toZonedTime(now, timeZone);
       const today = startOfDay(localDate);
       const tomorrow = endOfDay(localDate);
 
@@ -101,7 +101,7 @@ export const DailyForecastPanel = () => {
   }, []);
 
   const formatToLocalDate = (date: Date) => {
-    const zonedDate = utcToZonedTime(date, timeZone);
+    const zonedDate = toZonedTime(date, timeZone);
     return format(zonedDate, 'dd/MM/yyyy');
   };
 
