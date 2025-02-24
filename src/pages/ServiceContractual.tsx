@@ -15,7 +15,6 @@ const ServiceContractual = () => {
 
   const process = [
     "Revisión de contratos actuales",
-    "Identificación de áreas de mejora",
     "Negociación y ajuste de términos",
     "Firma de contrato o adenda"
   ];
