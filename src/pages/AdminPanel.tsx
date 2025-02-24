@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
 import { ModulationCalendar } from "@/components/admin/ModulationCalendar";
+import { toast } from "sonner";
 
 interface CoesData {
   fecha: string;
@@ -38,12 +39,13 @@ const AdminPanel = () => {
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-          .gte('fecha', startDate)
-          .lte('fecha', endDate)
+          .filter('fecha', 'gte', startDate)
+          .filter('fecha', 'lte', endDate)
           .order('fecha', { ascending: true });
 
         if (error) {
           console.error('Error fetching forecast data:', error);
+          toast.error('Error al cargar los datos del pronóstico');
           return;
         }
 
@@ -51,6 +53,7 @@ const AdminPanel = () => {
         setForecastData(data || []);
       } catch (error) {
         console.error('Error in fetchTodayForecast:', error);
+        toast.error('Error al cargar los datos del pronóstico');
       }
     };
 

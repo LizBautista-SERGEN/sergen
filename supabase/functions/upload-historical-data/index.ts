@@ -9,6 +9,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -16,7 +17,7 @@ serve(async (req) => {
   try {
     const formData = await req.formData()
     const file = formData.get('file')
-
+    
     if (!file || !(file instanceof File)) {
       throw new Error('No file uploaded')
     }
@@ -31,30 +32,48 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const formattedData = data.map((row: any) => ({
-      fecha: new Date(row.fecha).toISOString(),
-      demanda_programada: row.demanda_programada,
-      ejecutado: row.ejecutado,
-      prog_semanal: row.prog_semanal,
-      reprogramacion_diaria: row.reprogramacion_diaria,
-      error_porcentual: row.error_porcentual
-    }))
+    // Formatea los datos antes de insertarlos
+    const formattedData = data.map((row: any) => {
+      // Asegúrate de que la fecha esté en el formato correcto
+      let fecha = new Date(row.fecha)
+      if (isNaN(fecha.getTime())) {
+        // Si la fecha no es válida, intenta convertir desde Excel serial number
+        const excelEpoch = new Date(1899, 11, 31)
+        fecha = new Date(excelEpoch.getTime() + (row.fecha - 1) * 24 * 60 * 60 * 1000)
+      }
 
-    const { error } = await supabase
+      return {
+        fecha: fecha.toISOString().replace('T', ' ').replace('Z', '+00'),
+        demanda_programada: row.demanda_programada,
+        reprogramacion_diaria: row.reprogramacion_diaria,
+        prog_semanal: row.prog_semanal,
+        error_porcentual: row.error_porcentual,
+        ejecutado: row.ejecutado
+      }
+    })
+
+    // Realiza la inserción
+    const { error: insertError } = await supabase
       .from('coes_historical')
       .insert(formattedData)
 
-    if (error) throw error
+    if (insertError) throw insertError
 
     return new Response(
-      JSON.stringify({ message: 'Datos históricos actualizados correctamente' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      JSON.stringify({ success: true, message: 'Datos históricos actualizados correctamente' }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
     )
   } catch (error) {
     console.error('Error processing file:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ success: false, error: error.message }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      }
     )
   }
 })

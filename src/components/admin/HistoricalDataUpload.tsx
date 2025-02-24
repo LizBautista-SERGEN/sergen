@@ -19,32 +19,40 @@ export const HistoricalDataUpload = () => {
 
     try {
       setIsUploading(true);
-      const formData = new FormData();
-      formData.append('file', file);
 
       // Primero eliminamos los datos existentes
       const { error: deleteError } = await supabase
         .from('coes_historical')
         .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Usar una condición que siempre sea verdadera
+        .neq('id', '00000000-0000-0000-0000-000000000000');
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Error al eliminar datos:', deleteError);
+        throw deleteError;
+      }
 
-      // Luego subimos los nuevos datos
-      const response = await supabase.functions.invoke('upload-historical-data', {
-        body: formData
+      // Crear el FormData con el archivo
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Llamar a la función edge
+      const { error } = await supabase.functions.invoke('upload-historical-data', {
+        body: formData,
       });
 
-      if (response.error) throw response.error;
+      if (error) {
+        console.error('Error en la función edge:', error);
+        throw error;
+      }
 
       toast.success('Datos históricos actualizados correctamente');
     } catch (error: any) {
       console.error('Error al subir archivo:', error);
-      toast.error('Error al procesar el archivo: ' + error.message);
+      toast.error('Error al procesar el archivo: ' + (error.message || 'Error desconocido'));
     } finally {
       setIsUploading(false);
       if (event.target) {
-        event.target.value = ''; // Limpiar el input para permitir subir el mismo archivo nuevamente
+        event.target.value = '';
       }
     }
   };
