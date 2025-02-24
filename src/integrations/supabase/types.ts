@@ -281,6 +281,30 @@ export type Database = {
         }
         Relationships: []
       }
+      modulation_days: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          is_modulated: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: string
+          is_modulated?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_modulated?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       peak_power: {
         Row: {
           created_at: string

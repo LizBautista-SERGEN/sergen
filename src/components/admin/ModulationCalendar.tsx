@@ -13,6 +13,11 @@ interface ModulationDay {
   is_modulated: boolean;
 }
 
+type ModulationDaysResponse = {
+  date: string;
+  is_modulated: boolean;
+}
+
 export const ModulationCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
@@ -21,18 +26,29 @@ export const ModulationCalendar = () => {
     const startDate = startOfMonth(selectedDate);
     const endDate = endOfMonth(selectedDate);
 
-    const { data, error } = await supabase
-      .from('modulation_days')
-      .select('date, is_modulated')
-      .gte('date', format(startDate, 'yyyy-MM-dd'))
-      .lte('date', format(endDate, 'yyyy-MM-dd'));
+    try {
+      const { data, error } = await supabase
+        .from('modulation_days')
+        .select('date, is_modulated')
+        .gte('date', format(startDate, 'yyyy-MM-dd'))
+        .lte('date', format(endDate, 'yyyy-MM-dd'));
 
-    if (error) {
-      console.error('Error fetching modulation data:', error);
-      return;
+      if (error) {
+        console.error('Error fetching modulation data:', error);
+        return;
+      }
+
+      // Asegurar que los datos coinciden con el tipo ModulationDay
+      const typedData: ModulationDay[] = (data || []).map(row => ({
+        date: row.date,
+        is_modulated: row.is_modulated
+      }));
+
+      setModulationData(typedData);
+    } catch (error) {
+      console.error('Error in fetchModulationData:', error);
+      toast.error('Error al cargar los datos de modulación');
     }
-
-    setModulationData(data || []);
   };
 
   useEffect(() => {
@@ -40,20 +56,26 @@ export const ModulationCalendar = () => {
   }, [selectedDate]);
 
   const handleToggleModulation = async (date: string, currentValue: boolean) => {
-    const { error } = await supabase
-      .from('modulation_days')
-      .upsert({
-        date,
-        is_modulated: !currentValue
-      });
+    try {
+      const { error } = await supabase
+        .from('modulation_days')
+        .upsert({
+          date,
+          is_modulated: !currentValue
+        });
 
-    if (error) {
+      if (error) {
+        console.error('Error updating modulation:', error);
+        toast.error('Error al actualizar la modulación');
+        return;
+      }
+
+      fetchModulationData();
+      toast.success('Modulación actualizada correctamente');
+    } catch (error) {
+      console.error('Error in handleToggleModulation:', error);
       toast.error('Error al actualizar la modulación');
-      return;
     }
-
-    fetchModulationData();
-    toast.success('Modulación actualizada correctamente');
   };
 
   const getDateClassName = (date: Date): string => {
