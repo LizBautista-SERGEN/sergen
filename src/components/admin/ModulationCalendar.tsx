@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,7 +91,7 @@ export const ModulationCalendar = () => {
       return "text-red-500 font-bold"; // Días modulados en rojo
     }
     
-    return "text-green-500 font-bold"; // Días no modulados en verde
+    return "text-red-500 font-bold"; // Días no modulados también en rojo según la especificación
   };
 
   return (
