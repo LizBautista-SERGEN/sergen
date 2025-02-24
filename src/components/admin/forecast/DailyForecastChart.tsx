@@ -32,7 +32,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Line 
             type="monotone" 
             dataKey="pronostico_diario" 
-            name="Pronóstico Diario"
+            name="Programado Diario"
             stroke="#F97316" 
             strokeWidth={2}
             dot={false}
@@ -41,8 +41,8 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Line 
             type="monotone" 
             dataKey="demanda_real" 
-            name="Demanda Real"
-            stroke="#0EA5E9" 
+            name="Ejecutado"
+            stroke="#0036A2" 
             strokeWidth={2}
             dot={false}
             connectNulls
@@ -50,7 +50,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Line 
             type="monotone" 
             dataKey="rango_superior" 
-            name="Rango Superior"
+            name="Límite Superior"
             stroke="#00C000" 
             strokeWidth={1}
             strokeDasharray="5 5"
@@ -60,7 +60,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Line 
             type="monotone" 
             dataKey="rango_inferior" 
-            name="Rango Inferior"
+            name="Límite Inferior"
             stroke="#00C000" 
             strokeWidth={1}
             strokeDasharray="5 5"
@@ -70,7 +70,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Line 
             type="monotone" 
             dataKey="reprogramacion" 
-            name="Reprogramación"
+            name="Reprogramado"
             stroke="#C00000" 
             strokeWidth={2}
             dot={false}
