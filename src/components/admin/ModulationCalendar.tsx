@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ModulationDay {
   date: string;
@@ -84,9 +85,21 @@ export const ModulationCalendar = () => {
           selected={selectedDate}
           onSelect={(date) => date && setSelectedDate(date)}
           className="rounded-md border"
-          classNames={{
-            day_selected: "bg-sergen-50 text-sergen-900",
-            day: (date: Date) => getDateClassName(date)
+          modifiers={{
+            modulated: (date) => {
+              const dateStr = format(date, 'yyyy-MM-dd');
+              return modulationData.some(d => d.date === dateStr && d.is_modulated);
+            }
+          }}
+          modifiersStyles={{
+            modulated: { color: 'red' }
+          }}
+          components={{
+            Day: ({ date }) => (
+              <div className={cn(getDateClassName(date))}>
+                {date.getDate()}
+              </div>
+            )
           }}
         />
       </div>
