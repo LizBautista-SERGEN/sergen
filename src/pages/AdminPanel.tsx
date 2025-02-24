@@ -4,8 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
@@ -27,9 +27,15 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchTodayForecast = async () => {
       try {
+        const today = new Date();
+        const todayStart = startOfDay(today);
+        const todayEnd = endOfDay(today);
+
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
+          .gte('fecha', todayStart.toISOString())
+          .lte('fecha', todayEnd.toISOString())
           .order('fecha', { ascending: true });
 
         if (error) {
@@ -38,17 +44,8 @@ const AdminPanel = () => {
           return;
         }
 
-        const today = new Date();
-        const todayStart = startOfDay(today);
-        const todayEnd = endOfDay(today);
-
-        const filteredData = data?.filter(row => {
-          const rowDate = new Date(row.fecha);
-          return rowDate >= todayStart && rowDate <= todayEnd;
-        });
-
-        console.log('Filtered forecast data:', filteredData);
-        setForecastData(filteredData || []);
+        console.log('Forecast data:', data);
+        setForecastData(data || []);
       } catch (error) {
         console.error('Error in fetchTodayForecast:', error);
         toast.error('Error al cargar los datos del pronóstico');
@@ -94,37 +91,38 @@ const AdminPanel = () => {
                           <LineChart data={forecastData}>
                             <XAxis 
                               dataKey="fecha" 
-                              tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                              tickFormatter={(value) => format(parseISO(value), 'HH:mm')}
                             />
                             <YAxis domain={['auto', 'auto']} />
                             <Tooltip 
-                              labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy HH:mm')}
-                              formatter={(value: any) => [
+                              labelFormatter={(value) => format(parseISO(value as string), 'dd/MM/yyyy HH:mm')}
+                              formatter={(value: any, name: string) => [
                                 `${Number(value).toFixed(2)} MW`,
-                                'Potencia'
+                                name
                               ]}
                             />
+                            <Legend />
                             <Line 
                               type="monotone" 
                               dataKey="pronostico_diario" 
+                              name="Pronóstico Diario"
                               stroke="#156082" 
-                              name="Pronóstico"
                               strokeWidth={2}
                               dot={false}
                             />
                             <Line 
                               type="monotone" 
                               dataKey="demanda_real" 
-                              stroke="#f39200" 
                               name="Demanda Real"
+                              stroke="#f39200" 
                               strokeWidth={2}
                               dot={false}
                             />
                             <Line 
                               type="monotone" 
                               dataKey="rango_superior" 
-                              stroke="#C00000" 
                               name="Rango Superior"
+                              stroke="#C00000" 
                               strokeWidth={1}
                               strokeDasharray="5 5"
                               dot={false}
@@ -132,8 +130,8 @@ const AdminPanel = () => {
                             <Line 
                               type="monotone" 
                               dataKey="rango_inferior" 
-                              stroke="#C00000" 
                               name="Rango Inferior"
+                              stroke="#C00000" 
                               strokeWidth={1}
                               strokeDasharray="5 5"
                               dot={false}
@@ -141,8 +139,8 @@ const AdminPanel = () => {
                             <Line 
                               type="monotone" 
                               dataKey="reprogramacion" 
-                              stroke="#00C000" 
                               name="Reprogramación"
+                              stroke="#00C000" 
                               strokeWidth={2}
                               dot={false}
                             />
@@ -165,7 +163,7 @@ const AdminPanel = () => {
                           <TableBody>
                             {forecastData.map((row, index) => (
                               <TableRow key={index}>
-                                <TableCell>{format(new Date(row.fecha), 'HH:mm')}</TableCell>
+                                <TableCell>{format(parseISO(row.fecha), 'HH:mm')}</TableCell>
                                 <TableCell>{row.pronostico_diario?.toFixed(2) ?? '-'}</TableCell>
                                 <TableCell>{row.demanda_real?.toFixed(2) ?? '-'}</TableCell>
                                 <TableCell>{row.rango_superior?.toFixed(2) ?? '-'}</TableCell>
