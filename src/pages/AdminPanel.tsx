@@ -7,6 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
+import { PowerPeaks } from "@/components/admin/PowerPeaks";
+import { ModulationCalendar } from "@/components/admin/ModulationCalendar";
 
 interface CoesData {
   fecha: string;
@@ -160,22 +163,25 @@ const AdminPanel = () => {
 
               <TabsContent value="historical">
                 <Card className="p-4">
-                  <h3 className="text-lg font-semibold">Datos Históricos</h3>
-                  {/* Implementar vista histórica */}
+                  <h3 className="text-lg font-semibold mb-4">Datos Históricos</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Subir archivo Excel con datos históricos. Se borrarán los datos existentes antes de importar los nuevos.
+                  </p>
+                  <HistoricalDataUpload />
                 </Card>
               </TabsContent>
 
               <TabsContent value="power">
                 <Card className="p-4">
-                  <h3 className="text-lg font-semibold">Potencia</h3>
-                  {/* Implementar vista de potencia */}
+                  <h3 className="text-lg font-semibold mb-4">Potencia Máxima (18:00 - 23:00)</h3>
+                  <PowerPeaks />
                 </Card>
               </TabsContent>
 
               <TabsContent value="modulation">
                 <Card className="p-4">
-                  <h3 className="text-lg font-semibold">Modulación</h3>
-                  {/* Implementar vista de modulación */}
+                  <h3 className="text-lg font-semibold mb-4">Modulación</h3>
+                  <ModulationCalendar />
                 </Card>
               </TabsContent>
             </Tabs>

@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { parse } from 'https://deno.land/x/excel@v1.1.2/mod.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import * as XLSX from 'https://deno.land/x/xlsx@v0.0.2/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,64 +18,42 @@ serve(async (req) => {
     const file = formData.get('file')
 
     if (!file || !(file instanceof File)) {
-      throw new Error('No se proporcionó un archivo válido')
+      throw new Error('No file uploaded')
     }
 
-    // Leer el archivo Excel
     const arrayBuffer = await file.arrayBuffer()
-    const workbook = parse(new Uint8Array(arrayBuffer))
-    const worksheet = workbook.sheets[0]
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]]
+    const data = XLSX.utils.sheet_to_json(worksheet)
 
-    if (!worksheet) {
-      throw new Error('El archivo no contiene hojas de cálculo')
-    }
-
-    // Procesar datos
-    const data = []
-    for (let i = 1; i < worksheet.rows.length; i++) {
-      const row = worksheet.rows[i]
-      if (!row[0]) continue // Saltar filas vacías
-
-      // Asumiendo columnas: Fecha, Ejecutado, Prog. Diaria, Prog. Semanal
-      const fecha = new Date(row[0])
-      if (isNaN(fecha.getTime())) continue
-
-      data.push({
-        fecha: fecha.toISOString(),
-        ejecutado: parseFloat(row[1] || '0'),
-        reprogramacion_diaria: parseFloat(row[2] || '0'),
-        created_at: new Date().toISOString()
-      })
-    }
-
-    // Guardar en Supabase
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    const formattedData = data.map((row: any) => ({
+      fecha: new Date(row.fecha).toISOString(),
+      demanda_programada: row.demanda_programada,
+      ejecutado: row.ejecutado,
+      prog_semanal: row.prog_semanal,
+      reprogramacion_diaria: row.reprogramacion_diaria,
+      error_porcentual: row.error_porcentual
+    }))
+
     const { error } = await supabase
       .from('coes_historical')
-      .upsert(data)
+      .insert(formattedData)
 
     if (error) throw error
 
     return new Response(
-      JSON.stringify({ success: true, count: data.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ message: 'Datos históricos actualizados correctamente' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
-
   } catch (error) {
-    console.error('Error:', error)
     return new Response(
-      JSON.stringify({ 
-        error: 'Error al procesar el archivo', 
-        details: error.message 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
-      }
+      JSON.stringify({ error: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
 })
