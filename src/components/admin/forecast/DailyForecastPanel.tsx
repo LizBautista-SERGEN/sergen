@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { format, startOfDay, endOfDay } from 'date-fns';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DailyForecastChart } from "./DailyForecastChart";
@@ -17,16 +16,17 @@ export const DailyForecastPanel = () => {
       setIsLoading(true);
       
       const now = new Date();
-      const today = startOfDay(now);
-      const tomorrow = endOfDay(now);
+      now.setUTCHours(0, 0, 0, 0);
+      const tomorrow = new Date(now);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
-      console.log('Consultando datos entre:', today.toISOString(), 'y', tomorrow.toISOString());
+      console.log('Consultando datos entre:', now.toISOString(), 'y', tomorrow.toISOString());
 
       const { data: existingData, error: dbError } = await supabase
         .from('coes_forecast')
         .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-        .gte('fecha', today.toISOString())
-        .lte('fecha', tomorrow.toISOString())
+        .gte('fecha', now.toISOString())
+        .lt('fecha', tomorrow.toISOString())
         .order('fecha', { ascending: true });
 
       if (dbError) {
@@ -62,8 +62,8 @@ export const DailyForecastPanel = () => {
         const { data: freshData, error: freshError } = await supabase
           .from('coes_forecast')
           .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-          .gte('fecha', today.toISOString())
-          .lte('fecha', tomorrow.toISOString())
+          .gte('fecha', now.toISOString())
+          .lt('fecha', tomorrow.toISOString())
           .order('fecha', { ascending: true });
 
         if (freshError) {
@@ -101,7 +101,7 @@ export const DailyForecastPanel = () => {
     <Card className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">
-          Pronóstico COES - {format(new Date(), 'dd/MM/yyyy')} (UTC)
+          Pronóstico COES - {new Date().toISOString().split('T')[0]} (UTC)
         </h3>
         {isLoading && (
           <div className="text-sm text-gray-500">

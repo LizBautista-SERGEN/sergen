@@ -1,6 +1,5 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from 'date-fns';
 import { CoesData } from '@/types/forecast';
 
 interface DailyForecastTableProps {
@@ -9,8 +8,7 @@ interface DailyForecastTableProps {
 
 export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
   const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return format(date, 'HH:mm');
+    return dateStr.split('T')[1].substring(0, 5);
   };
 
   return (

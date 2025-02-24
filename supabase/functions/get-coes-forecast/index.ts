@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Descargando archivo Excel del COES...");
+    console.log("Iniciando descarga de archivo Excel del COES...");
     const response = await fetch('https://www.coes.org.pe/Portal/portalinformacion/ExportarPronosticoTiempoReal');
     
     if (!response.ok) {
@@ -30,17 +30,20 @@ serve(async (req) => {
     for (let i = 2; i < jsonData.length; i++) {
       const row = jsonData[i];
       if (row && row[0]) {
-        const fecha = row[0];
+        // Asegurarnos de que la fecha se mantenga en UTC
+        const fecha = new Date(row[0]);
         processedData.push({
-          fecha: new Date(fecha).toISOString(),
-          pronostico_diario: parseFloat(row[1]) || null,
-          demanda_real: parseFloat(row[2]) || null,
-          rango_superior: parseFloat(row[3]) || null,
-          rango_inferior: parseFloat(row[4]) || null,
-          reprogramacion: parseFloat(row[5]) || null
+          fecha: fecha.toISOString(),
+          pronostico_diario: parseFloat(row[1]) || 0,
+          demanda_real: parseFloat(row[2]) || 0,
+          rango_superior: parseFloat(row[3]) || 0,
+          rango_inferior: parseFloat(row[4]) || 0,
+          reprogramacion: parseFloat(row[5]) || 0
         });
       }
     }
+
+    console.log(`Procesados ${processedData.length} registros`);
 
     // Update database
     const { createClient } = await import('@supabase/supabase-js');
@@ -49,14 +52,22 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Delete all existing data
+    // Delete existing data for today
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+    console.log('Eliminando datos existentes entre:', today.toISOString(), 'y', tomorrow.toISOString());
+
     const { error: deleteError } = await supabaseAdmin
       .from('coes_forecast')
       .delete()
-      .not('id', 'is', null); // This deletes all records
+      .gte('fecha', today.toISOString())
+      .lt('fecha', tomorrow.toISOString());
 
     if (deleteError) {
-      console.error('Error deleting old data:', deleteError);
+      console.error('Error eliminando datos antiguos:', deleteError);
       throw deleteError;
     }
 
@@ -66,9 +77,11 @@ serve(async (req) => {
       .insert(processedData);
 
     if (insertError) {
-      console.error('Error inserting new data:', insertError);
+      console.error('Error insertando nuevos datos:', insertError);
       throw insertError;
     }
+
+    console.log('Datos actualizados correctamente');
 
     return new Response(
       JSON.stringify({ 
