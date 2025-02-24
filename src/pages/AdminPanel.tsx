@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
@@ -25,10 +26,10 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchTodayForecast = async () => {
       try {
+        // Usar UTC directamente
         const today = new Date();
-        const peruDate = new Date(today.getTime() - (5 * 60 * 60 * 1000));
-        const start = startOfDay(peruDate);
-        const end = endOfDay(peruDate);
+        const start = startOfDay(today);
+        const end = endOfDay(today);
 
         console.log('Fetching forecast data from:', start.toISOString(), 'to:', end.toISOString());
 
@@ -45,16 +46,7 @@ const AdminPanel = () => {
         }
 
         console.log('Received forecast data:', data);
-        
-        if (data) {
-          const adjustedData = data.map(item => ({
-            ...item,
-            fecha: new Date(item.fecha).toISOString()
-          }));
-          setForecastData(adjustedData);
-        } else {
-          setForecastData([]);
-        }
+        setForecastData(data || []);
       } catch (error) {
         console.error('Error in fetchTodayForecast:', error);
       }
@@ -90,7 +82,7 @@ const AdminPanel = () => {
               <TabsContent value="daily">
                 <Card className="p-4">
                   <h3 className="text-lg font-semibold mb-4">
-                    Pronóstico del Día {format(new Date(), 'dd/MM/yyyy')}
+                    Pronóstico del Día {format(new Date(), 'dd/MM/yyyy')} (UTC)
                   </h3>
                   {forecastData.length > 0 ? (
                     <>
@@ -99,17 +91,11 @@ const AdminPanel = () => {
                           <LineChart data={forecastData}>
                             <XAxis 
                               dataKey="fecha" 
-                              tickFormatter={(value) => {
-                                const date = new Date(value);
-                                return format(date, 'HH:mm');
-                              }}
+                              tickFormatter={(value) => format(new Date(value), 'HH:mm')}
                             />
                             <YAxis domain={['auto', 'auto']} />
                             <Tooltip 
-                              labelFormatter={(value) => {
-                                const date = new Date(value);
-                                return format(date, 'dd/MM/yyyy HH:mm');
-                              }}
+                              labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy HH:mm')}
                               formatter={(value: any) => [
                                 `${Number(value).toFixed(2)} MW`,
                                 'Potencia'
@@ -165,7 +151,7 @@ const AdminPanel = () => {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Hora</TableHead>
+                              <TableHead>Hora (UTC)</TableHead>
                               <TableHead>Pronóstico Diario (MW)</TableHead>
                               <TableHead>Demanda Real (MW)</TableHead>
                               <TableHead>Rango Superior (MW)</TableHead>
