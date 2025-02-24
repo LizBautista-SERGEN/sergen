@@ -1,3 +1,4 @@
+
 export interface EnergyData {
   id: string;
   date: string;
