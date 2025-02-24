@@ -42,7 +42,7 @@ const LoginPage = () => {
           .single();
 
         if (profile?.role === 'superuser') {
-          navigate('/admin/dashboard');
+          navigate('/admin/panel');
         } else {
           navigate('/dashboard');
         }
@@ -109,7 +109,7 @@ const LoginPage = () => {
         
         toast.success("Inicio de sesión exitoso");
         if (profile?.role === 'superuser') {
-          navigate('/admin/dashboard');
+          navigate('/admin/panel');
         } else {
           navigate('/dashboard');
         }

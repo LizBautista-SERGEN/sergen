@@ -18,7 +18,7 @@ import ServiceControl from "./pages/ServiceControl";
 import ServiceContractual from "./pages/ServiceContractual";
 import ServiceEfficiency from "./pages/ServiceEfficiency";
 import ServiceDemanda from "./pages/ServiceDemanda";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
 import InformesPage from "./pages/InformesPage";
 
@@ -52,7 +52,7 @@ const App = () => {
                   <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
                   <Route path="/contacto" element={<ContactPage />} />
                   <Route path="/login" element={<LoginPage />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/panel" element={<AdminPanel />} />
                   <Route path="/perfil" element={<ProfilePage />} />
                   <Route path="/informes" element={<InformesPage />} />
                   <Route path="*" element={<NotFound />} />
