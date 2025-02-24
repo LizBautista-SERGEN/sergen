@@ -120,25 +120,34 @@ export type Database = {
       coes_historical: {
         Row: {
           created_at: string | null
+          demanda_programada: number | null
           ejecutado: number | null
+          error_porcentual: number | null
           fecha: string
           id: string
+          prog_semanal: number | null
           reprogramacion_diaria: number | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          demanda_programada?: number | null
           ejecutado?: number | null
+          error_porcentual?: number | null
           fecha: string
           id?: string
+          prog_semanal?: number | null
           reprogramacion_diaria?: number | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          demanda_programada?: number | null
           ejecutado?: number | null
+          error_porcentual?: number | null
           fecha?: string
           id?: string
+          prog_semanal?: number | null
           reprogramacion_diaria?: number | null
           updated_at?: string | null
         }
@@ -295,6 +304,36 @@ export type Database = {
           id?: never
           is_modulated?: boolean | null
           max_power?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      power_peaks: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_modulated: boolean | null
+          peak_time: string
+          peak_value: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_modulated?: boolean | null
+          peak_time: string
+          peak_value: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_modulated?: boolean | null
+          peak_time?: string
+          peak_value?: number
           updated_at?: string | null
         }
         Relationships: []
