@@ -32,7 +32,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Line 
             type="monotone" 
             dataKey="pronostico_diario" 
-            name="Programado Diario"
+            name="Pronóstico"
             stroke="#F97316" 
             strokeWidth={2}
             dot={false}

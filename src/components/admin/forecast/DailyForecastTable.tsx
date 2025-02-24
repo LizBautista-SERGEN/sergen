@@ -17,7 +17,7 @@ export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
         <TableHeader>
           <TableRow>
             <TableHead>Hora (UTC)</TableHead>
-            <TableHead>Programado Diario (MW)</TableHead>
+            <TableHead>Pronóstico (MW)</TableHead>
             <TableHead>Ejecutado (MW)</TableHead>
             <TableHead>Límite Superior (MW)</TableHead>
             <TableHead>Límite Inferior (MW)</TableHead>
