@@ -19,8 +19,8 @@ export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
             <TableHead>Hora (UTC)</TableHead>
             <TableHead>pronostico_diario (MW)</TableHead>
             <TableHead>demanda_real (MW)</TableHead>
-            <TableHead>rango_superior (MW)</TableHead>
             <TableHead>rango_inferior (MW)</TableHead>
+            <TableHead>rango_superior (MW)</TableHead>
             <TableHead>reprogramacion (MW)</TableHead>
           </TableRow>
         </TableHeader>
@@ -30,8 +30,8 @@ export const DailyForecastTable = ({ data }: DailyForecastTableProps) => {
               <TableCell>{formatTime(row.fecha)}</TableCell>
               <TableCell>{row.pronostico_diario || '-'}</TableCell>
               <TableCell>{row.demanda_real || '-'}</TableCell>
-              <TableCell>{row.rango_superior || '-'}</TableCell>
               <TableCell>{row.rango_inferior || '-'}</TableCell>
+              <TableCell>{row.rango_superior || '-'}</TableCell>
               <TableCell>{row.reprogramacion || '-'}</TableCell>
             </TableRow>
           ))}

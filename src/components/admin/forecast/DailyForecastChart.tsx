@@ -49,7 +49,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           />
           <Line 
             type="monotone" 
-            dataKey="rango_superior" 
+            dataKey="rango_inferior" 
             name="Límite Superior"
             stroke="#00C000" 
             strokeWidth={1}
@@ -59,7 +59,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           />
           <Line 
             type="monotone" 
-            dataKey="rango_inferior" 
+            dataKey="rango_superior" 
             name="Límite Inferior"
             stroke="#00C000" 
             strokeWidth={1}
