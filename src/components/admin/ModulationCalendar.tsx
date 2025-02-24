@@ -39,13 +39,16 @@ export const ModulationCalendar = () => {
   }, [selectedDate]);
 
   const handleToggleModulation = async (date: string, currentValue: boolean) => {
+    const currentTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+    
     const { error } = await supabase
       .from('power_peaks')
       .upsert({
         date,
-        is_modulated: !currentValue
-      })
-      .eq('date', date);
+        is_modulated: !currentValue,
+        peak_time: currentTime,
+        peak_value: 0 // Valor por defecto, ajustar según necesidades
+      });
 
     if (error) {
       toast.error('Error al actualizar la modulación');
@@ -56,7 +59,7 @@ export const ModulationCalendar = () => {
     toast.success('Modulación actualizada correctamente');
   };
 
-  const getDateStyle = (date: Date) => {
+  const getDateClassName = (date: Date): string => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const modulationDay = modulationData.find(d => d.date === dateStr);
     const today = new Date();
@@ -83,7 +86,7 @@ export const ModulationCalendar = () => {
           className="rounded-md border"
           classNames={{
             day_selected: "bg-sergen-50 text-sergen-900",
-            day: (date) => getDateStyle(date)
+            day: getDateClassName
           }}
         />
       </div>

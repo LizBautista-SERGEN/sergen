@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import * as XLSX from 'https://deno.land/x/xlsx@v0.0.2/mod.ts'
+import * as XLSX from 'https://deno.land/x/sheetjs@v0.18.3/xlsx.mjs'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,6 +51,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
+    console.error('Error processing file:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
