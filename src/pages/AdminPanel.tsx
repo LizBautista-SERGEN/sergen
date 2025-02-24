@@ -1,11 +1,10 @@
-
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
@@ -26,18 +25,21 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchTodayForecast = async () => {
       try {
-        // Usar UTC directamente
         const today = new Date();
-        const start = startOfDay(today);
-        const end = endOfDay(today);
+        const year = today.getUTCFullYear();
+        const month = String(today.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(today.getUTCDate()).padStart(2, '0');
+        
+        const startDate = `${year}-${month}-${day}T00:00:00Z`;
+        const endDate = `${year}-${month}-${day}T23:59:59Z`;
 
-        console.log('Fetching forecast data from:', start.toISOString(), 'to:', end.toISOString());
+        console.log('Fetching forecast data from:', startDate, 'to:', endDate);
 
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-          .gte('fecha', start.toISOString())
-          .lte('fecha', end.toISOString())
+          .gte('fecha', startDate)
+          .lte('fecha', endDate)
           .order('fecha', { ascending: true });
 
         if (error) {
