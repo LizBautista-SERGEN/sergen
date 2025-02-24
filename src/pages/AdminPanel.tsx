@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface CoesData {
   fecha: string;
@@ -13,6 +14,7 @@ interface CoesData {
   demanda_real: number | null;
   rango_inferior: number | null;
   rango_superior: number | null;
+  reprogramacion: number | null;
 }
 
 const AdminPanel = () => {
@@ -45,7 +47,7 @@ const AdminPanel = () => {
     <div className="container mx-auto py-16 space-y-6">
       <Card className="p-6">
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid grid-cols-2 gap-4">
+          <TabsList className="grid w-fit grid-cols-2 gap-4">
             <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
           </TabsList>
@@ -56,7 +58,7 @@ const AdminPanel = () => {
           
           <TabsContent value="forecast">
             <Tabs defaultValue="daily" className="space-y-4">
-              <TabsList className="grid grid-cols-4 gap-2">
+              <TabsList className="grid w-fit grid-cols-4 gap-2">
                 <TabsTrigger value="daily">Diario</TabsTrigger>
                 <TabsTrigger value="historical">Histórico</TabsTrigger>
                 <TabsTrigger value="power">Potencia</TabsTrigger>
@@ -66,7 +68,7 @@ const AdminPanel = () => {
               <TabsContent value="daily">
                 <Card className="p-4">
                   <h3 className="text-lg font-semibold mb-4">Pronóstico del Día</h3>
-                  <div className="h-[400px] w-full">
+                  <div className="h-[400px] w-full mb-6">
                     <ResponsiveContainer>
                       <LineChart data={forecastData}>
                         <XAxis 
@@ -115,8 +117,43 @@ const AdminPanel = () => {
                           strokeDasharray="5 5"
                           dot={false}
                         />
+                        <Line 
+                          type="monotone" 
+                          dataKey="reprogramacion" 
+                          stroke="#00C000" 
+                          name="Reprogramación"
+                          strokeWidth={2}
+                          dot={false}
+                        />
                       </LineChart>
                     </ResponsiveContainer>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Fecha</TableHead>
+                          <TableHead>Pronóstico Diario (MW)</TableHead>
+                          <TableHead>Demanda Real (MW)</TableHead>
+                          <TableHead>Rango Superior (MW)</TableHead>
+                          <TableHead>Rango Inferior (MW)</TableHead>
+                          <TableHead>Reprogramación (MW)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {forecastData.map((row, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{format(new Date(row.fecha), 'HH:mm')}</TableCell>
+                            <TableCell>{row.pronostico_diario?.toFixed(2) ?? '-'}</TableCell>
+                            <TableCell>{row.demanda_real?.toFixed(2) ?? '-'}</TableCell>
+                            <TableCell>{row.rango_superior?.toFixed(2) ?? '-'}</TableCell>
+                            <TableCell>{row.rango_inferior?.toFixed(2) ?? '-'}</TableCell>
+                            <TableCell>{row.reprogramacion?.toFixed(2) ?? '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </Card>
               </TabsContent>
