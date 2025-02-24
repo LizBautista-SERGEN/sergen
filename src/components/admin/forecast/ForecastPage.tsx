@@ -10,8 +10,7 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { PowerTab } from "./components/PowerTab";
-import { ModulationTab } from "./components/ModulationTab";
+import { startOfDay, endOfDay } from "date-fns";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
@@ -21,11 +20,15 @@ export const ForecastPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Obtenemos todos los datos sin filtrar por fecha
-      let { data: forecastData, error } = await supabase
+      const today = new Date();
+      const startOfToday = startOfDay(today).toISOString();
+      const endOfToday = endOfDay(today).toISOString();
+
+      const { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('*')
+        .gte('fecha', startOfToday)
+        .lte('fecha', endOfToday)
         .order('fecha', { ascending: true });
 
       if (error) {
@@ -34,18 +37,13 @@ export const ForecastPage = () => {
       }
 
       if (!forecastData || forecastData.length === 0) {
-        console.log('No hay datos disponibles');
-        toast.info('No hay datos disponibles');
+        console.log('No hay datos disponibles para hoy');
+        toast.info('No hay datos disponibles para hoy');
         setData([]);
         return;
       }
 
-      // Debugging de los datos obtenidos
-      console.log('Cantidad de datos recuperados:', forecastData.length);
-      forecastData.forEach((item, index) => {
-        console.log(`Registro ${index + 1}:`, new Date(item.fecha).toLocaleString());
-      });
-      
+      console.log('Datos obtenidos de Supabase:', forecastData);
       setData(forecastData);
 
     } catch (error) {
@@ -89,7 +87,7 @@ export const ForecastPage = () => {
     
     const interval = setInterval(() => {
       refreshData();
-    }, 15 * 60 * 1000); // 15 minutos
+    }, 15 * 60 * 1000); // 15 minutos en milisegundos
 
     return () => clearInterval(interval);
   }, []);
@@ -97,11 +95,9 @@ export const ForecastPage = () => {
   return (
     <div>
       <Tabs defaultValue="forecast" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="forecast">Diario</TabsTrigger>
           <TabsTrigger value="historical">Histórico</TabsTrigger>
-          <TabsTrigger value="power">Potencia</TabsTrigger>
-          <TabsTrigger value="modulation">Modulación</TabsTrigger>
         </TabsList>
         
         <TabsContent value="forecast">
@@ -144,14 +140,6 @@ export const ForecastPage = () => {
         
         <TabsContent value="historical">
           <HistoricalTab />
-        </TabsContent>
-
-        <TabsContent value="power">
-          <PowerTab />
-        </TabsContent>
-
-        <TabsContent value="modulation">
-          <ModulationTab />
         </TabsContent>
       </Tabs>
     </div>

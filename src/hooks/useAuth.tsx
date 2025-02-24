@@ -2,60 +2,53 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
-
-export type UserRole = 'superuser' | 'user' | null;
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<UserRole>(null);
-
-  const checkUserRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking user role:', error);
-        return null;
-      }
-
-      return (data?.role as UserRole) || 'user';
-    } catch (error) {
-      console.error('Error in checkUserRole:', error);
-      return null;
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const setupSession = async (currentSession: Session | null) => {
-      if (currentSession?.user?.id) {
-        const role = await checkUserRole(currentSession.user.id);
-        setUserRole(role);
-      } else {
-        setUserRole(null);
+    // Obtener la sesión actual
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        if (!error.message.includes('Invalid Refresh Token')) {
+          console.error('Error getting session:', error);
+          toast.error('Error al verificar la sesión');
+        }
+        // Si hay error de refresh token, redirigimos al login
+        setSession(null);
+        setLoading(false);
+        navigate('/login');
+        return;
       }
-      setSession(currentSession);
+      setSession(session);
       setLoading(false);
-    };
-
-    // Verificar sesión inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setupSession(session);
     });
 
-    // Suscribirse a cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setupSession(session);
+    // Escuchar cambios en la autenticación
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'SIGNED_OUT') {
+        console.log('Auth state changed: SIGNED_OUT');
+        setSession(null);
+        navigate('/login');
+      } else if (_event === 'TOKEN_REFRESHED') {
+        console.log('Auth state changed: TOKEN_REFRESHED');
+      }
+      
+      setSession(session);
+      setLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
-  return { session, loading, userRole };
+  return {
+    session,
+    loading,
+  };
 };

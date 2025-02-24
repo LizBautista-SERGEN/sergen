@@ -5,12 +5,10 @@ import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useQueryClient } from "@tanstack/react-query";
 
 export const UploadHistoricalData = () => {
   const [isUploading, setIsUploading] = useState(false);
   const { isSuperUser } = useUserProfile();
-  const queryClient = useQueryClient();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -23,53 +21,16 @@ export const UploadHistoricalData = () => {
 
     try {
       setIsUploading(true);
-      
-      // Convert file to base64
-      const base64File = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { error } = await supabase.functions.invoke('upload-historical-data', {
+        body: formData
       });
 
-      console.log('Enviando archivo:', file.name);
+      if (error) throw error;
 
-      // Primero, eliminar todos los datos existentes
-      const { error: deleteError } = await supabase
-        .from('coes_historical')
-        .delete()
-        .not('id', 'is', null); // Esto eliminará todos los registros
-
-      if (deleteError) {
-        console.error('Error al eliminar datos existentes:', deleteError);
-        throw new Error('Error al eliminar datos existentes');
-      }
-
-      // Luego, proceder con la carga del nuevo archivo
-      const { data, error } = await supabase.functions.invoke('upload-historical-data', {
-        body: {
-          fileName: file.name,
-          fileContent: base64File,
-          contentType: file.type
-        }
-      });
-
-      if (error) {
-        console.error('Error al subir archivo:', error);
-        throw error;
-      }
-
-      console.log('Respuesta:', data);
       toast.success('Datos históricos actualizados correctamente');
-      
-      // Invalidar la consulta para forzar una actualización de los datos
-      await queryClient.invalidateQueries({
-        queryKey: ['historical-data']
-      });
-      
-      // Limpiar el input file
-      event.target.value = '';
-      
     } catch (error: any) {
       console.error('Error al subir archivo:', error);
       toast.error('Error al procesar el archivo: ' + error.message);

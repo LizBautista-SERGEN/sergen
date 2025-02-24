@@ -1,70 +1,110 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ForecastPage } from "@/components/admin/forecast/ForecastPage";
-import { useAuth } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { userRole, loading, session } = useAuth();
 
   useEffect(() => {
-    if (!loading) {
-      if (!session) {
-        console.log('No session, redirecting to login');
+    checkAuth();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
         navigate('/login');
         return;
       }
 
-      if (userRole !== 'superuser') {
-        console.log('Not a superuser, redirecting to dashboard');
+      // When token is refreshed, verify the user's role
+      if (event === 'TOKEN_REFRESHED') {
+        verifyUserRole(session.user.id);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const verifyUserRole = async (userId: string) => {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        toast.error('Error al verificar permisos');
+        navigate('/login');
+        return;
+      }
+
+      if (profile?.role !== 'superuser') {
+        console.log('User is not superuser, redirecting to dashboard');
         toast.error('No tienes permisos para acceder a esta página');
         navigate('/dashboard');
       }
+    } catch (error) {
+      console.error('Profile verification error:', error);
+      navigate('/login');
     }
-  }, [loading, session, userRole, navigate]);
+  };
+
+  const checkAuth = async () => {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!session) {
+        console.log('No session found, redirecting to login');
+        navigate('/login');
+        return;
+      }
+
+      await verifyUserRole(session.user.id);
+      setLoading(false);
+
+    } catch (error) {
+      console.error('Auth check error:', error);
+      toast.error('Error de autenticación');
+      navigate('/login');
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg">Verificando acceso...</p>
-        </div>
+        <p>Cargando...</p>
       </div>
     );
-  }
-
-  if (!session || userRole !== 'superuser') {
-    return null;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h1 className="text-2xl font-bold mb-6">Panel de Administración</h1>
-          <Tabs defaultValue="users" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="users">Usuarios</TabsTrigger>
-              <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="users" className="space-y-4">
-              <div className="bg-white rounded-lg">
-                <UserManagement />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="forecast" className="space-y-4">
-              <div className="bg-white rounded-lg">
-                <ForecastPage />
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+        <Tabs defaultValue="users">
+          <TabsList>
+            <TabsTrigger value="users">Usuarios</TabsTrigger>
+            <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
+          </TabsList>
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
+          <TabsContent value="forecast">
+            <ForecastPage />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
