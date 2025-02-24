@@ -1,10 +1,9 @@
 
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DailyTab } from "./admin/forecast/DailyTab";
-import UserManagement from "@/components/admin/UserManagement";
-import DailyPowerManagement from "@/components/admin/DailyPowerManagement";
-import EnergyManagement from "@/components/admin/EnergyManagement";
+import { UserManagement } from "@/components/admin/UserManagement";
+import { DailyPowerManagement } from "@/components/admin/DailyPowerManagement";
+import { EnergyManagement } from "@/components/admin/EnergyManagement";
 
 const AdminPanel = () => {
   return (
@@ -14,7 +13,6 @@ const AdminPanel = () => {
           <TabsList className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <TabsTrigger value="users">Gestión de Usuarios</TabsTrigger>
             <TabsTrigger value="daily">Potencia Diaria</TabsTrigger>
-            <TabsTrigger value="forecast">Pronóstico COES</TabsTrigger>
             <TabsTrigger value="energy">Gestión de Energía</TabsTrigger>
           </TabsList>
           
@@ -24,10 +22,6 @@ const AdminPanel = () => {
           
           <TabsContent value="daily">
             <DailyPowerManagement />
-          </TabsContent>
-          
-          <TabsContent value="forecast">
-            <DailyTab />
           </TabsContent>
           
           <TabsContent value="energy">
