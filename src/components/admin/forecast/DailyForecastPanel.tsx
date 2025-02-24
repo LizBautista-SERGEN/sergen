@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DailyForecastChart } from "./DailyForecastChart";
@@ -11,22 +12,24 @@ import { CoesData } from "@/types/forecast";
 export const DailyForecastPanel = () => {
   const [forecastData, setForecastData] = useState<CoesData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const timeZone = 'America/Lima';
 
   const fetchCoesData = async () => {
     try {
       setIsLoading(true);
       
       const now = new Date();
-      const today = startOfDay(now).toISOString();
-      const tomorrow = endOfDay(now).toISOString();
+      const localDate = utcToZonedTime(now, timeZone);
+      const today = startOfDay(localDate);
+      const tomorrow = endOfDay(localDate);
 
-      console.log('Consultando datos entre:', today, 'y', tomorrow);
+      console.log('Consultando datos entre:', today.toISOString(), 'y', tomorrow.toISOString());
 
       const { data: existingData, error: dbError } = await supabase
         .from('coes_forecast')
         .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-        .gte('fecha', today)
-        .lte('fecha', tomorrow)
+        .gte('fecha', today.toISOString())
+        .lte('fecha', tomorrow.toISOString())
         .order('fecha', { ascending: true });
 
       if (dbError) {
@@ -62,8 +65,8 @@ export const DailyForecastPanel = () => {
         const { data: freshData, error: freshError } = await supabase
           .from('coes_forecast')
           .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-          .gte('fecha', today)
-          .lte('fecha', tomorrow)
+          .gte('fecha', today.toISOString())
+          .lte('fecha', tomorrow.toISOString())
           .order('fecha', { ascending: true });
 
         if (freshError) {
@@ -97,11 +100,16 @@ export const DailyForecastPanel = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const formatToLocalDate = (date: Date) => {
+    const zonedDate = utcToZonedTime(date, timeZone);
+    return format(zonedDate, 'dd/MM/yyyy');
+  };
+
   return (
     <Card className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">
-          Pronóstico COES - {format(new Date(), 'dd/MM/yyyy')}
+          Pronóstico COES - {formatToLocalDate(new Date())}
         </h3>
         {isLoading && (
           <div className="text-sm text-gray-500">
