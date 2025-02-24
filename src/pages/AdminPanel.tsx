@@ -5,7 +5,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
@@ -29,18 +29,19 @@ const AdminPanel = () => {
     try {
       setIsLoading(true);
       
-      // Fechas específicas
-      const startDate = '2024-02-24T00:00:00.000Z';
-      const endDate = '2024-02-25T00:00:00.000Z';
+      // Obtener fecha actual en UTC
+      const now = new Date();
+      const today = startOfDay(now).toISOString();
+      const tomorrow = endOfDay(now).toISOString();
 
-      console.log('Consultando datos entre:', startDate, 'y', endDate);
+      console.log('Consultando datos entre:', today, 'y', tomorrow);
 
       // Primero, obtener los datos de la base de datos
       const { data: existingData, error: dbError } = await supabase
         .from('coes_forecast')
         .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-        .gte('fecha', startDate)
-        .lte('fecha', endDate)
+        .gte('fecha', today)
+        .lte('fecha', tomorrow)
         .order('fecha', { ascending: true });
 
       if (dbError) {
@@ -79,8 +80,8 @@ const AdminPanel = () => {
         const { data: freshData, error: freshError } = await supabase
           .from('coes_forecast')
           .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-          .gte('fecha', startDate)
-          .lte('fecha', endDate)
+          .gte('fecha', today)
+          .lte('fecha', tomorrow)
           .order('fecha', { ascending: true });
 
         if (freshError) {
@@ -141,7 +142,7 @@ const AdminPanel = () => {
                 <Card className="p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">
-                      Pronóstico COES - 24/02/2024
+                      Pronóstico COES - {format(new Date(), 'dd/MM/yyyy')}
                     </h3>
                     {isLoading && (
                       <div className="text-sm text-gray-500">
@@ -245,7 +246,7 @@ const AdminPanel = () => {
                     </>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      No hay datos disponibles para mostrar
+                      No hay datos disponibles para hoy
                     </div>
                   )}
                 </Card>
