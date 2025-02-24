@@ -5,7 +5,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
@@ -29,42 +29,61 @@ const AdminPanel = () => {
     try {
       setIsLoading(true);
       
-      try {
-        // Primero, actualizar datos desde COES
-        const { data: response, error: functionError } = await supabase.functions.invoke('get-coes-forecast');
-        
-        if (functionError) {
-          console.error('Error invoking COES function:', functionError);
-          toast.error('Error al actualizar datos del COES');
-        } else if (response?.success) {
-          console.log('COES data updated successfully:', response.count, 'records');
-        } else {
-          console.error('Error updating COES data:', response?.error || 'Unknown error');
-          toast.error('Error al actualizar datos del COES');
-        }
-      } catch (functionCallError) {
-        console.error('Error calling COES function:', functionCallError);
-      }
+      // Obtener el rango de fechas para hoy
+      const now = new Date();
+      const todayStart = startOfDay(now).toISOString();
+      const todayEnd = endOfDay(now).toISOString();
 
-      // Luego, obtener todos los datos independientemente del resultado de la actualización
-      const { data, error } = await supabase
+      // Primero, obtener los datos de la base de datos
+      const { data: existingData, error: dbError } = await supabase
         .from('coes_forecast')
         .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
+        .gte('fecha', todayStart)
+        .lte('fecha', todayEnd)
         .order('fecha', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching forecast data:', error);
+      if (dbError) {
+        console.error('Error al obtener datos:', dbError);
         toast.error('Error al cargar los datos del pronóstico');
         return;
       }
 
-      if (data && data.length > 0) {
-        setForecastData(data);
+      // Luego intentar actualizar los datos desde COES
+      try {
+        const { error: functionError } = await supabase.functions.invoke('get-coes-forecast');
+        
+        if (functionError) {
+          console.error('Error al invocar función COES:', functionError);
+          toast.error('Error al actualizar datos del COES');
+        }
+
+        // Obtener los datos actualizados después de la llamada a COES
+        const { data: freshData, error: freshError } = await supabase
+          .from('coes_forecast')
+          .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
+          .gte('fecha', todayStart)
+          .lte('fecha', todayEnd)
+          .order('fecha', { ascending: true });
+
+        if (freshError) {
+          console.error('Error al obtener datos actualizados:', freshError);
+        } else if (freshData && freshData.length > 0) {
+          setForecastData(freshData);
+          return;
+        }
+      } catch (functionError) {
+        console.error('Error al llamar función COES:', functionError);
+      }
+
+      // Si no se pudieron obtener datos frescos, usar los datos existentes
+      if (existingData && existingData.length > 0) {
+        setForecastData(existingData);
       } else {
-        console.log('No forecast data available');
+        console.log('No hay datos disponibles para hoy');
+        setForecastData([]);
       }
     } catch (error) {
-      console.error('Error in fetchCoesData:', error);
+      console.error('Error en fetchCoesData:', error);
       toast.error('Error al cargar los datos del pronóstico');
     } finally {
       setIsLoading(false);
@@ -103,7 +122,7 @@ const AdminPanel = () => {
                 <Card className="p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">
-                      Pronóstico COES (UTC)
+                      Pronóstico COES - {format(new Date(), 'dd/MM/yyyy')} (UTC)
                     </h3>
                     {isLoading && (
                       <div className="text-sm text-gray-500">
@@ -119,7 +138,7 @@ const AdminPanel = () => {
                           <LineChart data={forecastData}>
                             <XAxis 
                               dataKey="fecha" 
-                              tickFormatter={(value) => format(parseISO(value), 'dd/MM HH:mm')}
+                              tickFormatter={(value) => format(parseISO(value), 'HH:mm')}
                             />
                             <YAxis domain={['auto', 'auto']} />
                             <Tooltip 
@@ -180,7 +199,7 @@ const AdminPanel = () => {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Fecha y Hora (UTC)</TableHead>
+                              <TableHead>Hora (UTC)</TableHead>
                               <TableHead>Pronóstico Diario (MW)</TableHead>
                               <TableHead>Demanda Real (MW)</TableHead>
                               <TableHead>Rango Superior (MW)</TableHead>
@@ -191,7 +210,7 @@ const AdminPanel = () => {
                           <TableBody>
                             {forecastData.map((row, index) => (
                               <TableRow key={index}>
-                                <TableCell>{format(parseISO(row.fecha), 'dd/MM/yyyy HH:mm')}</TableCell>
+                                <TableCell>{format(parseISO(row.fecha), 'HH:mm')}</TableCell>
                                 <TableCell>{row.pronostico_diario?.toFixed(2) ?? '-'}</TableCell>
                                 <TableCell>{row.demanda_real?.toFixed(2) ?? '-'}</TableCell>
                                 <TableCell>{row.rango_superior?.toFixed(2) ?? '-'}</TableCell>
@@ -205,7 +224,7 @@ const AdminPanel = () => {
                     </>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      No hay datos disponibles
+                      No hay datos disponibles para hoy
                     </div>
                   )}
                 </Card>
