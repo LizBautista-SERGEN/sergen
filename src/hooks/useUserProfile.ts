@@ -18,6 +18,8 @@ export const useUserProfile = () => {
           return;
         }
 
+        console.log('Fetching profile for user:', session.user.id);
+
         // Intentamos obtener el perfil usando maybeSingle para evitar errores si no existe
         const { data, error } = await supabase
           .from('profiles')
@@ -37,6 +39,7 @@ export const useUserProfile = () => {
           return;
         }
 
+        console.log('Profile data:', data);
         setProfile(data);
         setIsSuperUser(data.role === 'superuser');
       } catch (err) {
