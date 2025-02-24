@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
@@ -24,23 +25,30 @@ const AdminPanel = () => {
 
   useEffect(() => {
     const fetchTodayForecast = async () => {
-      const today = new Date();
-      const start = startOfDay(today);
-      const end = endOfDay(today);
+      try {
+        const today = new Date();
+        const start = startOfDay(today);
+        const end = endOfDay(today);
 
-      const { data, error } = await supabase
-        .from('coes_forecast')
-        .select('*')
-        .gte('fecha', start.toISOString())
-        .lte('fecha', end.toISOString())
-        .order('fecha', { ascending: true });
+        console.log('Fetching forecast data from:', start.toISOString(), 'to:', end.toISOString());
 
-      if (error) {
-        console.error('Error fetching forecast data:', error);
-        return;
+        const { data, error } = await supabase
+          .from('coes_forecast')
+          .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
+          .gte('fecha', start.toISOString())
+          .lte('fecha', end.toISOString())
+          .order('fecha', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching forecast data:', error);
+          return;
+        }
+
+        console.log('Received forecast data:', data);
+        setForecastData(data || []);
+      } catch (error) {
+        console.error('Error in fetchTodayForecast:', error);
       }
-
-      setForecastData(data || []);
     };
 
     fetchTodayForecast();
@@ -51,7 +59,7 @@ const AdminPanel = () => {
   return (
     <div className="container mx-auto py-16 space-y-6">
       <Card className="p-6">
-        <Tabs defaultValue="users" className="space-y-4">
+        <Tabs defaultValue="forecast" className="space-y-4">
           <TabsList className="grid w-fit grid-cols-2 gap-4">
             <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
@@ -72,94 +80,102 @@ const AdminPanel = () => {
 
               <TabsContent value="daily">
                 <Card className="p-4">
-                  <h3 className="text-lg font-semibold mb-4">Pronóstico del Día</h3>
-                  <div className="h-[400px] w-full mb-6">
-                    <ResponsiveContainer>
-                      <LineChart data={forecastData}>
-                        <XAxis 
-                          dataKey="fecha" 
-                          tickFormatter={(value) => format(new Date(value), 'HH:mm')}
-                        />
-                        <YAxis />
-                        <Tooltip 
-                          labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy HH:mm')}
-                          formatter={(value: any) => [
-                            `${Number(value).toFixed(2)} MW`,
-                            'Potencia'
-                          ]}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="pronostico_diario" 
-                          stroke="#156082" 
-                          name="Pronóstico"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="demanda_real" 
-                          stroke="#f39200" 
-                          name="Demanda Real"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="rango_superior" 
-                          stroke="#C00000" 
-                          name="Rango Superior"
-                          strokeWidth={1}
-                          strokeDasharray="5 5"
-                          dot={false}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="rango_inferior" 
-                          stroke="#C00000" 
-                          name="Rango Inferior"
-                          strokeWidth={1}
-                          strokeDasharray="5 5"
-                          dot={false}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="reprogramacion" 
-                          stroke="#00C000" 
-                          name="Reprogramación"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <h3 className="text-lg font-semibold mb-4">Pronóstico del Día {format(new Date(), 'dd/MM/yyyy')}</h3>
+                  {forecastData.length > 0 ? (
+                    <>
+                      <div className="h-[400px] w-full mb-6">
+                        <ResponsiveContainer>
+                          <LineChart data={forecastData}>
+                            <XAxis 
+                              dataKey="fecha" 
+                              tickFormatter={(value) => format(new Date(value), 'HH:mm')}
+                            />
+                            <YAxis domain={['auto', 'auto']} />
+                            <Tooltip 
+                              labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy HH:mm')}
+                              formatter={(value: any) => [
+                                `${Number(value).toFixed(2)} MW`,
+                                'Potencia'
+                              ]}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="pronostico_diario" 
+                              stroke="#156082" 
+                              name="Pronóstico"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="demanda_real" 
+                              stroke="#f39200" 
+                              name="Demanda Real"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="rango_superior" 
+                              stroke="#C00000" 
+                              name="Rango Superior"
+                              strokeWidth={1}
+                              strokeDasharray="5 5"
+                              dot={false}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="rango_inferior" 
+                              stroke="#C00000" 
+                              name="Rango Inferior"
+                              strokeWidth={1}
+                              strokeDasharray="5 5"
+                              dot={false}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="reprogramacion" 
+                              stroke="#00C000" 
+                              name="Reprogramación"
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
 
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Hora</TableHead>
-                          <TableHead>Pronóstico Diario (MW)</TableHead>
-                          <TableHead>Demanda Real (MW)</TableHead>
-                          <TableHead>Rango Superior (MW)</TableHead>
-                          <TableHead>Rango Inferior (MW)</TableHead>
-                          <TableHead>Reprogramación (MW)</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {forecastData.map((row, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{format(new Date(row.fecha), 'HH:mm')}</TableCell>
-                            <TableCell>{row.pronostico_diario?.toFixed(2) ?? '-'}</TableCell>
-                            <TableCell>{row.demanda_real?.toFixed(2) ?? '-'}</TableCell>
-                            <TableCell>{row.rango_superior?.toFixed(2) ?? '-'}</TableCell>
-                            <TableCell>{row.rango_inferior?.toFixed(2) ?? '-'}</TableCell>
-                            <TableCell>{row.reprogramacion?.toFixed(2) ?? '-'}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Hora</TableHead>
+                              <TableHead>Pronóstico Diario (MW)</TableHead>
+                              <TableHead>Demanda Real (MW)</TableHead>
+                              <TableHead>Rango Superior (MW)</TableHead>
+                              <TableHead>Rango Inferior (MW)</TableHead>
+                              <TableHead>Reprogramación (MW)</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {forecastData.map((row, index) => (
+                              <TableRow key={index}>
+                                <TableCell>{format(new Date(row.fecha), 'HH:mm')}</TableCell>
+                                <TableCell>{row.pronostico_diario?.toFixed(2) ?? '-'}</TableCell>
+                                <TableCell>{row.demanda_real?.toFixed(2) ?? '-'}</TableCell>
+                                <TableCell>{row.rango_superior?.toFixed(2) ?? '-'}</TableCell>
+                                <TableCell>{row.rango_inferior?.toFixed(2) ?? '-'}</TableCell>
+                                <TableCell>{row.reprogramacion?.toFixed(2) ?? '-'}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No hay datos disponibles para el día de hoy
+                    </div>
+                  )}
                 </Card>
               </TabsContent>
 
