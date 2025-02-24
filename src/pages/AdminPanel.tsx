@@ -29,9 +29,11 @@ const AdminPanel = () => {
     try {
       setIsLoading(true);
       
-      // Fecha específica hasta el 25 de febrero a las 00:00
-      const endDate = '2024-02-25T00:00:00+00:00';
-      const startDate = '2024-02-24T00:00:00+00:00';
+      // Fechas específicas
+      const startDate = '2024-02-24T00:00:00.000Z';
+      const endDate = '2024-02-25T00:00:00.000Z';
+
+      console.log('Consultando datos entre:', startDate, 'y', endDate);
 
       // Primero, obtener los datos de la base de datos
       const { data: existingData, error: dbError } = await supabase
@@ -47,17 +49,22 @@ const AdminPanel = () => {
         return;
       }
 
-      // Procesar los datos para convertir 0 a null
-      const processedData = existingData?.map(row => ({
-        ...row,
-        pronostico_diario: row.pronostico_diario === 0 ? null : row.pronostico_diario,
-        demanda_real: row.demanda_real === 0 ? null : row.demanda_real,
-        rango_inferior: row.rango_inferior === 0 ? null : row.rango_inferior,
-        rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
-        reprogramacion: row.reprogramacion === 0 ? null : row.reprogramacion
-      })) || [];
+      console.log('Datos obtenidos de la base de datos:', existingData);
 
-      setForecastData(processedData);
+      if (existingData && existingData.length > 0) {
+        // Procesar los datos para convertir 0 a null
+        const processedData = existingData.map(row => ({
+          ...row,
+          pronostico_diario: row.pronostico_diario === 0 ? null : row.pronostico_diario,
+          demanda_real: row.demanda_real === 0 ? null : row.demanda_real,
+          rango_inferior: row.rango_inferior === 0 ? null : row.rango_inferior,
+          rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
+          reprogramacion: row.reprogramacion === 0 ? null : row.reprogramacion
+        }));
+
+        console.log('Datos procesados:', processedData);
+        setForecastData(processedData);
+      }
 
       // Luego intentar actualizar los datos desde COES
       try {
@@ -88,6 +95,7 @@ const AdminPanel = () => {
             rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
             reprogramacion: row.reprogramacion === 0 ? null : row.reprogramacion
           }));
+          console.log('Datos frescos procesados:', processedFreshData);
           setForecastData(processedFreshData);
         }
       } catch (functionError) {
