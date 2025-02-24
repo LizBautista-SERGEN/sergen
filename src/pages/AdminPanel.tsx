@@ -30,8 +30,8 @@ const AdminPanel = () => {
         const month = String(today.getUTCMonth() + 1).padStart(2, '0');
         const day = String(today.getUTCDate()).padStart(2, '0');
         
-        const startDate = `${year}-${month}-${day}T00:00:00Z`;
-        const endDate = `${year}-${month}-${day}T23:59:59Z`;
+        const startDate = `${year}-${month}-${day} 00:00:00+00`;
+        const endDate = `${year}-${month}-${day} 23:59:59+00`;
 
         console.log('Fetching forecast data from:', startDate, 'to:', endDate);
 

@@ -26,16 +26,16 @@ export const HistoricalDataUpload = () => {
       const { error: deleteError } = await supabase
         .from('coes_historical')
         .delete()
-        .not('id', 'is', null);
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Usar una condición que siempre sea verdadera
 
       if (deleteError) throw deleteError;
 
       // Luego subimos los nuevos datos
-      const { error } = await supabase.functions.invoke('upload-historical-data', {
+      const response = await supabase.functions.invoke('upload-historical-data', {
         body: formData
       });
 
-      if (error) throw error;
+      if (response.error) throw response.error;
 
       toast.success('Datos históricos actualizados correctamente');
     } catch (error: any) {
@@ -43,6 +43,9 @@ export const HistoricalDataUpload = () => {
       toast.error('Error al procesar el archivo: ' + error.message);
     } finally {
       setIsUploading(false);
+      if (event.target) {
+        event.target.value = ''; // Limpiar el input para permitir subir el mismo archivo nuevamente
+      }
     }
   };
 
