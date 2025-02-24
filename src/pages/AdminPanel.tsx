@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
@@ -23,37 +22,63 @@ interface CoesData {
 
 const AdminPanel = () => {
   const [forecastData, setForecastData] = useState<CoesData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchTodayForecast = async () => {
+    try {
+      setIsLoading(true);
+      const today = new Date();
+      const todayStart = startOfDay(today);
+      const todayEnd = endOfDay(today);
+
+      const { data: existingData, error: dbError } = await supabase
+        .from('coes_forecast')
+        .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
+        .gte('fecha', todayStart.toISOString())
+        .lte('fecha', todayEnd.toISOString())
+        .order('fecha', { ascending: true });
+
+      if (dbError) {
+        console.error('Error fetching forecast data:', dbError);
+        toast.error('Error al cargar los datos del pronóstico');
+        return;
+      }
+
+      try {
+        const response = await supabase.functions.invoke('get-coes-forecast');
+        if (!response.data.success) {
+          console.error('Error updating COES data:', response.data.error);
+        } else {
+          console.log('COES data updated successfully:', response.data.count, 'records');
+          
+          const { data: freshData, error: freshError } = await supabase
+            .from('coes_forecast')
+            .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
+            .gte('fecha', todayStart.toISOString())
+            .lte('fecha', todayEnd.toISOString())
+            .order('fecha', { ascending: true });
+
+          if (!freshError && freshData) {
+            setForecastData(freshData);
+            return;
+          }
+        }
+      } catch (updateError) {
+        console.error('Error invoking get-coes-forecast:', updateError);
+      }
+
+      setForecastData(existingData || []);
+    } catch (error) {
+      console.error('Error in fetchTodayForecast:', error);
+      toast.error('Error al cargar los datos del pronóstico');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTodayForecast = async () => {
-      try {
-        const today = new Date();
-        const todayStart = startOfDay(today);
-        const todayEnd = endOfDay(today);
-
-        const { data, error } = await supabase
-          .from('coes_forecast')
-          .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-          .gte('fecha', todayStart.toISOString())
-          .lte('fecha', todayEnd.toISOString())
-          .order('fecha', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching forecast data:', error);
-          toast.error('Error al cargar los datos del pronóstico');
-          return;
-        }
-
-        console.log('Forecast data:', data);
-        setForecastData(data || []);
-      } catch (error) {
-        console.error('Error in fetchTodayForecast:', error);
-        toast.error('Error al cargar los datos del pronóstico');
-      }
-    };
-
     fetchTodayForecast();
-    const interval = setInterval(fetchTodayForecast, 5 * 60 * 1000);
+    const interval = setInterval(fetchTodayForecast, 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -81,9 +106,17 @@ const AdminPanel = () => {
 
               <TabsContent value="daily">
                 <Card className="p-4">
-                  <h3 className="text-lg font-semibold mb-4">
-                    Pronóstico del Día {format(new Date(), 'dd/MM/yyyy')} (UTC)
-                  </h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">
+                      Pronóstico del Día {format(new Date(), 'dd/MM/yyyy')} (UTC)
+                    </h3>
+                    {isLoading && (
+                      <div className="text-sm text-gray-500">
+                        Actualizando datos...
+                      </div>
+                    )}
+                  </div>
+                  
                   {forecastData.length > 0 ? (
                     <>
                       <div className="h-[400px] w-full mb-6">

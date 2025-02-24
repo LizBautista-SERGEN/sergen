@@ -4,3 +4,6 @@ project_id = "zbixjkgwperxqrdhvtoy"
 [functions]
 [functions.get-coes-historical]
 verify_jwt = false
+
+[functions.get-coes-forecast]
+verify_jwt = false
