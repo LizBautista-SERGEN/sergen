@@ -1,10 +1,68 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsLoggedIn(!!session);
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Primero verificamos si hay una sesión activa
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Si no hay sesión, simplemente actualizamos el estado y redirigimos
+      if (!session) {
+        console.log('No hay sesión activa, redirigiendo...');
+        setIsLoggedIn(false);
+        navigate("/");
+        return;
+      }
+
+      // Si hay sesión, intentamos cerrarla
+      const { error } = await supabase.auth.signOut();
+      
+      // Ignoramos el error específico de 'session_not_found'
+      if (error && !error.message.includes('session_not_found')) {
+        console.error("Error al cerrar sesión:", error);
+        toast.error("Error al cerrar sesión");
+        return;
+      }
+
+      // Si todo fue exitoso o el error fue session_not_found
+      setIsLoggedIn(false);
+      toast.success("Sesión cerrada correctamente");
+      navigate("/");
+      
+    } catch (error: any) {
+      console.error("Error inesperado al cerrar sesión:", error);
+      // En caso de error, aseguramos que el usuario sea desconectado de todas formas
+      setIsLoggedIn(false);
+      toast.error("Error al cerrar sesión");
+      navigate("/");
+    }
+  };
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -13,7 +71,6 @@ const Navbar = () => {
     { text: "Nosotros", href: "/nosotros" },
     { text: "Servicios", href: "/servicios" },
     { text: "Contacto", href: "/contacto" },
-    { text: "Iniciar Sesión", href: "/login" },
   ];
 
   return (
@@ -28,8 +85,7 @@ const Navbar = () => {
             />
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
@@ -39,9 +95,26 @@ const Navbar = () => {
                 {item.text}
               </Link>
             ))}
+            {isLoggedIn ? (
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="text-sergen-500 hover:text-sergen-600"
+              >
+                Cerrar Sesión
+              </Button>
+            ) : (
+              <Link to="/login">
+                <Button
+                  variant="default"
+                  className="bg-sergen-500 hover:bg-sergen-600 text-white"
+                >
+                  Iniciar Sesión
+                </Button>
+              </Link>
+            )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={toggleMenu}
             className="md:hidden text-gray-600 hover:text-sergen-500"
@@ -51,7 +124,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isOpen && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -70,6 +142,25 @@ const Navbar = () => {
                 {item.text}
               </Link>
             ))}
+            {isLoggedIn ? (
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setIsOpen(false);
+                }}
+                className="block w-full text-left text-gray-600 hover:text-sergen-500 transition-colors"
+              >
+                Cerrar Sesión
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="block text-gray-600 hover:text-sergen-500 transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Iniciar Sesión
+              </Link>
+            )}
           </div>
         </motion.div>
       )}

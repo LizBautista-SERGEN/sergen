@@ -7,7 +7,7 @@ const WhyChooseUs = () => {
     {
       icon: <ChartBar className="h-8 w-8 text-white" />,
       title: "Trayectoria",
-      description: "Tenemos 5 años de trayectoria en el mercado, esta experiencia nos permite brindarle soluciones integrales que satisfagan las expectivas de los clientes."
+      description: "Tenemos diversos casos de éxito en el mercado, esta experiencia nos permite brindarle soluciones integrales que satisfagan las expectativas de los clientes."
     },
     {
       icon: <LayoutGrid className="h-8 w-8 text-white" />,
@@ -27,12 +27,15 @@ const WhyChooseUs = () => {
   ];
 
   return (
-    <section className="bg-sergen-600 py-24">
+    <section className="bg-gradient-to-b from-white to-sergen-50/30 py-24">
       <div className="container mx-auto px-4">
         <AnimatedSection className="text-center mb-16">
-          <h2 className="mb-6 text-4xl font-bold text-white">
+          <h2 className="mb-6 text-4xl font-bold text-gray-900">
             Por qué elegirnos
           </h2>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Nuestra experiencia y compromiso nos distinguen en el mercado de eficiencia energética
+          </p>
         </AnimatedSection>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -42,8 +45,8 @@ const WhyChooseUs = () => {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sergen-500">
                   {reason.icon}
                 </div>
-                <h3 className="mb-4 text-2xl font-bold text-white">{reason.title}</h3>
-                <p className="text-white/80">{reason.description}</p>
+                <h3 className="mb-4 text-2xl font-bold text-[#f39200]">{reason.title}</h3>
+                <p className="text-black">{reason.description}</p>
               </div>
             </AnimatedSection>
           ))}

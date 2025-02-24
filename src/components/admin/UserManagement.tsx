@@ -1,11 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface User {
@@ -18,39 +16,41 @@ interface User {
 
 export const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
+    // Primero, obtenemos el rol del usuario actual
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user.id) return;
+
+    const { data: currentUserProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError || currentUserProfile?.role !== 'superuser') {
+      toast.error('No tienes permisos para ver usuarios');
+      return;
+    }
+
+    // Ahora hacemos la consulta para obtener todos los usuarios
     const { data, error } = await supabase
       .from('profiles')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('Error fetching users:', error);
       toast.error('Error al cargar usuarios');
       return;
     }
 
+    console.log('Usuarios obtenidos:', data); // Para debugging
     setUsers(data || []);
-  };
-
-  const handleCreateUser = async () => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
-      });
-
-      if (error) throw error;
-
-      toast.success('Usuario creado exitosamente');
-      setNewUserEmail("");
-      setNewUserPassword("");
-      fetchUsers();
-    } catch (error) {
-      toast.error('Error al crear usuario');
-      console.error('Error:', error);
-    }
   };
 
   const handleToggleAccess = async (userId: string, currentAccess: boolean) => {
@@ -60,6 +60,7 @@ export const UserManagement = () => {
       .eq('id', userId);
 
     if (error) {
+      console.error('Error toggling access:', error);
       toast.error('Error al actualizar acceso');
       return;
     }
@@ -74,8 +75,8 @@ export const UserManagement = () => {
       if (error) throw error;
       toast.success('Correo de restablecimiento enviado');
     } catch (error) {
+      console.error('Error resetting password:', error);
       toast.error('Error al enviar correo de restablecimiento');
-      console.error('Error:', error);
     }
   };
 
@@ -84,31 +85,7 @@ export const UserManagement = () => {
       <CardHeader>
         <CardTitle>Gestión de Usuarios</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="space-y-2">
-            <Label htmlFor="newUserEmail">Email</Label>
-            <Input
-              id="newUserEmail"
-              type="email"
-              value={newUserEmail}
-              onChange={(e) => setNewUserEmail(e.target.value)}
-              placeholder="nuevo@usuario.com"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="newUserPassword">Contraseña</Label>
-            <Input
-              id="newUserPassword"
-              type="password"
-              value={newUserPassword}
-              onChange={(e) => setNewUserPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
-        </div>
-        <Button onClick={handleCreateUser}>Crear Usuario</Button>
-
+      <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
