@@ -4,7 +4,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
@@ -26,21 +26,9 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchTodayForecast = async () => {
       try {
-        const today = new Date();
-        const year = today.getUTCFullYear();
-        const month = String(today.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(today.getUTCDate()).padStart(2, '0');
-        
-        const startDate = `${year}-${month}-${day} 00:00:00+00`;
-        const endDate = `${year}-${month}-${day} 23:59:59+00`;
-
-        console.log('Fetching forecast data from:', startDate, 'to:', endDate);
-
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-          .filter('fecha', 'gte', startDate)
-          .filter('fecha', 'lte', endDate)
           .order('fecha', { ascending: true });
 
         if (error) {
@@ -49,8 +37,17 @@ const AdminPanel = () => {
           return;
         }
 
-        console.log('Received forecast data:', data);
-        setForecastData(data || []);
+        const today = new Date();
+        const todayStart = startOfDay(today);
+        const todayEnd = endOfDay(today);
+
+        const filteredData = data?.filter(row => {
+          const rowDate = new Date(row.fecha);
+          return rowDate >= todayStart && rowDate <= todayEnd;
+        });
+
+        console.log('Filtered forecast data:', filteredData);
+        setForecastData(filteredData || []);
       } catch (error) {
         console.error('Error in fetchTodayForecast:', error);
         toast.error('Error al cargar los datos del pronóstico');

@@ -25,7 +25,9 @@ serve(async (req) => {
     const arrayBuffer = await file.arrayBuffer()
     const workbook = XLSX.read(arrayBuffer, { type: 'array' })
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-    const data = XLSX.utils.sheet_to_json(worksheet)
+    const rawData = XLSX.utils.sheet_to_json(worksheet)
+
+    console.log('Raw data from Excel:', rawData)
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -33,31 +35,50 @@ serve(async (req) => {
     )
 
     // Formatea los datos antes de insertarlos
-    const formattedData = data.map((row: any) => {
-      // Asegúrate de que la fecha esté en el formato correcto
-      let fecha = new Date(row.fecha)
-      if (isNaN(fecha.getTime())) {
-        // Si la fecha no es válida, intenta convertir desde Excel serial number
-        const excelEpoch = new Date(1899, 11, 31)
-        fecha = new Date(excelEpoch.getTime() + (row.fecha - 1) * 24 * 60 * 60 * 1000)
-      }
+    const formattedData = rawData.map((row: any) => {
+      try {
+        let fecha
+        if (typeof row.fecha === 'number') {
+          // Si es un número de serie de Excel
+          const excelEpoch = new Date(1899, 11, 30)
+          fecha = new Date(excelEpoch.getTime() + row.fecha * 24 * 60 * 60 * 1000)
+        } else {
+          // Si es una cadena de fecha
+          fecha = new Date(row.fecha)
+        }
 
-      return {
-        fecha: fecha.toISOString().replace('T', ' ').replace('Z', '+00'),
-        demanda_programada: row.demanda_programada,
-        reprogramacion_diaria: row.reprogramacion_diaria,
-        prog_semanal: row.prog_semanal,
-        error_porcentual: row.error_porcentual,
-        ejecutado: row.ejecutado
+        if (isNaN(fecha.getTime())) {
+          throw new Error(`Invalid date: ${row.fecha}`)
+        }
+
+        // Formatear la fecha al formato específico de PostgreSQL
+        const formattedDate = fecha.toISOString().replace('T', ' ').replace('Z', '+00')
+
+        return {
+          fecha: formattedDate,
+          demanda_programada: Number(row.demanda_programada) || null,
+          reprogramacion_diaria: Number(row.reprogramacion_diaria) || null,
+          prog_semanal: Number(row.prog_semanal) || null,
+          error_porcentual: Number(row.error_porcentual) || null,
+          ejecutado: Number(row.ejecutado) || null
+        }
+      } catch (error) {
+        console.error('Error processing row:', row, error)
+        throw error
       }
     })
+
+    console.log('Formatted data:', formattedData)
 
     // Realiza la inserción
     const { error: insertError } = await supabase
       .from('coes_historical')
       .insert(formattedData)
 
-    if (insertError) throw insertError
+    if (insertError) {
+      console.error('Insert error:', insertError)
+      throw insertError
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: 'Datos históricos actualizados correctamente' }),
@@ -69,10 +90,14 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing file:', error)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'Error procesando el archivo',
+        details: error.toString()
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
+        status: 200 // Cambiado a 200 para evitar el error de non-2xx
       }
     )
   }
