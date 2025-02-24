@@ -86,7 +86,7 @@ export const ModulationCalendar = () => {
           className="rounded-md border"
           classNames={{
             day_selected: "bg-sergen-50 text-sergen-900",
-            day: getDateClassName
+            day: (date: Date) => getDateClassName(date)
           }}
         />
       </div>
