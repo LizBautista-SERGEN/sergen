@@ -5,7 +5,7 @@ import { UserManagement } from "@/components/admin/UserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
@@ -29,17 +29,16 @@ const AdminPanel = () => {
     try {
       setIsLoading(true);
       
-      // Obtener el rango de fechas para hoy
-      const now = new Date();
-      const todayStart = startOfDay(now).toISOString();
-      const todayEnd = endOfDay(now).toISOString();
+      // Fecha específica hasta el 25 de febrero a las 00:00
+      const endDate = '2024-02-25T00:00:00+00:00';
+      const startDate = '2024-02-24T00:00:00+00:00';
 
       // Primero, obtener los datos de la base de datos
       const { data: existingData, error: dbError } = await supabase
         .from('coes_forecast')
         .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-        .gte('fecha', todayStart)
-        .lte('fecha', todayEnd)
+        .gte('fecha', startDate)
+        .lte('fecha', endDate)
         .order('fecha', { ascending: true });
 
       if (dbError) {
@@ -73,8 +72,8 @@ const AdminPanel = () => {
         const { data: freshData, error: freshError } = await supabase
           .from('coes_forecast')
           .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
-          .gte('fecha', todayStart)
-          .lte('fecha', todayEnd)
+          .gte('fecha', startDate)
+          .lte('fecha', endDate)
           .order('fecha', { ascending: true });
 
         if (freshError) {
@@ -134,7 +133,7 @@ const AdminPanel = () => {
                 <Card className="p-4">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">
-                      Pronóstico COES - {format(new Date(), 'dd/MM/yyyy')}
+                      Pronóstico COES - 24/02/2024
                     </h3>
                     {isLoading && (
                       <div className="text-sm text-gray-500">
@@ -162,7 +161,7 @@ const AdminPanel = () => {
                               type="monotone" 
                               dataKey="pronostico_diario" 
                               name="Pronóstico Diario"
-                              stroke="#156082" 
+                              stroke="#F97316" 
                               strokeWidth={2}
                               dot={false}
                               connectNulls
@@ -171,7 +170,7 @@ const AdminPanel = () => {
                               type="monotone" 
                               dataKey="demanda_real" 
                               name="Demanda Real"
-                              stroke="#f39200" 
+                              stroke="#0EA5E9" 
                               strokeWidth={2}
                               dot={false}
                               connectNulls
@@ -180,7 +179,7 @@ const AdminPanel = () => {
                               type="monotone" 
                               dataKey="rango_superior" 
                               name="Rango Superior"
-                              stroke="#C00000" 
+                              stroke="#00C000" 
                               strokeWidth={1}
                               strokeDasharray="5 5"
                               dot={false}
@@ -190,7 +189,7 @@ const AdminPanel = () => {
                               type="monotone" 
                               dataKey="rango_inferior" 
                               name="Rango Inferior"
-                              stroke="#C00000" 
+                              stroke="#00C000" 
                               strokeWidth={1}
                               strokeDasharray="5 5"
                               dot={false}
@@ -200,7 +199,7 @@ const AdminPanel = () => {
                               type="monotone" 
                               dataKey="reprogramacion" 
                               name="Reprogramación"
-                              stroke="#00C000" 
+                              stroke="#C00000" 
                               strokeWidth={2}
                               dot={false}
                               connectNulls
@@ -238,7 +237,7 @@ const AdminPanel = () => {
                     </>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
-                      No hay datos disponibles para hoy
+                      No hay datos disponibles para mostrar
                     </div>
                   )}
                 </Card>
