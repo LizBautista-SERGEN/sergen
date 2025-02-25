@@ -8,6 +8,7 @@ import { HistoricalChart } from "./HistoricalChart";
 
 export const HistoricalDataUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Para forzar la recarga del gráfico
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -47,6 +48,7 @@ export const HistoricalDataUpload = () => {
       }
 
       toast.success('Datos históricos actualizados correctamente');
+      setRefreshKey(prev => prev + 1); // Forzar la recarga del gráfico
     } catch (error: any) {
       console.error('Error al subir archivo:', error);
       toast.error('Error al procesar el archivo: ' + (error.message || 'Error desconocido'));
@@ -87,7 +89,9 @@ export const HistoricalDataUpload = () => {
         </p>
       </div>
 
-      <HistoricalChart />
+      <div className="h-[400px] w-full border rounded-lg p-4">
+        <HistoricalChart key={refreshKey} />
+      </div>
     </div>
   );
 };

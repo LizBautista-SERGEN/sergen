@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -12,47 +13,37 @@ interface ModulationDay {
   is_modulated: boolean;
 }
 
-type ModulationDaysResponse = {
-  date: string;
-  is_modulated: boolean;
-}
-
 export const ModulationCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchModulationData = async () => {
-    const startDate = startOfMonth(selectedDate);
-    const endDate = endOfMonth(selectedDate);
-
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('modulation_days')
         .select('date, is_modulated')
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .lte('date', format(endDate, 'yyyy-MM-dd'));
+        .order('date', { ascending: false });
 
       if (error) {
-        console.error('Error fetching modulation data:', error);
+        console.error('Error al cargar datos de modulación:', error);
+        toast.error("Error al cargar datos de modulación");
         return;
       }
 
-      // Asegurar que los datos coinciden con el tipo ModulationDay
-      const typedData: ModulationDay[] = (data || []).map(row => ({
-        date: row.date,
-        is_modulated: row.is_modulated
-      }));
-
-      setModulationData(typedData);
+      setModulationData(data || []);
     } catch (error) {
-      console.error('Error in fetchModulationData:', error);
+      console.error('Error en fetchModulationData:', error);
       toast.error('Error al cargar los datos de modulación');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchModulationData();
-  }, [selectedDate]);
+  }, []);
 
   const handleToggleModulation = async (date: string, currentValue: boolean) => {
     try {
@@ -64,7 +55,7 @@ export const ModulationCalendar = () => {
         });
 
       if (error) {
-        console.error('Error updating modulation:', error);
+        console.error('Error al actualizar modulación:', error);
         toast.error('Error al actualizar la modulación');
         return;
       }
@@ -72,7 +63,7 @@ export const ModulationCalendar = () => {
       fetchModulationData();
       toast.success('Modulación actualizada correctamente');
     } catch (error) {
-      console.error('Error in handleToggleModulation:', error);
+      console.error('Error en handleToggleModulation:', error);
       toast.error('Error al actualizar la modulación');
     }
   };
@@ -91,7 +82,7 @@ export const ModulationCalendar = () => {
       return "text-red-500 font-bold"; // Días modulados en rojo
     }
     
-    return "text-red-500 font-bold"; // Días no modulados también en rojo según la especificación
+    return "text-green-500"; // Días no modulados en verde
   };
 
   return (
@@ -102,15 +93,6 @@ export const ModulationCalendar = () => {
           selected={selectedDate}
           onSelect={(date) => date && setSelectedDate(date)}
           className="rounded-md border"
-          modifiers={{
-            modulated: (date) => {
-              const dateStr = format(date, 'yyyy-MM-dd');
-              return modulationData.some(d => d.date === dateStr && d.is_modulated);
-            }
-          }}
-          modifiersStyles={{
-            modulated: { color: 'red' }
-          }}
           components={{
             Day: ({ date }) => (
               <div className={cn(getDateClassName(date))}>
@@ -131,9 +113,14 @@ export const ModulationCalendar = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {modulationData
-              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-              .map((day) => (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">
+                  Cargando datos...
+                </TableCell>
+              </TableRow>
+            ) : (
+              modulationData.map((day) => (
                 <TableRow key={day.date}>
                   <TableCell>{format(new Date(day.date), 'dd/MM/yyyy')}</TableCell>
                   <TableCell>
@@ -151,7 +138,8 @@ export const ModulationCalendar = () => {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
