@@ -1,7 +1,6 @@
 
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserManagement } from "@/components/admin/UserManagement";
 import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
 import { ModulationCalendar } from "@/components/admin/ModulationCalendar";
@@ -12,14 +11,9 @@ const AdminPanel = () => {
     <div className="container mx-auto py-16 space-y-6">
       <Card className="p-6">
         <Tabs defaultValue="forecast" className="space-y-4">
-          <TabsList className="grid w-fit grid-cols-2 gap-4">
-            <TabsTrigger value="users">Usuarios</TabsTrigger>
+          <TabsList className="grid w-fit grid-cols-1 gap-4">
             <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="users">
-            <UserManagement />
-          </TabsContent>
           
           <TabsContent value="forecast">
             <Tabs defaultValue="daily" className="space-y-4">

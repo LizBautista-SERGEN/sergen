@@ -8,22 +8,8 @@ export const useUserProfile = () => {
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
-    checkUserRole();
     fetchProfile();
   }, []);
-
-  const checkUserRole = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-      
-      setIsSuperUser(profile?.role === 'superuser');
-    }
-  };
 
   const fetchProfile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -35,11 +21,13 @@ export const useUserProfile = () => {
         .single();
 
       if (error) {
+        console.error('Error al cargar perfil:', error);
         toast.error("Error al cargar la información del perfil");
         return;
       }
 
       setProfile(data);
+      setIsSuperUser(data?.role === 'superuser');
     }
   };
 
