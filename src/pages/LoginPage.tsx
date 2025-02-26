@@ -26,20 +26,24 @@ const LoginPage = () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        if (error.message !== 'Invalid Refresh Token: Refresh Token Not Found') {
-          console.error('Error al verificar sesión:', error);
-          toast.error("Error al verificar la sesión");
-        }
+        console.error('Error al verificar sesión:', error);
         return;
       }
       
       if (session) {
-        const { data: profile } = await supabase
+        console.log('Sesión encontrada:', session);
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, has_access')
           .eq('id', session.user.id)
           .single();
 
+        if (profileError) {
+          console.error('Error al obtener perfil:', profileError);
+          return;
+        }
+
+        console.log('Perfil obtenido:', profile);
         if (profile?.role === 'superuser') {
           navigate('/admin/panel');
         } else {
@@ -60,29 +64,29 @@ const LoginPage = () => {
       
       if (!trimmedEmail || !password) {
         toast.error("Por favor ingrese su correo y contraseña");
-        setLoading(false);
         return;
       }
 
       await supabase.auth.signOut();
 
+      console.log('Intentando iniciar sesión con:', trimmedEmail);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
 
       if (error) {
-        console.error('Login error:', error);
+        console.error('Error de inicio de sesión:', error);
         if (error.message.includes('Invalid login credentials')) {
           toast.error("Credenciales inválidas");
         } else {
-          toast.error("Error al iniciar sesión");
+          toast.error("Error al iniciar sesión: " + error.message);
         }
-        setLoading(false);
         return;
       }
 
       if (data.user) {
+        console.log('Usuario autenticado:', data.user);
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role, has_access')
@@ -90,16 +94,16 @@ const LoginPage = () => {
           .single();
 
         if (profileError) {
-          console.error('Error fetching profile:', profileError);
+          console.error('Error al obtener perfil:', profileError);
           toast.error("Error al cargar el perfil");
-          setLoading(false);
           return;
         }
+
+        console.log('Perfil obtenido:', profile);
 
         if (!profile?.has_access) {
           toast.error("Su cuenta está pendiente de activación");
           await supabase.auth.signOut();
-          setLoading(false);
           return;
         }
 
@@ -114,8 +118,8 @@ const LoginPage = () => {
         }
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
-      toast.error("Error en la autenticación");
+      console.error('Error de autenticación:', error);
+      toast.error("Error en la autenticación: " + error.message);
     } finally {
       setLoading(false);
     }
