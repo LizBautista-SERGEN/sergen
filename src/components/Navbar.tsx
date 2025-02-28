@@ -1,169 +1,225 @@
 
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { profile, isLoading } = useUserProfile();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setIsLoggedIn(!!session);
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   const handleLogout = async () => {
     try {
-      // Primero verificamos si hay una sesión activa
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // Si no hay sesión, simplemente actualizamos el estado y redirigimos
-      if (!session) {
-        console.log('No hay sesión activa, redirigiendo...');
-        setIsLoggedIn(false);
-        navigate("/");
-        return;
-      }
-
-      // Si hay sesión, intentamos cerrarla
-      const { error } = await supabase.auth.signOut();
-      
-      // Ignoramos el error específico de 'session_not_found'
-      if (error && !error.message.includes('session_not_found')) {
-        console.error("Error al cerrar sesión:", error);
-        toast.error("Error al cerrar sesión");
-        return;
-      }
-
-      // Si todo fue exitoso o el error fue session_not_found
-      setIsLoggedIn(false);
-      toast.success("Sesión cerrada correctamente");
+      await supabase.auth.signOut();
+      toast.success("Sesión cerrada exitosamente");
       navigate("/");
-      
-    } catch (error: any) {
-      console.error("Error inesperado al cerrar sesión:", error);
-      // En caso de error, aseguramos que el usuario sea desconectado de todas formas
-      setIsLoggedIn(false);
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
       toast.error("Error al cerrar sesión");
-      navigate("/");
     }
   };
 
-  const toggleMenu = () => setIsOpen(!isOpen);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
 
-  const menuItems = [
-    { text: "Inicio", href: "/" },
-    { text: "Nosotros", href: "/nosotros" },
-    { text: "Servicios", href: "/servicios" },
-    { text: "Contacto", href: "/contacto" },
-  ];
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center">
+    <nav
+      className={`fixed w-full top-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white shadow-md py-2"
+          : "bg-transparent py-4"
+      }`}
+    >
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex justify-between items-center">
+          <a href="/" className="flex items-center space-x-3">
             <img
-              src="/lovable-uploads/12ae4369-c1d4-4066-b8c6-b5d4060a8d15.png"
+              src="/lovable-uploads/823922c8-88ef-4fb4-903c-59bcdadcb1ab.png"
               alt="Sergen Logo"
-              className="h-10"
+              className="h-10 w-auto"
             />
-          </Link>
+            <span
+              className={`font-bold text-xl ${
+                isScrolled ? "text-sergen-800" : "text-gray-800"
+              }`}
+            >
+              SERGEN
+            </span>
+          </a>
 
-          <div className="hidden md:flex items-center space-x-8">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="text-gray-600 hover:text-sergen-500 transition-colors"
-              >
-                {item.text}
-              </Link>
-            ))}
-            {isLoggedIn ? (
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="text-sergen-500 hover:text-sergen-600"
-              >
-                Cerrar Sesión
-              </Button>
-            ) : (
-              <Link to="/login">
-                <Button
-                  variant="default"
-                  className="bg-sergen-500 hover:bg-sergen-600 text-white"
+          {/* Desktop menu */}
+          <div className="hidden md:flex items-center space-x-10">
+            <a
+              href="/"
+              className={`${
+                isScrolled ? "text-gray-700" : "text-gray-800"
+              } hover:text-sergen-500 transition-colors`}
+            >
+              Inicio
+            </a>
+            <a
+              href="/services"
+              className={`${
+                isScrolled ? "text-gray-700" : "text-gray-800"
+              } hover:text-sergen-500 transition-colors`}
+            >
+              Servicios
+            </a>
+            <a
+              href="/about"
+              className={`${
+                isScrolled ? "text-gray-700" : "text-gray-800"
+              } hover:text-sergen-500 transition-colors`}
+            >
+              Nosotros
+            </a>
+            <a
+              href="/contact"
+              className={`${
+                isScrolled ? "text-gray-700" : "text-gray-800"
+              } hover:text-sergen-500 transition-colors`}
+            >
+              Contacto
+            </a>
+            
+            {!isLoading && profile ? (
+              <div className="flex items-center space-x-4">
+                <a
+                  href="/dashboard"
+                  className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 transition-colors"
                 >
-                  Iniciar Sesión
-                </Button>
-              </Link>
+                  Panel
+                </a>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-sergen-500 transition-colors"
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
+            ) : (
+              <a
+                href="/login"
+                className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 transition-colors"
+              >
+                Acceder
+              </a>
             )}
           </div>
 
+          {/* Mobile menu button */}
           <button
-            onClick={toggleMenu}
-            className="md:hidden text-gray-600 hover:text-sergen-500"
+            className="md:hidden text-gray-700"
+            onClick={toggleMobileMenu}
           >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              {isMobileMenuOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
           </button>
         </div>
-      </div>
 
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="md:hidden bg-white border-t"
-        >
-          <div className="container mx-auto px-4 py-4 space-y-4">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="block text-gray-600 hover:text-sergen-500 transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                {item.text}
-              </Link>
-            ))}
-            {isLoggedIn ? (
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setIsOpen(false);
-                }}
-                className="block w-full text-left text-gray-600 hover:text-sergen-500 transition-colors"
-              >
-                Cerrar Sesión
-              </button>
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden mt-4 bg-white rounded-lg shadow-lg p-4 transition-all duration-300">
+            <a
+              href="/"
+              className="block py-2 text-gray-700 hover:text-sergen-500"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Inicio
+            </a>
+            <a
+              href="/services"
+              className="block py-2 text-gray-700 hover:text-sergen-500"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Servicios
+            </a>
+            <a
+              href="/about"
+              className="block py-2 text-gray-700 hover:text-sergen-500"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Nosotros
+            </a>
+            <a
+              href="/contact"
+              className="block py-2 text-gray-700 hover:text-sergen-500"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Contacto
+            </a>
+            
+            {!isLoading && profile ? (
+              <div className="space-y-2 mt-2">
+                <a
+                  href="/dashboard"
+                  className="block py-2 text-center bg-sergen-500 text-white rounded hover:bg-sergen-600"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Panel
+                </a>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left py-2 text-gray-700 hover:text-sergen-500"
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
             ) : (
-              <Link
-                to="/login"
-                className="block text-gray-600 hover:text-sergen-500 transition-colors"
-                onClick={() => setIsOpen(false)}
+              <a
+                href="/login"
+                className="block py-2 mt-2 text-center bg-sergen-500 text-white rounded hover:bg-sergen-600"
+                onClick={() => setIsMobileMenuOpen(false)}
               >
-                Iniciar Sesión
-              </Link>
+                Acceder
+              </a>
             )}
           </div>
-        </motion.div>
-      )}
+        )}
+      </div>
     </nav>
   );
 };
