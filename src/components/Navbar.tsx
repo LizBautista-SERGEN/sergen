@@ -95,7 +95,7 @@ const Navbar = () => {
                 {item.text}
               </Link>
             ))}
-            {isLoggedIn ? (
+            {isLoggedIn && (
               <Button
                 onClick={handleLogout}
                 variant="outline"
@@ -103,15 +103,6 @@ const Navbar = () => {
               >
                 Cerrar Sesión
               </Button>
-            ) : (
-              <Link to="/login">
-                <Button
-                  variant="default"
-                  className="bg-sergen-500 hover:bg-sergen-600 text-white"
-                >
-                  Iniciar Sesión
-                </Button>
-              </Link>
             )}
           </div>
 
@@ -142,7 +133,7 @@ const Navbar = () => {
                 {item.text}
               </Link>
             ))}
-            {isLoggedIn ? (
+            {isLoggedIn && (
               <button
                 onClick={() => {
                   handleLogout();
@@ -152,14 +143,6 @@ const Navbar = () => {
               >
                 Cerrar Sesión
               </button>
-            ) : (
-              <Link
-                to="/login"
-                className="block text-gray-600 hover:text-sergen-500 transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                Iniciar Sesión
-              </Link>
             )}
           </div>
         </motion.div>
