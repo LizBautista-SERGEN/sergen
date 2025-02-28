@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,30 +99,6 @@ const Navbar = () => {
             >
               Contacto
             </a>
-            
-            {!isLoading && profile ? (
-              <div className="flex items-center space-x-4">
-                <a
-                  href="/dashboard"
-                  className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 transition-colors"
-                >
-                  Panel
-                </a>
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-700 hover:text-sergen-500 transition-colors"
-                >
-                  Cerrar Sesión
-                </button>
-              </div>
-            ) : (
-              <a
-                href="/login"
-                className="bg-sergen-500 text-white px-4 py-2 rounded hover:bg-sergen-600 transition-colors"
-              >
-                Acceder
-              </a>
-            )}
           </div>
 
           {/* Mobile menu button */}
@@ -188,35 +163,6 @@ const Navbar = () => {
             >
               Contacto
             </a>
-            
-            {!isLoading && profile ? (
-              <div className="space-y-2 mt-2">
-                <a
-                  href="/dashboard"
-                  className="block py-2 text-center bg-sergen-500 text-white rounded hover:bg-sergen-600"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Panel
-                </a>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left py-2 text-gray-700 hover:text-sergen-500"
-                >
-                  Cerrar Sesión
-                </button>
-              </div>
-            ) : (
-              <a
-                href="/login"
-                className="block py-2 mt-2 text-center bg-sergen-500 text-white rounded hover:bg-sergen-600"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Acceder
-              </a>
-            )}
           </div>
         )}
       </div>
