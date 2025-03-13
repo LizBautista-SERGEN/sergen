@@ -15,6 +15,30 @@ serve(async (req) => {
 
   try {
     console.log("Iniciando descarga de archivo Excel del COES...");
+    
+    // Create Supabase client
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    // Limpieza de datos antiguos
+    console.log("Ejecutando limpieza de datos antiguos...");
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    
+    const { error: cleanError, count: cleanedCount } = await supabaseAdmin
+      .from('coes_forecast')
+      .delete({ count: 'exact' })
+      .lt('fecha', today.toISOString());
+    
+    if (cleanError) {
+      console.error('Error eliminando datos antiguos:', cleanError);
+    } else {
+      console.log(`Limpieza completada. ${cleanedCount} registros antiguos eliminados.`);
+    }
+    
+    // Continuar con la descarga y procesamiento
     const response = await fetch('https://www.coes.org.pe/Portal/portalinformacion/ExportarPronosticoTiempoReal', {
       headers: {
         'Cache-Control': 'no-cache',
@@ -74,15 +98,7 @@ serve(async (req) => {
       throw new Error('No se encontraron datos para procesar');
     }
 
-    // Update database
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
     // Delete existing data for today
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
@@ -122,7 +138,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: 'Datos actualizados correctamente',
-        count: processedData.length 
+        count: processedData.length,
+        cleaned: cleanedCount 
       }),
       { 
         headers: { 
