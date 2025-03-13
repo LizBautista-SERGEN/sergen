@@ -75,13 +75,14 @@ serve(async (req) => {
             continue;
           }
 
+          // Updated to match the renamed columns in the database
           const data = {
             fecha: fecha.toISOString(),
-            reprogramado: parseFloat(row[1]) || 0,
-            pronostico: parseFloat(row[2]) || 0,
-            rango_superior: parseFloat(row[3]) || 0,
-            rango_inferior: parseFloat(row[4]) || 0,
-            ejecutado: parseFloat(row[5]) || 0
+            reprogramado: parseFloat(row[1]) || null,
+            pronostico: parseFloat(row[2]) || null,
+            rango_superior: parseFloat(row[3]) || null,
+            rango_inferior: parseFloat(row[4]) || null,
+            ejecutado: parseFloat(row[5]) || null
           };
           
           processedData.push(data);
