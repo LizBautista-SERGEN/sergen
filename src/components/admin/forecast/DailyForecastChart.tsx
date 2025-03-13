@@ -50,7 +50,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Line 
             type="monotone" 
             dataKey="rango_inferior" 
-            name="Límite Superior"
+            name="Límite Inferior"
             stroke="#00C000" 
             strokeWidth={1}
             strokeDasharray="5 5"
@@ -60,7 +60,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
           <Line 
             type="monotone" 
             dataKey="rango_superior" 
-            name="Límite Inferior"
+            name="Límite Superior"
             stroke="#00C000" 
             strokeWidth={1}
             strokeDasharray="5 5"
