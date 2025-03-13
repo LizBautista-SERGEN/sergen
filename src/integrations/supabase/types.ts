@@ -84,35 +84,35 @@ export type Database = {
       coes_forecast: {
         Row: {
           created_at: string
-          demanda_real: number | null
+          ejecutado: number | null
           fecha: string
           id: string
-          pronostico_diario: number | null
+          pronostico: number | null
           rango_inferior: number | null
           rango_superior: number | null
-          reprogramacion: number | null
+          reprogramado: number | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string
-          demanda_real?: number | null
+          ejecutado?: number | null
           fecha: string
           id?: string
-          pronostico_diario?: number | null
+          pronostico?: number | null
           rango_inferior?: number | null
           rango_superior?: number | null
-          reprogramacion?: number | null
+          reprogramado?: number | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string
-          demanda_real?: number | null
+          ejecutado?: number | null
           fecha?: string
           id?: string
-          pronostico_diario?: number | null
+          pronostico?: number | null
           rango_inferior?: number | null
           rango_superior?: number | null
-          reprogramacion?: number | null
+          reprogramado?: number | null
           updated_at?: string | null
         }
         Relationships: []

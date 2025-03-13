@@ -77,11 +77,11 @@ serve(async (req) => {
 
           const data = {
             fecha: fecha.toISOString(),
-            pronostico_diario: parseFloat(row[1]) || 0,
-            demanda_real: parseFloat(row[2]) || 0,
+            reprogramado: parseFloat(row[1]) || 0,
+            pronostico: parseFloat(row[2]) || 0,
             rango_superior: parseFloat(row[3]) || 0,
             rango_inferior: parseFloat(row[4]) || 0,
-            reprogramacion: parseFloat(row[5]) || 0
+            ejecutado: parseFloat(row[5]) || 0
           };
           
           processedData.push(data);

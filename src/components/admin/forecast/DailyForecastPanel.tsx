@@ -24,7 +24,7 @@ export const DailyForecastPanel = () => {
 
       const { data: existingData, error: dbError } = await supabase
         .from('coes_forecast')
-        .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
+        .select('fecha, reprogramado, pronostico, rango_inferior, rango_superior, ejecutado')
         .gte('fecha', now.toISOString())
         .lt('fecha', tomorrow.toISOString())
         .order('fecha', { ascending: true });
@@ -40,11 +40,11 @@ export const DailyForecastPanel = () => {
       if (existingData && existingData.length > 0) {
         const processedData = existingData.map(row => ({
           ...row,
-          pronostico_diario: row.pronostico_diario === 0 ? null : row.pronostico_diario,
-          demanda_real: row.demanda_real === 0 ? null : row.demanda_real,
+          reprogramado: row.reprogramado === 0 ? null : row.reprogramado,
+          pronostico: row.pronostico === 0 ? null : row.pronostico,
           rango_inferior: row.rango_inferior === 0 ? null : row.rango_inferior,
           rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
-          reprogramacion: row.reprogramacion === 0 ? null : row.reprogramacion
+          ejecutado: row.ejecutado === 0 ? null : row.ejecutado
         }));
 
         console.log('Datos procesados:', processedData);
@@ -61,7 +61,7 @@ export const DailyForecastPanel = () => {
 
         const { data: freshData, error: freshError } = await supabase
           .from('coes_forecast')
-          .select('fecha, pronostico_diario, demanda_real, rango_inferior, rango_superior, reprogramacion')
+          .select('fecha, reprogramado, pronostico, rango_inferior, rango_superior, ejecutado')
           .gte('fecha', now.toISOString())
           .lt('fecha', tomorrow.toISOString())
           .order('fecha', { ascending: true });
@@ -71,11 +71,11 @@ export const DailyForecastPanel = () => {
         } else if (freshData && freshData.length > 0) {
           const processedFreshData = freshData.map(row => ({
             ...row,
-            pronostico_diario: row.pronostico_diario === 0 ? null : row.pronostico_diario,
-            demanda_real: row.demanda_real === 0 ? null : row.demanda_real,
+            reprogramado: row.reprogramado === 0 ? null : row.reprogramado,
+            pronostico: row.pronostico === 0 ? null : row.pronostico,
             rango_inferior: row.rango_inferior === 0 ? null : row.rango_inferior,
             rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
-            reprogramacion: row.reprogramacion === 0 ? null : row.reprogramacion
+            ejecutado: row.ejecutado === 0 ? null : row.ejecutado
           }));
           console.log('Datos frescos procesados:', processedFreshData);
           setForecastData(processedFreshData);

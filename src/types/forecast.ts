@@ -1,9 +1,9 @@
 
 export interface CoesData {
   fecha: string;
-  pronostico_diario: number | null;
-  demanda_real: number | null;
+  reprogramado: number | null;
+  pronostico: number | null;
   rango_inferior: number | null;
   rango_superior: number | null;
-  reprogramacion: number | null;
+  ejecutado: number | null;
 }
