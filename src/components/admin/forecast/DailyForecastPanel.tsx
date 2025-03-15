@@ -38,18 +38,7 @@ export const DailyForecastPanel = () => {
       console.log('Datos obtenidos de la base de datos:', existingData);
 
       if (existingData && existingData.length > 0) {
-        // Asegurar que ningún valor es 0 (convertir 0 a null)
-        const processedData = existingData.map(row => ({
-          ...row,
-          reprogramado: row.reprogramado === 0 ? null : row.reprogramado,
-          pronostico: row.pronostico === 0 ? null : row.pronostico,
-          rango_inferior: row.rango_inferior === 0 ? null : row.rango_inferior,
-          rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
-          ejecutado: row.ejecutado === 0 ? null : row.ejecutado
-        }));
-
-        console.log('Datos procesados:', processedData);
-        setForecastData(processedData);
+        setForecastData(existingData);
       }
 
       try {
@@ -70,17 +59,8 @@ export const DailyForecastPanel = () => {
         if (freshError) {
           console.error('Error al obtener datos actualizados:', freshError);
         } else if (freshData && freshData.length > 0) {
-          // Asegurar que ningún valor es 0 (convertir 0 a null)
-          const processedFreshData = freshData.map(row => ({
-            ...row,
-            reprogramado: row.reprogramado === 0 ? null : row.reprogramado,
-            pronostico: row.pronostico === 0 ? null : row.pronostico,
-            rango_inferior: row.rango_inferior === 0 ? null : row.rango_inferior,
-            rango_superior: row.rango_superior === 0 ? null : row.rango_superior,
-            ejecutado: row.ejecutado === 0 ? null : row.ejecutado
-          }));
-          console.log('Datos frescos procesados:', processedFreshData);
-          setForecastData(processedFreshData);
+          console.log('Datos frescos recibidos:', freshData);
+          setForecastData(freshData);
         }
       } catch (functionError) {
         console.error('Error al llamar función COES:', functionError);
