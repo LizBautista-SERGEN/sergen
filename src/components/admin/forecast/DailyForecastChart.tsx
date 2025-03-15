@@ -49,7 +49,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
             stroke="#F97316" 
             strokeWidth={2}
             dot={false}
-            connectNulls
+            connectNulls={true}
           />
           <Line 
             type="monotone" 
@@ -58,7 +58,9 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
             stroke="#0036A2" 
             strokeWidth={2}
             dot={false}
-            connectNulls
+            connectNulls={true}
+            activeDot={{ r: 4 }}
+            isAnimationActive={false}
           />
           <Line 
             type="monotone" 
@@ -68,7 +70,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
             strokeWidth={1}
             strokeDasharray="5 5"
             dot={false}
-            connectNulls
+            connectNulls={true}
           />
           <Line 
             type="monotone" 
@@ -78,7 +80,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
             strokeWidth={1}
             strokeDasharray="5 5"
             dot={false}
-            connectNulls
+            connectNulls={true}
           />
           <Line 
             type="monotone" 
@@ -87,7 +89,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
             stroke="#C00000" 
             strokeWidth={2}
             dot={false}
-            connectNulls
+            connectNulls={true}
           />
         </LineChart>
       </ResponsiveContainer>
