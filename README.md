@@ -1,69 +1,77 @@
-# Welcome to your Lovable project
 
-## Project info
+# Sergen Sustainability Suite
 
-**URL**: https://lovable.dev/projects/068ea7a3-5c2d-4b84-a217-d7b3a036eabc
+## Project Overview
+Sergen Sustainability Suite is a comprehensive energy management platform designed for Peruvian businesses seeking to optimize their energy consumption, reduce costs, and improve sustainability metrics.
 
-## How can I edit this code?
+## Features
+- **Energy Consumption Monitoring**: Track and analyze energy usage patterns
+- **COES Data Integration**: Real-time data from the Peruvian power grid operator
+- **Power Peak Management**: Identify and manage power consumption peaks
+- **Energy Forecasting**: Predict future energy needs based on historical data
+- **Report Generation**: Create detailed sustainability and energy usage reports
+- **User Management**: Role-based access control for different organizational needs
 
-There are several ways of editing your application.
+## Tech Stack
+This project is built with:
+- **Frontend**: React, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Supabase (PostgreSQL database, Auth, Storage)
+- **Data Visualization**: Recharts
+- **API Integration**: Supabase Edge Functions (Deno)
 
-**Use Lovable**
+## Getting Started
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/068ea7a3-5c2d-4b84-a217-d7b3a036eabc) and start prompting.
+### Prerequisites
+- Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Supabase account (for backend services)
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
+### Installation
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone the repository
+git clone <repository-url>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project directory
+cd sergen-sustainability-suite
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Variables
+Create a `.env.local` file in the root directory with the following variables:
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Deployment
+This project is deployed using Lovable's deployment system. To deploy:
+1. Go to the Lovable project dashboard
+2. Click on "Share" in the top menu
+3. Select "Publish" to deploy to Lovable hosting
 
-**Use GitHub Codespaces**
+## Project Structure
+- `/src`: Frontend React application
+  - `/components`: Reusable UI components
+  - `/pages`: Main page layouts
+  - `/hooks`: Custom React hooks
+  - `/types`: TypeScript type definitions
+  - `/integrations`: External service integrations
+- `/supabase`: Backend functionality
+  - `/functions`: Edge functions for API endpoints
+  - `/migrations`: Database schema migrations
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Contributing
+1. Create a feature branch from `main`
+2. Make your changes
+3. Test thoroughly
+4. Submit a pull request
 
-## What technologies are used for this project?
+## License
+All rights reserved. This codebase is proprietary and confidential.
 
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/068ea7a3-5c2d-4b84-a217-d7b3a036eabc) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## Support
+For issues or questions, please contact support@sergen.com.pe
