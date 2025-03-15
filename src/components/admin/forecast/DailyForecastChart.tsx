@@ -121,7 +121,7 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
             name="Ejecutado"
             stroke="#0036A2" 
             strokeWidth={2.5}
-            dot={!!processedData.some(item => item.ejecutado !== null)}
+            dot={false}
             activeDot={{ r: 5 }}
             isAnimationActive={false}
             connectNulls={true}
