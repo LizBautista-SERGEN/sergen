@@ -15,10 +15,23 @@ export const DailyForecastChart = ({ data }: DailyForecastChartProps) => {
     return dateStr.replace('T', ' ').substring(0, 16);
   };
 
+  // Pre-procesamiento de datos para asegurar conectividad en la línea ejecutado
+  const processedData = data.map(item => ({
+    ...item,
+    // Si ejecutado es 0, lo convertimos a null para evitar confusiones en la gráfica
+    ejecutado: item.ejecutado === 0 ? null : item.ejecutado,
+    pronostico: item.pronostico === 0 ? null : item.pronostico,
+    reprogramado: item.reprogramado === 0 ? null : item.reprogramado,
+    rango_inferior: item.rango_inferior === 0 ? null : item.rango_inferior,
+    rango_superior: item.rango_superior === 0 ? null : item.rango_superior
+  }));
+
+  console.log('Datos procesados para la gráfica:', processedData);
+
   return (
     <div className="h-[400px] w-full mb-6">
       <ResponsiveContainer>
-        <LineChart data={data}>
+        <LineChart data={processedData}>
           <XAxis 
             dataKey="fecha" 
             tickFormatter={formatTime}

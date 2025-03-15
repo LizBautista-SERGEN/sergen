@@ -38,6 +38,7 @@ export const DailyForecastPanel = () => {
       console.log('Datos obtenidos de la base de datos:', existingData);
 
       if (existingData && existingData.length > 0) {
+        // Asegurar que ningún valor es 0 (convertir 0 a null)
         const processedData = existingData.map(row => ({
           ...row,
           reprogramado: row.reprogramado === 0 ? null : row.reprogramado,
@@ -69,6 +70,7 @@ export const DailyForecastPanel = () => {
         if (freshError) {
           console.error('Error al obtener datos actualizados:', freshError);
         } else if (freshData && freshData.length > 0) {
+          // Asegurar que ningún valor es 0 (convertir 0 a null)
           const processedFreshData = freshData.map(row => ({
             ...row,
             reprogramado: row.reprogramado === 0 ? null : row.reprogramado,
