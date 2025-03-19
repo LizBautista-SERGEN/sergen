@@ -11,7 +11,7 @@ const WhyChooseUs = () => {
     },
     {
       icon: <LayoutGrid className="h-8 w-8 text-white" />,
-      title: "Fexibilidad",
+      title: "Flexibilidad",
       description: "Estamos capacitados para proporcionar servicios innovadores y de alta calidad en distintas áreas, gracias a nuestra amplia experiencia y conocimiento."
     },
     {

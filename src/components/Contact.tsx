@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,15 +8,55 @@ import AnimatedSection from "./AnimatedSection";
 
 const Contact = () => {
   const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Open default email client with pre-filled email
-    window.location.href = "mailto:ventas@sergen.pe";
-    toast({
-      title: "Redirigiendo al correo",
-      description: "Se abrirá tu cliente de correo para contactarnos.",
-    });
+    setIsSubmitting(true);
+    
+    try {
+      // Construct email body and subject
+      const subject = `Contacto de ${formData.name} desde la web`;
+      const body = `
+Nombre: ${formData.name}
+Email: ${formData.email}
+Mensaje: ${formData.message}
+      `;
+      
+      // Open mail client with prefilled data
+      window.location.href = `mailto:ventas@sergen.pe?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      
+      // Show success toast
+      toast({
+        title: "Mensaje enviado",
+        description: "Gracias por contactarnos. Te responderemos a la brevedad.",
+      });
+      
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        message: ""
+      });
+    } catch (error) {
+      toast({
+        title: "Error al enviar",
+        description: "Ha ocurrido un error. Por favor, intenta nuevamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -46,6 +87,8 @@ const Contact = () => {
                 </label>
                 <Input
                   id="name"
+                  value={formData.name}
+                  onChange={handleChange}
                   required
                   className="bg-white/50 backdrop-blur-sm"
                 />
@@ -60,6 +103,8 @@ const Contact = () => {
                 <Input
                   id="email"
                   type="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   required
                   className="bg-white/50 backdrop-blur-sm"
                 />
@@ -74,15 +119,18 @@ const Contact = () => {
               </label>
               <Textarea
                 id="message"
+                value={formData.message}
+                onChange={handleChange}
                 required
                 className="min-h-[150px] bg-white/50 backdrop-blur-sm"
               />
             </div>
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="w-full bg-sergen-500 text-white hover:bg-sergen-600"
             >
-              Enviar Mensaje
+              {isSubmitting ? "Enviando..." : "Enviar Mensaje"}
             </Button>
           </form>
         </div>

@@ -3,6 +3,8 @@ import { MapPin, Facebook, Linkedin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
+  const whatsappMessage = "¡Hola Sergen! Vi esto en tu página web y me interesa conocer más sobre sus servicios de eficiencia energética.";
+  
   return (
     <footer className="bg-gray-900 text-white relative">
       <div className="container mx-auto px-4 py-12">
@@ -75,7 +77,7 @@ const Footer = () => {
         </div>
       </div>
       <a 
-        href="https://wa.me/51985138443" 
+        href={`https://wa.me/51985138443?text=${encodeURIComponent(whatsappMessage)}`} 
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-green-600 p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors"
