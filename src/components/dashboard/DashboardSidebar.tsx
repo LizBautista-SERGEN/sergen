@@ -1,6 +1,6 @@
 
-import { User, Plug, Book, FileText } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { User, BarChart2, FileText, HelpCircle, Settings } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -12,29 +12,37 @@ const links = [
     icon: <User className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   },
   { 
-    label: "Gestión Energética", 
+    label: "Control de Demanda", 
     href: "/servicios/control",
-    icon: <Plug className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
+    icon: <BarChart2 className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   },
   { 
-    label: "Cápsulas", 
-    href: "/formativa",
-    icon: <Book className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
-  },
-  { 
-    label: "Informes", 
+    label: "Reporte Técnico", 
     href: "/informes",
     icon: <FileText className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
+  },
+  { 
+    label: "Asistente Técnico", 
+    href: "/asistente",
+    icon: <HelpCircle className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
+  },
+  { 
+    label: "Configuración", 
+    href: "/configuracion",
+    icon: <Settings className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   }
 ];
 
-const SidebarLink = ({ link, isOpen }: { link: typeof links[0], isOpen: boolean }) => {
+const SidebarLink = ({ link, isOpen, isActive }: { link: typeof links[0], isOpen: boolean, isActive: boolean }) => {
   const navigate = useNavigate();
   
   return (
     <button
       onClick={() => navigate(link.href)}
-      className="flex items-center justify-start gap-3 group/sidebar py-4 w-full hover:bg-gray-100 rounded-lg px-4"
+      className={cn(
+        "flex items-center justify-start gap-3 group/sidebar py-4 w-full hover:bg-gray-100 rounded-lg px-4",
+        isActive && "bg-gray-100 font-medium"
+      )}
     >
       {link.icon}
       <motion.span
@@ -52,11 +60,12 @@ const SidebarLink = ({ link, isOpen }: { link: typeof links[0], isOpen: boolean 
 
 export const DashboardSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const location = useLocation();
 
   return (
     <motion.div
       className={cn(
-        "h-full px-4 py-6 flex flex-col bg-white border-r border-gray-200 transition-all fixed top-16 left-0",
+        "h-full px-4 py-6 flex flex-col bg-white border-r border-gray-200 transition-all fixed top-16 left-0 z-40",
       )}
       animate={{
         width: isOpen ? "300px" : "80px",
@@ -72,7 +81,13 @@ export const DashboardSidebar = () => {
           }}
         >
           {links.map((link, idx) => (
-            <SidebarLink key={idx} link={link} isOpen={isOpen} />
+            <SidebarLink 
+              key={idx} 
+              link={link} 
+              isOpen={isOpen} 
+              isActive={location.pathname === link.href || 
+                (link.href !== "/" && location.pathname.startsWith(link.href))}
+            />
           ))}
         </motion.div>
       </div>

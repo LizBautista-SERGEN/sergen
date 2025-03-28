@@ -5,15 +5,25 @@ import { HistoricalDataUpload } from "@/components/admin/HistoricalDataUpload";
 import { PowerPeaks } from "@/components/admin/PowerPeaks";
 import { ModulationCalendar } from "@/components/admin/ModulationCalendar";
 import { DailyForecastPanel } from "@/components/admin/forecast/DailyForecastPanel";
+import { UserManagement } from "@/components/admin/UserManagement";
 
 const AdminPanel = () => {
   return (
-    <div className="container mx-auto py-16 space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
+      <h1 className="text-2xl font-bold">Panel de Administración</h1>
       <Card className="p-6">
-        <Tabs defaultValue="forecast" className="space-y-4">
-          <TabsList className="grid w-fit grid-cols-1 gap-4">
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList className="grid w-fit grid-cols-2 gap-4">
+            <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="forecast">Pronóstico</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="users">
+            <Card className="p-4">
+              <h3 className="text-lg font-semibold mb-4">Gestión de Usuarios</h3>
+              <UserManagement />
+            </Card>
+          </TabsContent>
           
           <TabsContent value="forecast">
             <Tabs defaultValue="daily" className="space-y-4">
@@ -31,9 +41,6 @@ const AdminPanel = () => {
               <TabsContent value="historical">
                 <Card className="p-4">
                   <h3 className="text-lg font-semibold mb-4">Datos Históricos</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Subir archivo Excel con datos históricos. Se borrarán los datos existentes antes de importar los nuevos.
-                  </p>
                   <HistoricalDataUpload />
                 </Card>
               </TabsContent>

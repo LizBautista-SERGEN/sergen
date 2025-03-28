@@ -21,6 +21,9 @@ import ServiceDemanda from "./pages/ServiceDemanda";
 import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
 import InformesPage from "./pages/InformesPage";
+import AsistentePage from "./pages/AsistentePage";
+import ConfiguracionPage from "./pages/ConfiguracionPage";
+import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -43,19 +46,27 @@ const App = () => {
             <main className="flex-1">
               <TooltipProvider>
                 <Routes>
+                  {/* Rutas públicas */}
                   <Route path="/" element={<Home />} />
                   <Route path="/nosotros" element={<AboutUs />} />
                   <Route path="/servicios" element={<ServicesPage />} />
                   <Route path="/servicios/diagnostico" element={<ServiceDiagnostico />} />
                   <Route path="/servicios/demanda" element={<ServiceDemanda />} />
-                  <Route path="/servicios/control" element={<ServiceControl />} />
                   <Route path="/servicios/contractual" element={<ServiceContractual />} />
                   <Route path="/servicios/efficiency" element={<ServiceEfficiency />} />
                   <Route path="/contacto" element={<ContactPage />} />
                   <Route path="/login" element={<LoginPage />} />
-                  <Route path="/admin/panel" element={<AdminPanel />} />
-                  <Route path="/perfil" element={<ProfilePage />} />
-                  <Route path="/informes" element={<InformesPage />} />
+                  
+                  {/* Rutas con layout de dashboard */}
+                  <Route element={<DashboardLayout />}>
+                    <Route path="/perfil" element={<ProfilePage />} />
+                    <Route path="/servicios/control" element={<ServiceControl />} />
+                    <Route path="/informes" element={<InformesPage />} />
+                    <Route path="/asistente" element={<AsistentePage />} />
+                    <Route path="/configuracion" element={<ConfiguracionPage />} />
+                    <Route path="/admin/panel" element={<AdminPanel />} />
+                  </Route>
+                  
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </TooltipProvider>
