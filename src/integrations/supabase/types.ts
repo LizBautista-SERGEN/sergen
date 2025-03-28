@@ -183,6 +183,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_tab: {
+        Row: {
+          created_at: string | null
+          "Demanda Real (MW)": number | null
+          hora: string
+          id: string
+          "Prog. Demanda (MW)": number | null
+          "Rango Inferior (MW)": number | null
+          "Rango Superior (MW)": number | null
+          "Reprogramación (MW)": number | null
+        }
+        Insert: {
+          created_at?: string | null
+          "Demanda Real (MW)"?: number | null
+          hora: string
+          id?: string
+          "Prog. Demanda (MW)"?: number | null
+          "Rango Inferior (MW)"?: number | null
+          "Rango Superior (MW)"?: number | null
+          "Reprogramación (MW)"?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          "Demanda Real (MW)"?: number | null
+          hora?: string
+          id?: string
+          "Prog. Demanda (MW)"?: number | null
+          "Rango Inferior (MW)"?: number | null
+          "Rango Superior (MW)"?: number | null
+          "Reprogramación (MW)"?: number | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
@@ -254,6 +287,54 @@ export type Database = {
           },
         ]
       }
+      forecast_data: {
+        Row: {
+          created_at: string | null
+          daily_forecast: number | null
+          date: string | null
+          demand_real: number | null
+          id: string
+          weekly_forecast: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_forecast?: number | null
+          date?: string | null
+          demand_real?: number | null
+          id?: string
+          weekly_forecast?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_forecast?: number | null
+          date?: string | null
+          demand_real?: number | null
+          id?: string
+          weekly_forecast?: number | null
+        }
+        Relationships: []
+      }
+      forecast_settings: {
+        Row: {
+          id: string
+          last_update: string | null
+          modulation_time: string | null
+          risk_level: string | null
+        }
+        Insert: {
+          id?: string
+          last_update?: string | null
+          modulation_time?: string | null
+          risk_level?: string | null
+        }
+        Update: {
+          id?: string
+          last_update?: string | null
+          modulation_time?: string | null
+          risk_level?: string | null
+        }
+        Relationships: []
+      }
       historical_demand: {
         Row: {
           created_at: string
@@ -281,6 +362,27 @@ export type Database = {
         }
         Relationships: []
       }
+      modulation_data: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          id: string
+          is_modulated: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          is_modulated?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          is_modulated?: boolean | null
+        }
+        Relationships: []
+      }
       modulation_days: {
         Row: {
           created_at: string | null
@@ -302,6 +404,51 @@ export type Database = {
           id?: string
           is_modulated?: boolean | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      modulation_tab: {
+        Row: {
+          date: string
+          id: number
+          modulated: string | null
+        }
+        Insert: {
+          date: string
+          id?: number
+          modulated?: string | null
+        }
+        Update: {
+          date?: string
+          id?: number
+          modulated?: string | null
+        }
+        Relationships: []
+      }
+      monthly_forecast: {
+        Row: {
+          created_at: string | null
+          demanda_real: number | null
+          fecha: string
+          id: number
+          programacion_diaria: number | null
+          programacion_semanal: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          demanda_real?: number | null
+          fecha: string
+          id?: number
+          programacion_diaria?: number | null
+          programacion_semanal?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          demanda_real?: number | null
+          fecha?: string
+          id?: number
+          programacion_diaria?: number | null
+          programacion_semanal?: number | null
         }
         Relationships: []
       }
@@ -491,15 +638,130 @@ export type Database = {
         }
         Relationships: []
       }
+      tickets: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          priority: string | null
+          status: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          status?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          status?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          activity: string | null
+          address: string | null
+          company_name: string | null
+          contract_expiration: string | null
+          contracted_power: string | null
+          created_at: string | null
+          department: string | null
+          electric_supplier: string | null
+          email: string
+          id: string
+          name: string | null
+          notice_period: string | null
+          password: string | null
+          permissions: Json | null
+          phone: string | null
+          role: string | null
+          ruc: string | null
+        }
+        Insert: {
+          activity?: string | null
+          address?: string | null
+          company_name?: string | null
+          contract_expiration?: string | null
+          contracted_power?: string | null
+          created_at?: string | null
+          department?: string | null
+          electric_supplier?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          notice_period?: string | null
+          password?: string | null
+          permissions?: Json | null
+          phone?: string | null
+          role?: string | null
+          ruc?: string | null
+        }
+        Update: {
+          activity?: string | null
+          address?: string | null
+          company_name?: string | null
+          contract_expiration?: string | null
+          contracted_power?: string | null
+          created_at?: string | null
+          department?: string | null
+          electric_supplier?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          notice_period?: string | null
+          password?: string | null
+          permissions?: Json | null
+          phone?: string | null
+          role?: string | null
+          ruc?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      clear_monthly_forecast: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      load_monthly_forecast: {
+        Args: {
+          p_fecha: string
+          p_demanda_real: number
+          p_programacion_diaria: number
+          p_programacion_semanal: number
+        }
+        Returns: undefined
+      }
+      truncate_monthly_forecast: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "superuser" | "user"
+      modulation_state: "modulado" | "no_modulado"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -5,9 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Upload, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { ProfileType } from "@/hooks/useUserProfile";
 
 interface ProfileCardProps {
-  profile: any;
+  profile: ProfileType | null;
   onProfileUpdate: () => void;
 }
 
@@ -51,7 +52,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
       });
 
       onProfileUpdate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
         title: "Error",
@@ -83,7 +84,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
       });
 
       onProfileUpdate();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting avatar:', error);
       toast({
         title: "Error",
@@ -100,7 +101,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
       <Card className="w-72 h-72 overflow-hidden bg-gradient-to-b from-sergen-100 to-sergen-50">
         <div className="relative w-full h-full">
           <Avatar className="w-full h-full rounded-lg">
-            <AvatarImage src={profile?.profile} className="object-cover w-full h-full" />
+            <AvatarImage src={profile?.profile || ""} className="object-cover w-full h-full" />
             <AvatarFallback className="text-4xl w-full h-full">{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
           </Avatar>
           <input
@@ -133,7 +134,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
           </div>
         </div>
       </Card>
-      <h2 className="text-xl font-semibold mt-4 text-center">{profile?.business_name || "Ultrafrio S.A.C."}</h2>
+      <h2 className="text-xl font-semibold mt-4 text-center">{profile?.business_name || "Empresa"}</h2>
     </div>
   );
 };

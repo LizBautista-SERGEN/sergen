@@ -3,18 +3,43 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export type ProfileType = {
+  id: string;
+  email: string;
+  business_name: string | null;
+  contact_name: string | null;
+  position: string | null;
+  profile: string | null;
+  corporate_email: string | null;
+  phone: string | null;
+  role: string;
+  has_access: boolean;
+  ruc: string | null;
+  activity: string | null;
+  electricity_provider: string | null;
+  contracted_power: string | null;
+  contract_expiration: string | null;
+  notice_period: string | null;
+};
+
 export const useUserProfile = () => {
   const [isSuperUser, setIsSuperUser] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
+      // Obtener sesión actual
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
         console.error('Error de sesión:', sessionError);
-        throw sessionError;
+        setError(sessionError.message);
+        return;
       }
       
       if (!session) {
@@ -22,23 +47,22 @@ export const useUserProfile = () => {
         return;
       }
 
-      console.log('ID del usuario:', session.user.id); // Para debugging
-
-      const { data, error } = await supabase
+      // Obtener perfil del usuario
+      const { data, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error al obtener perfil:', error);
-        throw error;
+      if (profileError) {
+        console.error('Error al obtener perfil:', profileError);
+        setError(profileError.message);
+        throw profileError;
       }
 
-      console.log('Datos del perfil:', data); // Para debugging
-
       if (data) {
-        setProfile(data);
+        console.log('Perfil cargado correctamente:', data);
+        setProfile(data as ProfileType);
         setIsSuperUser(data.role === 'superuser');
       } else {
         console.log('No se encontró perfil para el usuario');
@@ -47,19 +71,23 @@ export const useUserProfile = () => {
       }
     } catch (error: any) {
       console.error('Error al cargar perfil:', error);
+      setError(error.message || 'Error desconocido');
       toast.error("Error al cargar la información del perfil: " + (error.message || 'Error desconocido'));
-      setProfile(null);
-      setIsSuperUser(false);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Refetch profile function to be called after updates
+  const refetchProfile = () => {
+    fetchProfile();
   };
 
   // Escuchar cambios en la sesión
   useEffect(() => {
     fetchProfile();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         fetchProfile();
       } else {
@@ -74,5 +102,5 @@ export const useUserProfile = () => {
     };
   }, []);
 
-  return { isSuperUser, profile, isLoading };
+  return { isSuperUser, profile, isLoading, error, refetchProfile };
 };

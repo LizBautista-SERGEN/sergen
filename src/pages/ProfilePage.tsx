@@ -9,49 +9,25 @@ import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { ContactInfo } from "@/components/profile/ContactInfo";
 import { DocumentsManager } from "@/components/profile/DocumentsManager";
 import { SecuritySettings } from "@/components/profile/SecuritySettings";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 const ProfilePage = () => {
   const { toast } = useToast();
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { profile, isLoading, error, refetchProfile } = useUserProfile();
   const [documents, setDocuments] = useState<any[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(true);
 
   useEffect(() => {
-    getProfile();
-    getDocuments();
-  }, []);
-
-  const getProfile = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo cargar el perfil",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (profile) {
+      getDocuments();
     }
-  };
+  }, [profile]);
 
   const getDocuments = async () => {
     try {
+      setLoadingDocuments(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
@@ -75,11 +51,39 @@ const ProfilePage = () => {
         description: "No se pudieron cargar los documentos",
         variant: "destructive",
       });
+    } finally {
+      setLoadingDocuments(false);
     }
   };
 
-  if (loading) {
-    return <div className="container mx-auto px-4 py-8">Cargando...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <DashboardSidebar />
+        <div className="flex-1 ml-[300px] flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Cargando información del perfil...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <DashboardSidebar />
+        <div className="flex-1 ml-[300px] p-8">
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>
+              Error al cargar el perfil: {error}. Por favor, intenta recargar la página.
+            </AlertDescription>
+          </Alert>
+          <Button onClick={refetchProfile}>Reintentar</Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -87,8 +91,8 @@ const ProfilePage = () => {
       <DashboardSidebar />
       <div className="flex-1 ml-[300px]">
         <div className="container mx-auto px-4 py-24">
-          <div className="flex gap-8">
-            <ProfileCard profile={profile} onProfileUpdate={getProfile} />
+          <div className="flex flex-col md:flex-row gap-8">
+            <ProfileCard profile={profile} onProfileUpdate={refetchProfile} />
 
             <div className="flex-1">
               <Tabs defaultValue="informacion" className="w-full">
@@ -112,22 +116,29 @@ const ProfilePage = () => {
                 </TabsContent>
 
                 <TabsContent value="contacto">
-                  <ContactInfo profile={profile} onProfileUpdate={getProfile} readOnly={true} />
+                  <ContactInfo profile={profile} onProfileUpdate={refetchProfile} readOnly={true} />
                 </TabsContent>
 
                 <TabsContent value="archivos">
-                  <DocumentsManager 
-                    documents={documents}
-                    profile={profile}
-                    onDocumentsUpdate={getDocuments}
-                  />
+                  {loadingDocuments ? (
+                    <div className="text-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                      <p>Cargando documentos...</p>
+                    </div>
+                  ) : (
+                    <DocumentsManager 
+                      documents={documents}
+                      profile={profile}
+                      onDocumentsUpdate={getDocuments}
+                    />
+                  )}
                 </TabsContent>
 
                 <TabsContent value="configuracion" className="space-y-6">
-                  <div className="grid grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-6">
                       <h3 className="font-semibold mb-4">ACTUALIZAR DATOS DE CONTACTO</h3>
-                      <ContactInfo profile={profile} onProfileUpdate={getProfile} />
+                      <ContactInfo profile={profile} onProfileUpdate={refetchProfile} />
                     </div>
 
                     <div className="space-y-6">
