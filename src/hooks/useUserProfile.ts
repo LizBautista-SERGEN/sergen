@@ -47,9 +47,11 @@ export const useUserProfile = () => {
         return;
       }
 
-      // Use RPC function to safely get profile without recursion
+      // Use direct query instead of RPC to avoid type issues
       const { data, error: profileError } = await supabase
-        .rpc('get_user_profile', { user_id: session.user.id });
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id);
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
