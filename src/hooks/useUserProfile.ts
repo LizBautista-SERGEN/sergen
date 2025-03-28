@@ -33,11 +33,11 @@ export const useUserProfile = () => {
     setError(null);
     
     try {
-      // Obtener sesión actual
+      // Get current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        console.error('Error de sesión:', sessionError);
+        console.error('Session error:', sessionError);
         setError(sessionError.message);
         return;
       }
@@ -47,32 +47,48 @@ export const useUserProfile = () => {
         return;
       }
 
-      // Obtener perfil del usuario
+      // Get user profile with direct SQL query to avoid RLS recursion
       const { data, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
+        .rpc('get_user_profile', { user_id: session.user.id });
 
       if (profileError) {
-        console.error('Error al obtener perfil:', profileError);
+        console.error('Error fetching profile:', profileError);
         setError(profileError.message);
-        throw profileError;
-      }
-
-      if (data) {
-        console.log('Perfil cargado correctamente:', data);
+        
+        // Fallback: Try to get profile with admin key if available
+        try {
+          const { data: profileData, error: fallbackError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+            
+          if (fallbackError) {
+            console.error('Fallback error:', fallbackError);
+            throw fallbackError;
+          }
+          
+          if (profileData) {
+            console.log('Profile loaded successfully via fallback:', profileData);
+            setProfile(profileData as ProfileType);
+            setIsSuperUser(profileData.role === 'superuser');
+          }
+        } catch (fallbackError) {
+          throw profileError; // Throw the original error if fallback fails
+        }
+      } else if (data) {
+        console.log('Profile loaded successfully:', data);
         setProfile(data as ProfileType);
         setIsSuperUser(data.role === 'superuser');
       } else {
-        console.log('No se encontró perfil para el usuario');
+        console.log('No profile found for user');
         setProfile(null);
         setIsSuperUser(false);
       }
     } catch (error: any) {
-      console.error('Error al cargar perfil:', error);
-      setError(error.message || 'Error desconocido');
-      toast.error("Error al cargar la información del perfil: " + (error.message || 'Error desconocido'));
+      console.error('Error loading profile:', error);
+      setError(error.message || 'Unknown error');
+      toast.error("Error loading profile information: " + (error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +99,7 @@ export const useUserProfile = () => {
     fetchProfile();
   };
 
-  // Escuchar cambios en la sesión
+  // Listen for session changes
   useEffect(() => {
     fetchProfile();
 
