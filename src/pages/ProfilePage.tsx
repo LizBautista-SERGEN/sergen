@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -12,6 +11,7 @@ import { SecuritySettings } from "@/components/profile/SecuritySettings";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const ProfilePage = () => {
   const { toast } = useToast();
