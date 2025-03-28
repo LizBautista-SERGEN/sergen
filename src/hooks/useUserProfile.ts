@@ -47,39 +47,21 @@ export const useUserProfile = () => {
         return;
       }
 
-      // Get user profile with direct SQL query to avoid RLS recursion
+      // Use RPC function to safely get profile without recursion
       const { data, error: profileError } = await supabase
         .rpc('get_user_profile', { user_id: session.user.id });
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
         setError(profileError.message);
-        
-        // Fallback: Try to get profile with admin key if available
-        try {
-          const { data: profileData, error: fallbackError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-            
-          if (fallbackError) {
-            console.error('Fallback error:', fallbackError);
-            throw fallbackError;
-          }
-          
-          if (profileData) {
-            console.log('Profile loaded successfully via fallback:', profileData);
-            setProfile(profileData as ProfileType);
-            setIsSuperUser(profileData.role === 'superuser');
-          }
-        } catch (fallbackError) {
-          throw profileError; // Throw the original error if fallback fails
-        }
-      } else if (data) {
-        console.log('Profile loaded successfully:', data);
-        setProfile(data as ProfileType);
-        setIsSuperUser(data.role === 'superuser');
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        const userProfile = data[0] as ProfileType;
+        console.log('Profile loaded successfully:', userProfile);
+        setProfile(userProfile);
+        setIsSuperUser(userProfile.role === 'superuser');
       } else {
         console.log('No profile found for user');
         setProfile(null);
