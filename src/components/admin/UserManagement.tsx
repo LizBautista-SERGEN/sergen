@@ -26,8 +26,9 @@ export const UserManagement = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user.id) return;
 
+    // Usamos la nueva tabla user_accounts
     const { data: currentUserProfile, error: profileError } = await supabase
-      .from('profiles')
+      .from('user_accounts')
       .select('role')
       .eq('id', session.user.id)
       .single();
@@ -37,9 +38,9 @@ export const UserManagement = () => {
       return;
     }
 
-    // Ahora hacemos la consulta para obtener todos los usuarios
+    // Ahora hacemos la consulta para obtener todos los usuarios usando user_accounts
     const { data, error } = await supabase
-      .from('profiles')
+      .from('user_accounts')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -49,13 +50,14 @@ export const UserManagement = () => {
       return;
     }
 
-    console.log('Usuarios obtenidos:', data); // Para debugging
+    console.log('Usuarios obtenidos:', data);
     setUsers(data || []);
   };
 
   const handleToggleAccess = async (userId: string, currentAccess: boolean) => {
+    // Actualizar en user_accounts
     const { error } = await supabase
-      .from('profiles')
+      .from('user_accounts')
       .update({ has_access: !currentAccess })
       .eq('id', userId);
 

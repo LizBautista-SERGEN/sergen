@@ -1,6 +1,8 @@
 
+import { ProfileType } from "@/hooks/useUserProfile";
+
 interface ProfileInfoProps {
-  profile: any;
+  profile: ProfileType | null;
 }
 
 export const ProfileInfo = ({ profile }: ProfileInfoProps) => {

@@ -676,6 +676,69 @@ export type Database = {
           },
         ]
       }
+      user_accounts: {
+        Row: {
+          activity: string | null
+          business_name: string | null
+          contact_name: string | null
+          contract_expiration: string | null
+          contracted_power: string | null
+          corporate_email: string | null
+          created_at: string
+          electricity_provider: string | null
+          email: string
+          has_access: boolean
+          id: string
+          notice_period: string | null
+          phone: string | null
+          position: string | null
+          profile_image: string | null
+          role: string
+          ruc: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity?: string | null
+          business_name?: string | null
+          contact_name?: string | null
+          contract_expiration?: string | null
+          contracted_power?: string | null
+          corporate_email?: string | null
+          created_at?: string
+          electricity_provider?: string | null
+          email: string
+          has_access?: boolean
+          id: string
+          notice_period?: string | null
+          phone?: string | null
+          position?: string | null
+          profile_image?: string | null
+          role?: string
+          ruc?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity?: string | null
+          business_name?: string | null
+          contact_name?: string | null
+          contract_expiration?: string | null
+          contracted_power?: string | null
+          corporate_email?: string | null
+          created_at?: string
+          electricity_provider?: string | null
+          email?: string
+          has_access?: boolean
+          id?: string
+          notice_period?: string | null
+          phone?: string | null
+          position?: string | null
+          profile_image?: string | null
+          role?: string
+          ruc?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           activity: string | null

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,9 @@ const LoginPage = () => {
       
       if (session) {
         console.log('Sesión encontrada:', session);
+        // Usamos user_accounts en lugar de profiles
         const { data: profile, error: profileError } = await supabase
-          .from('profiles')
+          .from('user_accounts')
           .select('role, has_access')
           .eq('id', session.user.id)
           .single();
@@ -87,8 +89,9 @@ const LoginPage = () => {
 
       if (data.user) {
         console.log('Usuario autenticado:', data.user);
+        // Usamos user_accounts en lugar de profiles
         const { data: profile, error: profileError } = await supabase
-          .from('profiles')
+          .from('user_accounts')
           .select('role, has_access')
           .eq('id', data.user.id)
           .single();

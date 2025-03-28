@@ -24,7 +24,7 @@ export const ContactInfo = ({ profile, onProfileUpdate, readOnly = false }: Cont
     const formData = {
       contact_name: form.contact_name.value,
       position: form.position.value,
-      profile: form.profile.value,
+      profile_image: form.profile.value, // Renombrado a profile_image en la BD
       corporate_email: form.corporate_email.value,
       phone: form.phone.value,
     };
@@ -41,8 +41,9 @@ export const ContactInfo = ({ profile, onProfileUpdate, readOnly = false }: Cont
         return;
       }
 
+      // Actualizar la tabla user_accounts en lugar de profiles
       const { error } = await supabase
-        .from('profiles')
+        .from('user_accounts')
         .update(formData)
         .eq('id', session.user.id);
 
@@ -90,7 +91,7 @@ export const ContactInfo = ({ profile, onProfileUpdate, readOnly = false }: Cont
         <label className="font-semibold mb-2 block">PERFIL:</label>
         <Input 
           name="profile" 
-          defaultValue={profile?.profile || ""} 
+          defaultValue={profile?.profile_image || ""} 
           readOnly={readOnly}
           className={readOnly ? "bg-gray-50" : ""}
         />

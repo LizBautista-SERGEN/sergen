@@ -9,7 +9,7 @@ export type ProfileType = {
   business_name: string | null;
   contact_name: string | null;
   position: string | null;
-  profile: string | null;
+  profile_image: string | null;
   corporate_email: string | null;
   phone: string | null;
   role: string;
@@ -47,9 +47,9 @@ export const useUserProfile = () => {
         return;
       }
 
-      // Use direct query instead of RPC to avoid type issues
+      // Use direct query to user_accounts table instead of profiles
       const { data, error: profileError } = await supabase
-        .from('profiles')
+        .from('user_accounts')
         .select('*')
         .eq('id', session.user.id);
 
