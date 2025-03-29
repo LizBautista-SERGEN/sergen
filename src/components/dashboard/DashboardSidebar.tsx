@@ -1,9 +1,6 @@
 
 import { User, BarChart2, FileText, HelpCircle, Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 const links = [
   { 
@@ -33,64 +30,41 @@ const links = [
   }
 ];
 
-const SidebarLink = ({ link, isOpen, isActive }: { link: typeof links[0], isOpen: boolean, isActive: boolean }) => {
+const SidebarLink = ({ link, isActive }: { link: typeof links[0], isActive: boolean }) => {
   const navigate = useNavigate();
   
   return (
     <button
       onClick={() => navigate(link.href)}
-      className={cn(
-        "flex items-center justify-start gap-3 group/sidebar py-4 w-full hover:bg-gray-100 rounded-lg px-4",
-        isActive && "bg-gray-100 font-medium"
-      )}
+      className={`flex items-center justify-start gap-3 group py-4 w-full hover:bg-gray-100 rounded-lg px-4 ${
+        isActive ? "bg-gray-100 font-medium" : ""
+      }`}
     >
       {link.icon}
-      <motion.span
-        animate={{
-          display: isOpen ? "inline-block" : "none",
-          opacity: isOpen ? 1 : 0,
-        }}
-        className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block"
-      >
+      <span className="text-neutral-700 dark:text-neutral-200 text-sm group-hover:translate-x-1 transition duration-150 whitespace-pre">
         {link.label}
-      </motion.span>
+      </span>
     </button>
   );
 };
 
 export const DashboardSidebar = () => {
-  const [isOpen, setIsOpen] = useState(true);
   const location = useLocation();
 
   return (
-    <motion.div
-      className={cn(
-        "h-full px-4 py-6 flex flex-col bg-white border-r border-gray-200 transition-all fixed top-16 left-0 z-40",
-      )}
-      animate={{
-        width: isOpen ? "300px" : "80px",
-      }}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
-      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-        <motion.div 
-          className="mt-8 flex flex-col gap-4"
-          animate={{
-            marginTop: isOpen ? "2rem" : "4rem"
-          }}
-        >
+    <div className="h-full min-w-[280px] flex-shrink-0 bg-white border-r border-gray-200 fixed top-16 left-0 z-40">
+      <div className="flex flex-col flex-1 overflow-y-auto px-4 py-6">
+        <div className="mt-8 flex flex-col gap-4">
           {links.map((link, idx) => (
             <SidebarLink 
               key={idx} 
               link={link} 
-              isOpen={isOpen} 
               isActive={location.pathname === link.href || 
                 (link.href !== "/" && location.pathname.startsWith(link.href))}
             />
           ))}
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };

@@ -11,10 +11,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
 import { startOfDay, endOfDay } from "date-fns";
+import { CoesData } from "@/types/forecast";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<CoesData[]>([]);
   const { session } = useAuth();
 
   const fetchData = async () => {
@@ -26,7 +27,7 @@ export const ForecastPage = () => {
 
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
-        .select('*')
+        .select('fecha, reprogramado, pronostico, rango_inferior, rango_superior, ejecutado')
         .gte('fecha', startOfToday)
         .lte('fecha', endOfToday)
         .order('fecha', { ascending: true });
