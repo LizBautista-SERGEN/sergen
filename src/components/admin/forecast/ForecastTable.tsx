@@ -1,8 +1,9 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CoesData } from '@/types/forecast';
 
 interface ForecastTableProps {
-  data: any[];
+  data: CoesData[];
 }
 
 export const ForecastTable = ({ data }: ForecastTableProps) => {
@@ -21,7 +22,7 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
     const hora = fecha.getUTCHours().toString().padStart(2, '0');
     const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
     
-    return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+    return `${dia}/${mes}/${año} ${hora}:${minutos} (UTC)`;
   };
 
   // Función para validar si un valor es efectivamente nulo o cero
@@ -37,7 +38,7 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
   // Encontrar el último índice con demanda real (excluyendo ceros)
   let lastRealDemandIndex = -1;
   for (let i = 0; i < sortedData.length; i++) {
-    if (!isNullOrZero(sortedData[i].demanda_real)) {
+    if (!isNullOrZero(sortedData[i].ejecutado)) {
       lastRealDemandIndex = i;
     }
   }
@@ -45,17 +46,17 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
   // Procesamos los datos aplicando la misma lógica que en el gráfico
   const processedData = sortedData.map((item, index) => ({
     ...item,
-    pronostico_diario: index > lastRealDemandIndex && !isNullOrZero(item.pronostico_diario) ? item.pronostico_diario : null,
+    pronostico: index > lastRealDemandIndex && !isNullOrZero(item.pronostico) ? item.pronostico : null,
     rango_inferior: index > lastRealDemandIndex && !isNullOrZero(item.rango_inferior) ? item.rango_inferior : null,
     rango_superior: index > lastRealDemandIndex && !isNullOrZero(item.rango_superior) ? item.rango_superior : null,
-    demanda_real: isNullOrZero(item.demanda_real) ? null : item.demanda_real
+    ejecutado: isNullOrZero(item.ejecutado) ? null : item.ejecutado
   }));
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Fecha</TableHead>
+          <TableHead>Fecha (UTC)</TableHead>
           <TableHead>Reprogramación (MW)</TableHead>
           <TableHead>Pronóstico Diario (MW)</TableHead>
           <TableHead>Rango Inferior (MW)</TableHead>
@@ -67,11 +68,11 @@ export const ForecastTable = ({ data }: ForecastTableProps) => {
         {processedData.map((item, index) => (
           <TableRow key={index}>
             <TableCell>{formatDate(item.fecha)}</TableCell>
-            <TableCell>{formatNumber(item.reprogramacion)}</TableCell>
-            <TableCell>{formatNumber(item.pronostico_diario)}</TableCell>
+            <TableCell>{formatNumber(item.reprogramado)}</TableCell>
+            <TableCell>{formatNumber(item.pronostico)}</TableCell>
             <TableCell>{formatNumber(item.rango_inferior)}</TableCell>
             <TableCell>{formatNumber(item.rango_superior)}</TableCell>
-            <TableCell>{formatNumber(item.demanda_real)}</TableCell>
+            <TableCell>{formatNumber(item.ejecutado)}</TableCell>
           </TableRow>
         ))}
       </TableBody>

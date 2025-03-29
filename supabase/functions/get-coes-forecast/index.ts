@@ -55,6 +55,11 @@ serve(async (req) => {
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = utils.sheet_to_json(worksheet, { header: 1 });
 
+    // Log headers and first few rows to verify columns
+    console.log("Encabezados del Excel:", jsonData[0]);
+    console.log("Primera fila de datos:", jsonData[1]);
+    console.log("Segunda fila de datos:", jsonData[2]);
+
     // Skip header rows and process data
     const processedData = [];
     for (let i = 2; i < jsonData.length; i++) {
@@ -75,7 +80,7 @@ serve(async (req) => {
             continue;
           }
 
-          // Updated to match the renamed columns in the database
+          // Updated to match the column names in the database
           const data = {
             fecha: fecha.toISOString(),
             reprogramado: parseFloat(row[1]) || null,

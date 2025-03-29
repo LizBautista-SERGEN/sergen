@@ -1,8 +1,9 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { CoesData } from '@/types/forecast';
 
 interface ForecastChartProps {
-  data: any[];
+  data: CoesData[];
   forPDF?: boolean;
 }
 
@@ -10,6 +11,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   // Función para formatear la fecha manualmente sin conversiones
   const formatTime = (isoString: string): string => {
     const fecha = new Date(isoString);
+    // Mantenemos UTC+00 sin ajustes
     const hora = fecha.getUTCHours().toString().padStart(2, '0');
     const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
     return `${hora}:${minutos}`;
@@ -17,13 +19,14 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
 
   const formatFullDate = (isoString: string): string => {
     const fecha = new Date(isoString);
+    // Mantenemos UTC+00 sin ajustes
     const dia = fecha.getUTCDate().toString().padStart(2, '0');
     const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
     const año = fecha.getUTCFullYear();
     const hora = fecha.getUTCHours().toString().padStart(2, '0');
     const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
     
-    return `${dia}/${mes}/${año} ${hora}:${minutos}`;
+    return `${dia}/${mes}/${año} ${hora}:${minutos} (UTC)`;
   };
 
   // Función para validar si un valor es efectivamente nulo o cero
@@ -39,13 +42,13 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   // Encontrar el último índice con demanda real (excluyendo ceros)
   let lastRealDemandIndex = -1;
   for (let i = 0; i < sortedData.length; i++) {
-    if (!isNullOrZero(sortedData[i].demanda_real)) {
+    if (!isNullOrZero(sortedData[i].ejecutado)) {
       lastRealDemandIndex = i;
     }
   }
 
   console.log('Índice del último dato real:', lastRealDemandIndex);
-  console.log('Fecha del último dato real:', sortedData[lastRealDemandIndex]?.fecha);
+  console.log('Fecha del último dato real:', lastRealDemandIndex >= 0 ? sortedData[lastRealDemandIndex]?.fecha : 'No hay datos reales');
 
   const chartData = sortedData.map((item, index) => {
     const currentDate = new Date(item.fecha);
@@ -56,11 +59,11 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
 
     return {
       time: formatTime(item.fecha),
-      "Reprogramación": isNullOrZero(item.reprogramacion) ? null : item.reprogramacion,
-      "Pronóstico Diario": showForecast && !isNullOrZero(item.pronostico_diario) ? item.pronostico_diario : null,
+      "Reprogramación": isNullOrZero(item.reprogramado) ? null : item.reprogramado,
+      "Pronóstico Diario": showForecast && !isNullOrZero(item.pronostico) ? item.pronostico : null,
       "Rango Inferior": showForecast && !isNullOrZero(item.rango_inferior) ? item.rango_inferior : null,
       "Rango Superior": showForecast && !isNullOrZero(item.rango_superior) ? item.rango_superior : null,
-      "Demanda Real": isNullOrZero(item.demanda_real) ? null : item.demanda_real,
+      "Demanda Real": isNullOrZero(item.ejecutado) ? null : item.ejecutado,
       hora: hora,
       fecha_completa: formatFullDate(item.fecha)
     };

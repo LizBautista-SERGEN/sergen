@@ -25,6 +25,8 @@ export const ForecastPage = () => {
       const startOfToday = startOfDay(today).toISOString();
       const endOfToday = endOfDay(today).toISOString();
 
+      console.log('Consultando datos entre:', startOfToday, 'y', endOfToday);
+
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('fecha, reprogramado, pronostico, rango_inferior, rango_superior, ejecutado')
@@ -87,7 +89,7 @@ export const ForecastPage = () => {
     fetchData();
     
     const interval = setInterval(() => {
-      refreshData();
+      fetchData();
     }, 15 * 60 * 1000); // 15 minutos en milisegundos
 
     return () => clearInterval(interval);
