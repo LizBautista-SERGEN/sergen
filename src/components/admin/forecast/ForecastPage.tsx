@@ -126,7 +126,7 @@ export const ForecastPage = () => {
           <div className="grid grid-cols-1 gap-6">
             {data.length > 0 ? (
               <>
-                <div className="bg-white p-4 rounded-lg shadow h-[400px]">
+                <div className="bg-white p-4 rounded-lg shadow h-[600px]">
                   <ForecastChart data={data} />
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
