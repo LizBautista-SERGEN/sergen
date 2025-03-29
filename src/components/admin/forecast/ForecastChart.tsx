@@ -1,3 +1,4 @@
+
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { CoesData } from '@/types/forecast';
 
@@ -71,7 +72,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   console.log('Datos procesados del gráfico:', chartData);
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={500}> {/* Increased height from default to 500px */}
       <LineChart
         data={chartData}
         margin={{ top: 5, right: 30, left: 50, bottom: 25 }}
