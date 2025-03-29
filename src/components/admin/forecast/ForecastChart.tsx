@@ -72,7 +72,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   console.log('Datos procesados del gráfico:', chartData);
 
   return (
-    <ResponsiveContainer width="100%" height={500}> {/* Increased height from default to 500px */}
+    <ResponsiveContainer width="100%" height={500}>
       <LineChart
         data={chartData}
         margin={{ top: 5, right: 30, left: 50, bottom: 25 }}
