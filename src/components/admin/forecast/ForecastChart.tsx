@@ -1,4 +1,3 @@
-
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { CoesData } from '@/types/forecast';
 
@@ -89,7 +88,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
-          formatter={(value: any) => value ? [`${value.toLocaleString()} MW`, ''] : ['No disponible', '']}
+          formatter={(value: any, name: string) => value ? [`${value.toLocaleString()} MW`, name] : ['No disponible', name]}
           labelFormatter={(label, payload) => {
             if (payload && payload[0]) {
               return `${payload[0].payload.fecha_completa}`;
