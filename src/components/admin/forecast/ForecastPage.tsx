@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ForecastChart } from "./ForecastChart";
@@ -10,13 +9,14 @@ import { ExportDataDialog } from "../ExportDataDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HistoricalTab } from "./HistoricalTab";
-import { startOfDay, endOfDay } from "date-fns";
+import { startOfDay, endOfDay, format } from "date-fns";
 import { CoesData } from "@/types/forecast";
 
 export const ForecastPage = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<CoesData[]>([]);
   const { session } = useAuth();
+  const currentDate = format(new Date(), "dd/MM/yyyy");
 
   const fetchData = async () => {
     try {
@@ -105,7 +105,7 @@ export const ForecastPage = () => {
         
         <TabsContent value="forecast">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Pronóstico de Demanda</h2>
+            <h2 className="text-2xl font-bold">Pronóstico de Demanda - {currentDate}</h2>
             <div className="flex gap-4">
               <Button 
                 variant="outline" 
@@ -126,7 +126,7 @@ export const ForecastPage = () => {
           <div className="grid grid-cols-1 gap-6">
             {data.length > 0 ? (
               <>
-                <div className="bg-white p-4 rounded-lg shadow h-[600px]">
+                <div className="bg-white p-4 rounded-lg shadow h-[500px]">
                   <ForecastChart data={data} />
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">

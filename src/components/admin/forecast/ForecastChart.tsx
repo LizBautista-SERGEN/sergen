@@ -72,10 +72,10 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
   console.log('Datos procesados del gráfico:', chartData);
 
   return (
-    <ResponsiveContainer width="100%" height={500}>
+    <ResponsiveContainer width="100%" height={450}>
       <LineChart
         data={chartData}
-        margin={{ top: 5, right: 30, left: 50, bottom: 25 }}
+        margin={{ top: 5, right: 30, left: 50, bottom: 35 }}
       >
         <XAxis
           dataKey="time"
@@ -97,7 +97,7 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
             return label;
           }}
         />
-        <Legend verticalAlign="top" height={36} />
+        <Legend verticalAlign="bottom" height={36} />
 
         {/* Áreas grises para horas pico */}
         {chartData.map((entry, index) => {
