@@ -8,10 +8,12 @@ import { RiskManagement } from "@/components/dashboard/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/PowerCharts";
 import { ServiceInfo } from "@/components/dashboard/ServiceInfo";
 import { EnergyData } from "@/types/energy";
+import { format } from "date-fns";
 
 const ServiceControl = () => {
   const [userData, setUserData] = useState<any>(null);
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const navigate = useNavigate();
   const [date, setDate] = useState<Date | undefined>(new Date());
 
@@ -27,7 +29,9 @@ const ServiceControl = () => {
       const { data, error } = await supabase
         .from('energy_data')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       if (error) {
         console.error('Error fetching energy data:', error);
@@ -47,6 +51,11 @@ const ServiceControl = () => {
 
       console.log("Fetched energy data:", formattedData);
       setEnergyData(formattedData);
+      
+      // Set the last updated time
+      if (data && data.length > 0) {
+        setLastUpdated(new Date(data[0].created_at));
+      }
     };
 
     fetchUserData();
@@ -58,6 +67,14 @@ const ServiceControl = () => {
         <DashboardSidebar />
         <div className="flex-1">
           <div className="container mx-auto px-2 pt-24 pb-8">
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">Control de Demanda</h1>
+              {lastUpdated && (
+                <p className="text-sm text-gray-600">
+                  Última actualización: {format(lastUpdated, 'dd/MM/yyyy HH:mm')}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-3 space-y-6">
                 <RiskManagement 
