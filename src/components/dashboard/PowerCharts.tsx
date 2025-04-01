@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CoesData } from "@/types/forecast";
 import { ForecastChart } from "@/components/admin/forecast/ForecastChart";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format, startOfDay, endOfDay, subDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 type Props = {
   energyData: any[];
@@ -20,27 +21,30 @@ export const PowerCharts = ({ date }: Props) => {
     try {
       setLoading(true);
       const today = new Date();
-      const startOfToday = startOfDay(today).toISOString();
-      const endOfToday = endOfDay(today).toISOString();
+      const twoDaysAgo = subDays(today, 2);
+      const startDate = startOfDay(twoDaysAgo).toISOString();
+      const endDate = endOfDay(today).toISOString();
 
       const { data: forecastData, error } = await supabase
         .from('coes_forecast')
         .select('fecha, reprogramado, pronostico, rango_inferior, rango_superior, ejecutado')
-        .gte('fecha', startOfToday)
-        .lte('fecha', endOfToday)
+        .gte('fecha', startDate)
+        .lte('fecha', endDate)
         .order('fecha', { ascending: true });
 
       if (error) {
         console.error('Error al obtener datos:', error);
+        toast.error('Error al cargar datos de pronóstico');
         throw error;
       }
 
       if (!forecastData || forecastData.length === 0) {
-        console.log('No hay datos disponibles para hoy');
+        console.log('No hay datos disponibles para los últimos dos días');
         setData([]);
         return;
       }
 
+      console.log('Datos de pronóstico obtenidos:', forecastData.length);
       setData(forecastData);
     } catch (error) {
       console.error('Error fetching forecast data:', error);
@@ -69,7 +73,7 @@ export const PowerCharts = ({ date }: Props) => {
           <ForecastChart data={data} />
         ) : (
           <div className="flex justify-center items-center h-64">
-            <p className="text-gray-500">No hay datos disponibles para hoy</p>
+            <p className="text-gray-500">No hay datos disponibles para los últimos días</p>
           </div>
         )}
       </CardContent>
