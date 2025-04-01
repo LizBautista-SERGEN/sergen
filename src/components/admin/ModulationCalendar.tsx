@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, isAfter, startOfMonth, endOfMonth, addMonths } from "date-fns";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -14,22 +14,16 @@ interface ModulationDay {
 }
 
 export const ModulationCalendar = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(2025, 0, 1)); // January 1, 2025
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date(2025, 0, 1));
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchModulationData = async (month: Date) => {
+  const fetchModulationData = async () => {
     setIsLoading(true);
     try {
-      const start = startOfMonth(month).toISOString().split('T')[0];
-      const end = endOfMonth(month).toISOString().split('T')[0];
-
       const { data, error } = await supabase
         .from('modulation_days')
         .select('date, is_modulated')
-        .gte('date', start)
-        .lte('date', end)
         .order('date', { ascending: false });
 
       if (error) {
@@ -48,8 +42,8 @@ export const ModulationCalendar = () => {
   };
 
   useEffect(() => {
-    fetchModulationData(selectedMonth);
-  }, [selectedMonth]);
+    fetchModulationData();
+  }, []);
 
   const handleToggleModulation = async (date: string, currentValue: boolean) => {
     try {
@@ -66,16 +60,12 @@ export const ModulationCalendar = () => {
         return;
       }
 
-      fetchModulationData(selectedMonth);
+      fetchModulationData();
       toast.success('Modulación actualizada correctamente');
     } catch (error) {
       console.error('Error en handleToggleModulation:', error);
       toast.error('Error al actualizar la modulación');
     }
-  };
-
-  const handleMonthChange = (increment: boolean) => {
-    setSelectedMonth(prev => addMonths(prev, increment ? 1 : -1));
   };
 
   const getDateClassName = (date: Date): string => {
@@ -84,7 +74,7 @@ export const ModulationCalendar = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (isAfter(date, today)) {
+    if (date > today) {
       return "text-gray-400"; // Días futuros en gris
     }
     
@@ -97,31 +87,11 @@ export const ModulationCalendar = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between mb-4">
-        <Button 
-          variant="outline" 
-          onClick={() => handleMonthChange(false)}
-        >
-          Mes Anterior
-        </Button>
-        <h2 className="text-xl font-bold">
-          {format(selectedMonth, 'MMMM yyyy')}
-        </h2>
-        <Button 
-          variant="outline" 
-          onClick={() => handleMonthChange(true)}
-        >
-          Mes Siguiente
-        </Button>
-      </div>
-
       <div className="flex justify-center">
         <Calendar
           mode="single"
           selected={selectedDate}
           onSelect={(date) => date && setSelectedDate(date)}
-          month={selectedMonth}
-          onMonthChange={setSelectedMonth}
           className="rounded-md border"
           components={{
             Day: ({ date }) => (
