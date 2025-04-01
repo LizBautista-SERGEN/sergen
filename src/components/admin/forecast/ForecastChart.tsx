@@ -47,9 +47,6 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
     }
   }
 
-  console.log('Índice del último dato real:', lastRealDemandIndex);
-  console.log('Fecha del último dato real:', lastRealDemandIndex >= 0 ? sortedData[lastRealDemandIndex]?.fecha : 'No hay datos reales');
-
   const chartData = sortedData.map((item, index) => {
     const currentDate = new Date(item.fecha);
     const hora = currentDate.getUTCHours();
@@ -68,8 +65,6 @@ export const ForecastChart = ({ data, forPDF = false }: ForecastChartProps) => {
       fecha_completa: formatFullDate(item.fecha)
     };
   });
-
-  console.log('Datos procesados del gráfico:', chartData);
 
   return (
     <ResponsiveContainer width="100%" height={450}>
