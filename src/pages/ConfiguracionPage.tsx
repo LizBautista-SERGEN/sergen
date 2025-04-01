@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HistoricalTab } from "@/components/admin/forecast/HistoricalTab";
-import { ModulationCalendar } from "@/components/admin/ModulationCalendar";
+import { ModulationTab } from "@/components/admin/ModulationTab";
 
 const ConfiguracionPage = () => {
   return (
@@ -20,7 +20,7 @@ const ConfiguracionPage = () => {
           </TabsContent>
           
           <TabsContent value="modulation">
-            <ModulationCalendar />
+            <ModulationTab />
           </TabsContent>
         </Tabs>
       </Card>
