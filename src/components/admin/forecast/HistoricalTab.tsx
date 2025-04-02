@@ -11,28 +11,45 @@ import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ConsoleOutput } from "./ConsoleOutput";
 import { HistoricalChart } from "./HistoricalChart";
+import { 
+  Table, 
+  TableHeader, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
+} from "@/components/ui/table";
 
 export const HistoricalTab = () => {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [lastError, setLastError] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCheckingData, setIsCheckingData] = useState(false);
 
-  const { data: historicalData, isLoading, refetch } = useQuery({
+  const { data: historicalData, isLoading, refetch, error: fetchError } = useQuery({
     queryKey: ['historical-data'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('coes_historical')
-        .select('*')
-        .order('fecha', { ascending: true });
+      setIsCheckingData(true);
+      try {
+        const { data, error } = await supabase
+          .from('coes_historical')
+          .select('*')
+          .order('fecha', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching historical data:', error);
-        toast.error('Error al cargar los datos históricos');
-        throw error;
+        if (error) {
+          console.error('Error fetching historical data:', error);
+          toast.error('Error al cargar los datos históricos: ' + error.message);
+          throw error;
+        }
+
+        // Log the count of records for debugging
+        console.log(`Fetched ${data?.length || 0} historical records`);
+        
+        return data || [];
+      } finally {
+        setIsCheckingData(false);
       }
-
-      return data;
     }
   });
 
@@ -89,20 +106,34 @@ export const HistoricalTab = () => {
 
     try {
       setIsUploading(true);
+      setLastError(null);
+      
       const formData = new FormData();
       formData.append('file', file);
 
-      const { error } = await supabase.functions.invoke('upload-historical-data', {
+      console.log('Iniciando carga de archivo:', file.name);
+      
+      const { data, error } = await supabase.functions.invoke('upload-historical-data', {
         body: formData
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error en la función de carga:', error);
+        throw error;
+      }
 
-      toast.success('Datos históricos actualizados correctamente');
-      refetch();
+      console.log('Respuesta de la función:', data);
+      
+      if (data?.success) {
+        toast.success(`Datos históricos actualizados correctamente (${data.count} registros)`);
+        await refetch();
+      } else {
+        throw new Error(data?.error || 'Error desconocido al procesar el archivo');
+      }
     } catch (error: any) {
-      console.error('Error al subir archivo:', error);
-      toast.error('Error al procesar el archivo: ' + error.message);
+      console.error('Error completo al subir archivo:', error);
+      setLastError(error);
+      toast.error('Error al procesar el archivo: ' + (error.message || 'Error desconocido'));
     } finally {
       setIsUploading(false);
       if (event.target) {
@@ -111,7 +142,34 @@ export const HistoricalTab = () => {
     }
   };
 
-  if (isLoading) {
+  const checkDatabaseContent = async () => {
+    setIsCheckingData(true);
+    try {
+      const { count, error } = await supabase
+        .from('coes_historical')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      
+      const message = count === 0 
+        ? 'No hay registros en la tabla coes_historical' 
+        : `Hay ${count} registros en la tabla coes_historical`;
+      
+      toast.info(message);
+      console.log(message);
+      
+      if (count && count > 0) {
+        refetch();
+      }
+    } catch (error: any) {
+      console.error('Error al verificar registros:', error);
+      toast.error('Error al verificar registros: ' + error.message);
+    } finally {
+      setIsCheckingData(false);
+    }
+  };
+
+  if (isLoading && !isCheckingData) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin" />
@@ -145,6 +203,20 @@ export const HistoricalTab = () => {
               </span>
             </Button>
           </label>
+          <Button
+            variant="outline"
+            onClick={checkDatabaseContent}
+            disabled={isCheckingData}
+          >
+            {isCheckingData ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verificando...
+              </>
+            ) : (
+              'Verificar Registros'
+            )}
+          </Button>
           <p className="text-sm text-gray-500">
             Formatos soportados: .xlsx, .xls
           </p>
@@ -206,8 +278,8 @@ export const HistoricalTab = () => {
         </div>
       </div>
 
-      {lastError && (
-        <ConsoleOutput error={lastError} />
+      {(lastError || fetchError) && (
+        <ConsoleOutput error={lastError || fetchError} />
       )}
 
       <div className="grid grid-cols-1 gap-6">
@@ -217,48 +289,38 @@ export const HistoricalTab = () => {
               <HistoricalChart data={historicalData} />
             </div>
             <div className="bg-white p-4 rounded-lg shadow overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fecha
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Demanda Programada
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reprogramación Diaria
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Prog. Semanal
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ejecutado
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Demanda Programada</TableHead>
+                    <TableHead>Reprogramación Diaria</TableHead>
+                    <TableHead>Prog. Semanal</TableHead>
+                    <TableHead>Ejecutado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {historicalData.map((row) => (
-                    <tr key={row.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <TableRow key={row.id}>
+                      <TableCell>
                         {format(new Date(row.fecha), 'dd/MM/yyyy HH:mm')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell>
                         {row.demanda_programada?.toLocaleString() || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell>
                         {row.reprogramacion_diaria?.toLocaleString() || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell>
                         {row.prog_semanal?.toLocaleString() || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell>
                         {row.ejecutado?.toLocaleString() || '-'}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </>
         ) : (

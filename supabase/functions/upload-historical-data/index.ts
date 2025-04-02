@@ -22,12 +22,15 @@ serve(async (req) => {
       throw new Error('No file uploaded')
     }
 
+    console.log(`Processing file ${file.name} (${file.size} bytes)`)
+
     const arrayBuffer = await file.arrayBuffer()
     const workbook = XLSX.read(arrayBuffer, { type: 'array' })
     const worksheet = workbook.Sheets[workbook.SheetNames[0]]
     const rawData = XLSX.utils.sheet_to_json(worksheet)
 
-    console.log('Raw data from Excel:', rawData)
+    console.log(`Raw data from Excel: ${rawData.length} rows`)
+    console.log('First few rows:', rawData.slice(0, 3))
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -44,6 +47,8 @@ serve(async (req) => {
       console.error('Error al eliminar datos existentes:', deleteError);
       throw deleteError;
     }
+
+    console.log('Existing data deleted successfully')
 
     // Formatea los datos antes de insertarlos
     const formattedData = rawData.map((row: any) => {
@@ -76,13 +81,20 @@ serve(async (req) => {
         // Formatear la fecha al formato específico de PostgreSQL
         const formattedDate = fecha.toISOString();
 
+        // Mapear nombres de columnas que podrían variar
+        const demandaProgramada = Number(row["PROG. DIARIA"] || row["demanda_programada"] || 0) || null;
+        const reprogramacionDiaria = Number(row["REPROGRAMACIÓN"] || row["reprogramacion_diaria"] || 0) || null;
+        const progSemanal = Number(row["PROG. SEMANAL"] || row["prog_semanal"] || 0) || null;
+        const ejecutado = Number(row["EJECUTADO"] || row["ejecutado"] || 0) || null;
+        const errorPorcentual = Number(row["ERROR %"] || row["error_porcentual"] || 0) || null;
+
         return {
           fecha: formattedDate,
-          demanda_programada: Number(row["PROG. DIARIA"] || row["demanda_programada"] || 0) || null,
-          reprogramacion_diaria: Number(row["REPROGRAMACIÓN"] || row["reprogramacion_diaria"] || 0) || null,
-          prog_semanal: Number(row["PROG. SEMANAL"] || row["prog_semanal"] || 0) || null,
-          ejecutado: Number(row["EJECUTADO"] || row["ejecutado"] || 0) || null,
-          error_porcentual: Number(row["ERROR %"] || row["error_porcentual"] || 0) || null
+          demanda_programada: demandaProgramada,
+          reprogramacion_diaria: reprogramacionDiaria,
+          prog_semanal: progSemanal,
+          ejecutado: ejecutado,
+          error_porcentual: errorPorcentual
         }
       } catch (error) {
         console.error('Error processing row:', row, error)
@@ -90,30 +102,56 @@ serve(async (req) => {
       }
     }).filter(item => item !== null);
 
-    console.log('Formatted data:', formattedData)
+    console.log(`Formatted ${formattedData.length} rows for database insertion`)
 
-    // Realiza la inserción
-    const { error: insertError } = await supabase
+    if (formattedData.length === 0) {
+      throw new Error('No valid data could be extracted from the Excel file');
+    }
+
+    // Realizar la inserción en lotes para evitar problemas con archivos grandes
+    const batchSize = 100;
+    let insertedCount = 0;
+    
+    for (let i = 0; i < formattedData.length; i += batchSize) {
+      const batch = formattedData.slice(i, i + batchSize);
+      const { error: insertError } = await supabase
+        .from('coes_historical')
+        .insert(batch);
+
+      if (insertError) {
+        console.error('Insert error for batch:', insertError);
+        throw insertError;
+      }
+      
+      insertedCount += batch.length;
+      console.log(`Inserted batch ${i/batchSize + 1}, total records so far: ${insertedCount}`);
+    }
+
+    console.log(`Successfully inserted ${insertedCount} records`)
+
+    // Verificar que los datos se insertaron correctamente
+    const { count, error: countError } = await supabase
       .from('coes_historical')
-      .insert(formattedData)
-
-    if (insertError) {
-      console.error('Insert error:', insertError)
-      throw insertError
+      .select('*', { count: 'exact', head: true });
+      
+    if (countError) {
+      console.error('Error al verificar conteo final:', countError);
+    } else {
+      console.log(`Final record count in database: ${count}`);
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Datos históricos actualizados correctamente',
-        count: formattedData.length
+        count: insertedCount
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
       }
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing file:', error)
     return new Response(
       JSON.stringify({ 

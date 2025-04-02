@@ -2,11 +2,25 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export const HistoricalChart = ({ data }: { data: any[] }) => {
+  // If no data is provided, return a message
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">No hay datos disponibles para mostrar</p>
+      </div>
+    );
+  }
+
   const formatTime = (isoString: string): string => {
-    const fecha = new Date(isoString);
-    const hora = fecha.getUTCHours().toString().padStart(2, '0');
-    const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
-    return `${hora}:${minutos}`;
+    try {
+      const fecha = new Date(isoString);
+      const hora = fecha.getUTCHours().toString().padStart(2, '0');
+      const minutos = fecha.getUTCMinutes().toString().padStart(2, '0');
+      return `${hora}:${minutos}`;
+    } catch (error) {
+      console.error('Error formatting time:', error, isoString);
+      return 'Error';
+    }
   };
 
   return (
@@ -31,8 +45,13 @@ export const HistoricalChart = ({ data }: { data: any[] }) => {
           formatter={(value: any) => value ? [`${value.toLocaleString()} MW`, ''] : ['No disponible', '']}
           labelFormatter={(label) => {
             if (label) {
-              const fecha = new Date(label);
-              return `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
+              try {
+                const fecha = new Date(label);
+                return `${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}`;
+              } catch (error) {
+                console.error('Error formatting label:', error, label);
+                return String(label);
+              }
             }
             return '';
           }}
