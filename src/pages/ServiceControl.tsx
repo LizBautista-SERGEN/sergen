@@ -6,7 +6,6 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { RiskManagement } from "@/components/dashboard/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/PowerCharts";
-import { ServiceInfo } from "@/components/dashboard/ServiceInfo";
 import { EnergyData } from "@/types/energy";
 import { format } from "date-fns";
 
@@ -84,16 +83,10 @@ const ServiceControl = () => {
                 />
               </div>
 
-              <div className="col-span-6">
+              <div className="col-span-9">
                 <PowerCharts 
                   energyData={energyData}
                   date={date}
-                />
-              </div>
-
-              <div className="col-span-3">
-                <ServiceInfo 
-                  energyData={energyData}
                 />
               </div>
             </div>
