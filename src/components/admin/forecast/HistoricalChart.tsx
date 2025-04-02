@@ -11,6 +11,10 @@ export const HistoricalChart = ({ data }: { data: any[] }) => {
     );
   }
 
+  // Add debug logging to check data structure
+  console.log('Data received in HistoricalChart:', data);
+  console.log('First data point:', data[0]);
+
   const formatTime = (isoString: string): string => {
     try {
       const fecha = new Date(isoString);
