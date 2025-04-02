@@ -2,21 +2,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { HistoricalChart } from "./HistoricalChart";
 import { ExportDataDialog } from "../ExportDataDialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ConsoleOutput } from "./ConsoleOutput";
-import { UploadHistoricalData } from "./UploadHistoricalData";
+import { HistoricalChart } from "./HistoricalChart";
 
 export const HistoricalTab = () => {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [lastError, setLastError] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: historicalData, isLoading, refetch } = useQuery({
     queryKey: ['historical-data'],
@@ -78,6 +78,39 @@ export const HistoricalTab = () => {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast.error('Por favor selecciona un archivo Excel (.xlsx o .xls)');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { error } = await supabase.functions.invoke('upload-historical-data', {
+        body: formData
+      });
+
+      if (error) throw error;
+
+      toast.success('Datos históricos actualizados correctamente');
+      refetch();
+    } catch (error: any) {
+      console.error('Error al subir archivo:', error);
+      toast.error('Error al procesar el archivo: ' + error.message);
+    } finally {
+      setIsUploading(false);
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -88,7 +121,35 @@ export const HistoricalTab = () => {
 
   return (
     <div className="space-y-4">
-      <UploadHistoricalData />
+      <div className="bg-white p-4 rounded-lg shadow mb-4">
+        <h3 className="font-semibold mb-2">Subir Datos Históricos</h3>
+        <div className="flex items-center gap-2">
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="excel-upload"
+            disabled={isUploading}
+          />
+          <label htmlFor="excel-upload">
+            <Button 
+              variant="outline" 
+              disabled={isUploading}
+              className="cursor-pointer"
+              asChild
+            >
+              <span>
+                <Upload className="mr-2 h-4 w-4" />
+                {isUploading ? 'Subiendo...' : 'Seleccionar Excel'}
+              </span>
+            </Button>
+          </label>
+          <p className="text-sm text-gray-500">
+            Formatos soportados: .xlsx, .xls
+          </p>
+        </div>
+      </div>
       
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Datos Históricos</h2>
@@ -163,7 +224,13 @@ export const HistoricalTab = () => {
                       Fecha
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Demanda Programada
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Reprogramación Diaria
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Prog. Semanal
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Ejecutado
@@ -177,7 +244,13 @@ export const HistoricalTab = () => {
                         {format(new Date(row.fecha), 'dd/MM/yyyy HH:mm')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        {row.demanda_programada?.toLocaleString() || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {row.reprogramacion_diaria?.toLocaleString() || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {row.prog_semanal?.toLocaleString() || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {row.ejecutado?.toLocaleString() || '-'}
@@ -191,7 +264,7 @@ export const HistoricalTab = () => {
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500">
-              No hay datos históricos disponibles. Selecciona un rango de fechas y haz clic en "Actualizar Datos".
+              No hay datos históricos disponibles. Selecciona un rango de fechas y haz clic en "Actualizar Datos" o sube un archivo Excel.
             </p>
           </div>
         )}

@@ -34,39 +34,61 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Primero eliminamos datos existentes para evitar duplicados
+    const { error: deleteError } = await supabase
+      .from('coes_historical')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); 
+
+    if (deleteError) {
+      console.error('Error al eliminar datos existentes:', deleteError);
+      throw deleteError;
+    }
+
     // Formatea los datos antes de insertarlos
     const formattedData = rawData.map((row: any) => {
       try {
-        let fecha
-        if (typeof row.fecha === 'number') {
-          // Si es un número de serie de Excel
-          const excelEpoch = new Date(1899, 11, 30)
-          fecha = new Date(excelEpoch.getTime() + row.fecha * 24 * 60 * 60 * 1000)
-        } else {
-          // Si es una cadena de fecha
-          fecha = new Date(row.fecha)
+        // Detectar el formato de fecha en el archivo Excel
+        let fecha;
+        if (row["FECHA"]) {
+          if (typeof row["FECHA"] === 'number') {
+            // Si es un número de serie de Excel
+            const excelEpoch = new Date(1899, 11, 30);
+            fecha = new Date(excelEpoch.getTime() + row["FECHA"] * 24 * 60 * 60 * 1000);
+          } else {
+            // Si es una cadena de fecha
+            fecha = new Date(row["FECHA"]);
+          }
+        } else if (row["fecha"]) {
+          if (typeof row["fecha"] === 'number') {
+            const excelEpoch = new Date(1899, 11, 30);
+            fecha = new Date(excelEpoch.getTime() + row["fecha"] * 24 * 60 * 60 * 1000);
+          } else {
+            fecha = new Date(row["fecha"]);
+          }
         }
 
-        if (isNaN(fecha.getTime())) {
-          throw new Error(`Invalid date: ${row.fecha}`)
+        if (!fecha || isNaN(fecha.getTime())) {
+          console.error(`Invalid date in row:`, row);
+          return null;
         }
 
         // Formatear la fecha al formato específico de PostgreSQL
-        const formattedDate = fecha.toISOString().replace('T', ' ').replace('Z', '+00')
+        const formattedDate = fecha.toISOString();
 
         return {
           fecha: formattedDate,
-          demanda_programada: Number(row.demanda_programada) || null,
-          reprogramacion_diaria: Number(row.reprogramacion_diaria) || null,
-          prog_semanal: Number(row.prog_semanal) || null,
-          error_porcentual: Number(row.error_porcentual) || null,
-          ejecutado: Number(row.ejecutado) || null
+          demanda_programada: Number(row["PROG. DIARIA"] || row["demanda_programada"] || 0) || null,
+          reprogramacion_diaria: Number(row["REPROGRAMACIÓN"] || row["reprogramacion_diaria"] || 0) || null,
+          prog_semanal: Number(row["PROG. SEMANAL"] || row["prog_semanal"] || 0) || null,
+          ejecutado: Number(row["EJECUTADO"] || row["ejecutado"] || 0) || null,
+          error_porcentual: Number(row["ERROR %"] || row["error_porcentual"] || 0) || null
         }
       } catch (error) {
         console.error('Error processing row:', row, error)
-        throw error
+        return null;
       }
-    })
+    }).filter(item => item !== null);
 
     console.log('Formatted data:', formattedData)
 
@@ -81,7 +103,11 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Datos históricos actualizados correctamente' }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'Datos históricos actualizados correctamente',
+        count: formattedData.length
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 

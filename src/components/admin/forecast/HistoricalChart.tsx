@@ -1,6 +1,4 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export const HistoricalChart = ({ data }: { data: any[] }) => {
@@ -26,7 +24,7 @@ export const HistoricalChart = ({ data }: { data: any[] }) => {
           height={60}
         />
         <YAxis
-          domain={[5500, 8500]}
+          domain={['auto', 'auto']}
           tickFormatter={(value) => `${value.toLocaleString()}`}
         />
         <Tooltip
@@ -43,9 +41,27 @@ export const HistoricalChart = ({ data }: { data: any[] }) => {
         
         <Line
           type="monotone"
+          dataKey="demanda_programada"
+          name="Demanda Programada"
+          stroke="#156082"
+          strokeWidth={2}
+          dot={false}
+          connectNulls={true}
+        />
+        <Line
+          type="monotone"
           dataKey="reprogramacion_diaria"
           name="Reprogramación"
-          stroke="#C00000"
+          stroke="#f39200"
+          strokeWidth={2}
+          dot={false}
+          connectNulls={true}
+        />
+        <Line
+          type="monotone"
+          dataKey="prog_semanal"
+          name="Prog. Semanal"
+          stroke="#00C000"
           strokeWidth={2}
           dot={false}
           connectNulls={true}
@@ -54,7 +70,7 @@ export const HistoricalChart = ({ data }: { data: any[] }) => {
           type="monotone"
           dataKey="ejecutado"
           name="Ejecutado"
-          stroke="#156082"
+          stroke="#C00000"
           strokeWidth={2}
           dot={false}
           connectNulls={true}

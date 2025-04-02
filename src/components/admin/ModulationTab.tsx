@@ -124,11 +124,14 @@ export const ModulationTab = () => {
           onMonthChange={setSelectedMonth}
           className="rounded-md border"
           components={{
-            Day: ({ date }) => (
-              <div className={cn(getDateClassName(date))}>
-                {date.getDate()}
-              </div>
-            )
+            Day: (props) => {
+              const date = props.date;
+              return (
+                <div className={cn(getDateClassName(date))}>
+                  {date.getDate()}
+                </div>
+              );
+            }
           }}
         />
       </div>
