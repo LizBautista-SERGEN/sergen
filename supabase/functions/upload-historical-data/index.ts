@@ -50,59 +50,85 @@ serve(async (req) => {
 
     console.log('Existing data deleted successfully')
 
+    // Determinar los nombres de las columnas en el Excel
+    // Basándonos en la imagen proporcionada, las columnas son:
+    // FECHA, EJECUTADO, PROG. DIARIA, PROG. SEMANAL
+    
     // Formatea los datos antes de insertarlos
     const formattedData = rawData.map((row: any) => {
       try {
-        // Detectar el formato de fecha en el archivo Excel
-        let fecha;
-        if (row["FECHA"]) {
-          if (typeof row["FECHA"] === 'number') {
-            // Si es un número de serie de Excel
-            const excelEpoch = new Date(1899, 11, 30);
-            fecha = new Date(excelEpoch.getTime() + row["FECHA"] * 24 * 60 * 60 * 1000);
-          } else {
-            // Si es una cadena de fecha
-            fecha = new Date(row["FECHA"]);
-          }
-        } else if (row["fecha"]) {
-          if (typeof row["fecha"] === 'number') {
-            const excelEpoch = new Date(1899, 11, 30);
-            fecha = new Date(excelEpoch.getTime() + row["fecha"] * 24 * 60 * 60 * 1000);
-          } else {
-            fecha = new Date(row["fecha"]);
-          }
-        }
-
-        if (!fecha || isNaN(fecha.getTime())) {
-          console.error(`Invalid date in row:`, row);
+        // Obtener valores de las columnas usando los nombres exactos del Excel
+        // Los nombres de las columnas pueden estar en mayúsculas o minúsculas
+        const fechaRaw = row["FECHA"] || row["fecha"] || null;
+        const ejecutadoRaw = row["EJECUTADO"] || row["ejecutado"] || null;
+        const progDiariaRaw = row["PROG. DIARIA"] || row["prog. diaria"] || null;
+        const progSemanalRaw = row["PROG. SEMANAL"] || row["prog. semanal"] || null;
+        
+        if (!fechaRaw) {
+          console.error('Row missing date:', row);
           return null;
         }
-
-        // Formatear la fecha al formato específico de PostgreSQL
+        
+        // Parsear la fecha correctamente
+        let fecha;
+        if (typeof fechaRaw === 'number') {
+          // Si es un número de serie de Excel
+          const excelEpoch = new Date(1899, 11, 30);
+          fecha = new Date(excelEpoch.getTime() + fechaRaw * 24 * 60 * 60 * 1000);
+        } else if (typeof fechaRaw === 'string') {
+          // Si es una cadena de fecha
+          if (fechaRaw.includes('/')) {
+            // Formato tipo: 01/03/2025 00:30
+            const [datePart, timePart] = fechaRaw.split(' ');
+            const [day, month, year] = datePart.split('/');
+            const [hours, minutes] = (timePart || '00:00').split(':');
+            
+            fecha = new Date(
+              parseInt(year), 
+              parseInt(month) - 1, 
+              parseInt(day),
+              parseInt(hours),
+              parseInt(minutes)
+            );
+          } else {
+            // Otros formatos
+            fecha = new Date(fechaRaw);
+          }
+        } else {
+          // Si es un objeto Date de JavaScript
+          fecha = new Date(fechaRaw);
+        }
+        
+        if (isNaN(fecha.getTime())) {
+          console.error('Invalid date format:', fechaRaw);
+          return null;
+        }
+        
+        // Convertir a ISO string
         const formattedDate = fecha.toISOString();
-
-        // Mapear nombres de columnas que podrían variar
-        const demandaProgramada = Number(row["PROG. DIARIA"] || row["demanda_programada"] || 0) || null;
-        const reprogramacionDiaria = Number(row["REPROGRAMACIÓN"] || row["reprogramacion_diaria"] || 0) || null;
-        const progSemanal = Number(row["PROG. SEMANAL"] || row["prog_semanal"] || 0) || null;
-        const ejecutado = Number(row["EJECUTADO"] || row["ejecutado"] || 0) || null;
-        const errorPorcentual = Number(row["ERROR %"] || row["error_porcentual"] || 0) || null;
-
+        
+        // Parsear los valores numéricos
+        const ejecutado = parseFloat(String(ejecutadoRaw).replace(',', '.')) || null;
+        const demandaProgramada = parseFloat(String(progDiariaRaw).replace(',', '.')) || null;
+        const progSemanal = parseFloat(String(progSemanalRaw).replace(',', '.')) || null;
+        
+        // Registrar para depuración
+        console.log(`Processed row: date=${formattedDate}, ejecutado=${ejecutado}, prog_diaria=${demandaProgramada}, prog_semanal=${progSemanal}`);
+        
         return {
           fecha: formattedDate,
-          demanda_programada: demandaProgramada,
-          reprogramacion_diaria: reprogramacionDiaria,
-          prog_semanal: progSemanal,
           ejecutado: ejecutado,
-          error_porcentual: errorPorcentual
-        }
+          demanda_programada: demandaProgramada,
+          prog_semanal: progSemanal,
+          reprogramacion_diaria: demandaProgramada // Usamos PROG. DIARIA como reprogramacion_diaria
+        };
       } catch (error) {
-        console.error('Error processing row:', row, error)
+        console.error('Error processing row:', row, error);
         return null;
       }
-    }).filter(item => item !== null);
+    }).filter(Boolean);
 
-    console.log(`Formatted ${formattedData.length} rows for database insertion`)
+    console.log(`Formatted ${formattedData.length} rows for database insertion`);
 
     if (formattedData.length === 0) {
       throw new Error('No valid data could be extracted from the Excel file');
@@ -161,7 +187,7 @@ serve(async (req) => {
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 // Cambiado a 200 para evitar el error de non-2xx
+        status: 200 // Mantenemos 200 para evitar errores CORS
       }
     )
   }
