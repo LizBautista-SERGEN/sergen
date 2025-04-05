@@ -6,6 +6,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { RiskManagement } from "@/components/dashboard/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/PowerCharts";
+import { HistoricalPowerMaximum } from "@/components/dashboard/HistoricalPowerMaximum";
 import { EnergyData } from "@/types/energy";
 import { format } from "date-fns";
 
@@ -88,6 +89,10 @@ const ServiceControl = () => {
                   energyData={energyData}
                   date={date}
                 />
+                
+                <div className="mt-6">
+                  <HistoricalPowerMaximum />
+                </div>
               </div>
             </div>
           </div>
