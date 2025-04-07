@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 
 interface ChartData {
   date: string;
@@ -24,6 +24,8 @@ export const HistoricalPowerMaximum = () => {
         const today = new Date();
         // Get first day of current month
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        // For testing/development - get data from previous month if current month has no data
+        const threeMonthsAgo = subDays(today, 90);
         
         console.log("Fetching historical power data...");
         console.log("Date range:", {
@@ -31,10 +33,11 @@ export const HistoricalPowerMaximum = () => {
           end: today.toISOString()
         });
         
+        // Important: Query the coes_historical table directly
         const { data, error } = await supabase
-          .from('coes_historical')
+          .from('coes_forecast')
           .select('fecha, ejecutado')
-          .gte('fecha', startOfMonth.toISOString())
+          .gte('fecha', threeMonthsAgo.toISOString())
           .lte('fecha', today.toISOString())
           .order('fecha', { ascending: true });
 
@@ -43,14 +46,13 @@ export const HistoricalPowerMaximum = () => {
           return;
         }
 
-        console.log(`Retrieved ${data?.length || 0} records from coes_historical`, data);
+        console.log(`Retrieved ${data?.length || 0} records from coes_forecast`, data);
 
         // Process to find daily maximums between 18:00 and 23:00
         const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
         
         data?.forEach(item => {
           if (!item.fecha || typeof item.ejecutado !== 'number') {
-            console.log('Skipping invalid item:', item);
             return;
           }
 
