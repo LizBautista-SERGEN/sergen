@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -38,7 +37,6 @@ const ServiceControl = () => {
         return;
       }
 
-      // Convert the data to match EnergyData type
       const formattedData: EnergyData[] = data?.map(item => ({
         id: item.id,
         date: item.date,
@@ -52,7 +50,6 @@ const ServiceControl = () => {
       console.log("Fetched energy data:", formattedData);
       setEnergyData(formattedData);
       
-      // Set the last updated time
       if (data && data.length > 0) {
         setLastUpdated(new Date(data[0].created_at));
       }
@@ -84,15 +81,13 @@ const ServiceControl = () => {
                 />
               </div>
 
-              <div className="col-span-9">
+              <div className="col-span-9 space-y-6">
                 <PowerCharts 
                   energyData={energyData}
                   date={date}
                 />
                 
-                <div className="mt-6">
-                  <HistoricalPowerMaximum />
-                </div>
+                <HistoricalPowerMaximum />
               </div>
             </div>
           </div>

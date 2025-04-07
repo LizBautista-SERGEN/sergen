@@ -5,11 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format } from "date-fns";
 
-interface PowerData {
-  fecha: string;
-  max_power: number;
-}
-
 interface ChartData {
   date: string;
   value: number;
@@ -25,9 +20,16 @@ export const HistoricalPowerMaximum = () => {
     const fetchMaxPowerData = async () => {
       setIsLoading(true);
       try {
-        // Get current date and set to beginning of current month
+        // Get current date
         const today = new Date();
+        // Get first day of current month
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        console.log("Fetching historical power data...");
+        console.log("Date range:", {
+          start: startOfMonth.toISOString(),
+          end: today.toISOString()
+        });
         
         const { data, error } = await supabase
           .from('coes_historical')
@@ -41,25 +43,38 @@ export const HistoricalPowerMaximum = () => {
           return;
         }
 
+        console.log(`Retrieved ${data?.length || 0} records from coes_historical`, data);
+
         // Process to find daily maximums between 18:00 and 23:00
-        const dailyMaximums: Record<string, PowerData> = {};
+        const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
         
         data?.forEach(item => {
-          const date = new Date(item.fecha);
-          const hour = date.getHours();
-          
-          // Filter for hours between 18:00 and 23:00
-          if (hour >= 18 && hour <= 23 && typeof item.ejecutado === 'number') {
-            const dateString = format(date, 'yyyy-MM-dd');
+          if (!item.fecha || typeof item.ejecutado !== 'number') {
+            console.log('Skipping invalid item:', item);
+            return;
+          }
+
+          try {
+            const date = new Date(item.fecha);
+            const hour = date.getHours();
             
-            if (!dailyMaximums[dateString] || item.ejecutado > dailyMaximums[dateString].max_power) {
-              dailyMaximums[dateString] = {
-                fecha: item.fecha,
-                max_power: item.ejecutado
-              };
+            // Filter for hours between 18:00 and 23:00
+            if (hour >= 18 && hour <= 23) {
+              const dateString = format(date, 'yyyy-MM-dd');
+              
+              if (!dailyMaximums[dateString] || item.ejecutado > dailyMaximums[dateString].max_power) {
+                dailyMaximums[dateString] = {
+                  fecha: item.fecha,
+                  max_power: item.ejecutado
+                };
+              }
             }
+          } catch (error) {
+            console.error('Error processing date:', error, item);
           }
         });
+        
+        console.log('Daily maximums processed:', dailyMaximums);
         
         // Convert to chart data format
         const formattedData = Object.values(dailyMaximums)
@@ -69,7 +84,7 @@ export const HistoricalPowerMaximum = () => {
               date: format(date, 'dd/MM'),
               fullDate: item.fecha,
               value: item.max_power,
-              color: '#E6E6E6' // Default color, will be updated below
+              color: '#156082' // Default color, will be updated below
             };
           })
           .sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime());
@@ -81,7 +96,7 @@ export const HistoricalPowerMaximum = () => {
           
           // Assign colors
           formattedData.forEach(item => {
-            if (item.value === sortedByValue[0].value) {
+            if (sortedByValue.length > 0 && item.value === sortedByValue[0].value) {
               item.color = '#D9001B'; // Red for highest
             } else if (sortedByValue.length > 1 && item.value === sortedByValue[1].value) {
               item.color = '#F97316'; // Amber for second highest
