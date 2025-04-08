@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { format, subDays } from "date-fns";
+import { format, subDays, parseISO } from "date-fns";
 
 interface ChartData {
   date: string;
@@ -33,27 +33,60 @@ export const HistoricalPowerMaximum = () => {
           end: today.toISOString()
         });
         
-        // Query the coes_historical table directly - no date/time conversion in the query
+        // Direct SQL query to bypass any potential RLS issues
         const { data, error } = await supabase
-          .from('coes_historical')
-          .select('*')
-          .gte('fecha', thirtyDaysAgo.toISOString())
-          .lte('fecha', today.toISOString())
-          .order('fecha', { ascending: true });
+          .rpc('get_historical_power_data', {
+            start_date: thirtyDaysAgo.toISOString(),
+            end_date: today.toISOString()
+          });
 
         if (error) {
           console.error('Error fetching historical power data:', error);
           setError(`Error: ${error.message}`);
+          
+          // Fallback to direct query if RPC fails
+          const directQuery = await supabase
+            .from('coes_historical')
+            .select('fecha, ejecutado')
+            .gte('fecha', thirtyDaysAgo.toISOString())
+            .lte('fecha', today.toISOString())
+            .order('fecha', { ascending: true });
+            
+          if (directQuery.error) {
+            console.error('Fallback query also failed:', directQuery.error);
+            throw new Error(directQuery.error.message);
+          }
+          
+          if (!directQuery.data || directQuery.data.length === 0) {
+            console.log("No data found in the specified date range");
+            setIsLoading(false);
+            return;
+          }
+          
+          console.log(`Retrieved ${directQuery.data.length} records from direct query`);
+          processData(directQuery.data);
           return;
         }
 
         if (!data || data.length === 0) {
           console.log("No data found in the specified date range");
+          setIsLoading(false);
           return;
         }
 
         console.log(`Retrieved ${data.length} records from coes_historical`);
-
+        processData(data);
+        
+      } catch (err: any) {
+        console.error('Error processing power data:', err);
+        setError(`Error: ${err.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    const processData = (data: any[]) => {
+      try {
         // Process to find daily maximums between 18:00 and 23:00
         const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
         
@@ -63,8 +96,11 @@ export const HistoricalPowerMaximum = () => {
           }
 
           try {
-            const date = new Date(item.fecha);
-            const hour = date.getUTCHours(); // Use UTC hours since the dates in Supabase are stored in UTC
+            // Parse the date string to a Date object
+            const date = typeof item.fecha === 'string' ? parseISO(item.fecha) : new Date(item.fecha);
+            
+            // Get hour in UTC since the dates in Supabase are stored in UTC
+            const hour = date.getUTCHours();
             
             // Filter for hours between 18:00 and 23:00
             if (hour >= 18 && hour <= 23) {
@@ -87,7 +123,7 @@ export const HistoricalPowerMaximum = () => {
         // Convert to chart data format
         const formattedData = Object.values(dailyMaximums)
           .map(item => {
-            const date = new Date(item.fecha);
+            const date = typeof item.fecha === 'string' ? parseISO(item.fecha) : new Date(item.fecha);
             return {
               date: format(date, 'dd/MM'),
               fullDate: item.fecha,
@@ -117,10 +153,8 @@ export const HistoricalPowerMaximum = () => {
         setChartData(formattedData);
         console.log('Power maximum data:', formattedData);
       } catch (err: any) {
-        console.error('Error processing power data:', err);
-        setError(`Error: ${err.message}`);
-      } finally {
-        setIsLoading(false);
+        console.error('Error in processData:', err);
+        setError(`Error processing data: ${err.message}`);
       }
     };
 

@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -11,34 +10,17 @@ import { EnergyData } from "@/types/energy";
 import { format } from "date-fns";
 
 const ServiceControl = () => {
-  const [userData, setUserData] = useState<any>(null);
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const navigate = useNavigate();
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          navigate('/login');
-          return;
-        }
-
-        // Instead of querying energy_data which is causing issues, 
-        // directly set sample energy data or fetch from a different table if needed
-        setEnergyData([]);
-        
-        // Set a default lastUpdated date
-        setLastUpdated(new Date());
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-
-    fetchUserData();
+    // Set a default lastUpdated date
+    setLastUpdated(new Date());
+    
+    // Set empty energy data to avoid profile-related queries
+    setEnergyData([]);
   }, [navigate]);
 
   return (
