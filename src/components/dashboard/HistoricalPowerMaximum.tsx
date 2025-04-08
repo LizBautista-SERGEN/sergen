@@ -22,31 +22,29 @@ export const HistoricalPowerMaximum = () => {
       try {
         // Get current date
         const today = new Date();
-        // Get first day of current month
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        // For testing/development - get data from previous month if current month has no data
-        const threeMonthsAgo = subDays(today, 90);
+        // Get date from 30 days ago for a reasonable date range
+        const thirtyDaysAgo = subDays(today, 30);
         
         console.log("Fetching historical power data...");
         console.log("Date range:", {
-          start: startOfMonth.toISOString(),
+          start: thirtyDaysAgo.toISOString(),
           end: today.toISOString()
         });
         
-        // Important: Query the coes_historical table directly
+        // Query the coes_historical table directly
         const { data, error } = await supabase
-          .from('coes_forecast')
+          .from('coes_historical')
           .select('fecha, ejecutado')
-          .gte('fecha', threeMonthsAgo.toISOString())
+          .gte('fecha', thirtyDaysAgo.toISOString())
           .lte('fecha', today.toISOString())
           .order('fecha', { ascending: true });
 
         if (error) {
-          console.error('Error fetching peak power data:', error);
+          console.error('Error fetching historical power data:', error);
           return;
         }
 
-        console.log(`Retrieved ${data?.length || 0} records from coes_forecast`, data);
+        console.log(`Retrieved ${data?.length || 0} records from coes_historical`, data);
 
         // Process to find daily maximums between 18:00 and 23:00
         const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
