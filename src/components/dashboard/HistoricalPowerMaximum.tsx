@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, subDays, parseISO } from "date-fns";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ChartData {
   date: string;
@@ -38,6 +39,9 @@ export const HistoricalPowerMaximum = () => {
           end: today.toISOString()
         });
         
+        // Get the anon key for authorization
+        const { data: { session } } = await supabase.auth.getSession();
+        
         // Call our edge function to get the historical power data
         const response = await fetch(
           "https://zbixjkgwperxqrdhvtoy.supabase.co/functions/v1/get-historical-power-data",
@@ -45,6 +49,7 @@ export const HistoricalPowerMaximum = () => {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpiaXhqa2d3cGVyeHFyZGh2dG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkwNzM1MjAsImV4cCI6MjA1NDY0OTUyMH0.ENpjlH5HgHT1Pqx6-tXeYO8gaPeGKx5wk_YUpzP5oHQ",
             },
             body: JSON.stringify({
               start_date: thirtyDaysAgo.toISOString(),

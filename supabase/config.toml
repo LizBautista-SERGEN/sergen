@@ -10,3 +10,6 @@ verify_jwt = false
 
 [functions.clean-coes-forecast]
 verify_jwt = false
+
+[functions.get-historical-power-data]
+verify_jwt = false
