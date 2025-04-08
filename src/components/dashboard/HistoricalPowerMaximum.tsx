@@ -15,10 +15,12 @@ interface ChartData {
 export const HistoricalPowerMaximum = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMaxPowerData = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         // Get current date
         const today = new Date();
@@ -31,32 +33,38 @@ export const HistoricalPowerMaximum = () => {
           end: today.toISOString()
         });
         
-        // Query the coes_historical table directly
+        // Query the coes_historical table directly - no date/time conversion in the query
         const { data, error } = await supabase
           .from('coes_historical')
-          .select('fecha, ejecutado')
+          .select('*')
           .gte('fecha', thirtyDaysAgo.toISOString())
           .lte('fecha', today.toISOString())
           .order('fecha', { ascending: true });
 
         if (error) {
           console.error('Error fetching historical power data:', error);
+          setError(`Error: ${error.message}`);
           return;
         }
 
-        console.log(`Retrieved ${data?.length || 0} records from coes_historical`, data);
+        if (!data || data.length === 0) {
+          console.log("No data found in the specified date range");
+          return;
+        }
+
+        console.log(`Retrieved ${data.length} records from coes_historical`);
 
         // Process to find daily maximums between 18:00 and 23:00
         const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
         
-        data?.forEach(item => {
+        data.forEach(item => {
           if (!item.fecha || typeof item.ejecutado !== 'number') {
             return;
           }
 
           try {
             const date = new Date(item.fecha);
-            const hour = date.getHours();
+            const hour = date.getUTCHours(); // Use UTC hours since the dates in Supabase are stored in UTC
             
             // Filter for hours between 18:00 and 23:00
             if (hour >= 18 && hour <= 23) {
@@ -108,8 +116,9 @@ export const HistoricalPowerMaximum = () => {
         
         setChartData(formattedData);
         console.log('Power maximum data:', formattedData);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error processing power data:', err);
+        setError(`Error: ${err.message}`);
       } finally {
         setIsLoading(false);
       }
@@ -136,9 +145,13 @@ export const HistoricalPowerMaximum = () => {
           <div className="flex items-center justify-center h-64">
             <p className="text-muted-foreground">Cargando datos...</p>
           </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-red-500">{error}</p>
+          </div>
         ) : chartData.length === 0 ? (
           <div className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">No hay datos disponibles</p>
+            <p className="text-muted-foreground">No hay datos disponibles en el rango horario de 18:00 a 23:00</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
