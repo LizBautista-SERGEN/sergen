@@ -1,15 +1,20 @@
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, subDays, parseISO } from "date-fns";
+import { toast } from "sonner";
 
 interface ChartData {
   date: string;
   value: number;
   fullDate: string;
   color: string;
+}
+
+interface PowerData {
+  fecha: string;
+  ejecutado: number;
 }
 
 export const HistoricalPowerMaximum = () => {
@@ -33,40 +38,28 @@ export const HistoricalPowerMaximum = () => {
           end: today.toISOString()
         });
         
-        // Direct SQL query to bypass any potential RLS issues
-        const { data, error } = await supabase
-          .rpc('get_historical_power_data', {
-            start_date: thirtyDaysAgo.toISOString(),
-            end_date: today.toISOString()
-          });
-
-        if (error) {
-          console.error('Error fetching historical power data:', error);
-          setError(`Error: ${error.message}`);
-          
-          // Fallback to direct query if RPC fails
-          const directQuery = await supabase
-            .from('coes_historical')
-            .select('fecha, ejecutado')
-            .gte('fecha', thirtyDaysAgo.toISOString())
-            .lte('fecha', today.toISOString())
-            .order('fecha', { ascending: true });
-            
-          if (directQuery.error) {
-            console.error('Fallback query also failed:', directQuery.error);
-            throw new Error(directQuery.error.message);
+        // Call our edge function to get the historical power data
+        const response = await fetch(
+          "https://zbixjkgwperxqrdhvtoy.supabase.co/functions/v1/get-historical-power-data",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              start_date: thirtyDaysAgo.toISOString(),
+              end_date: today.toISOString(),
+            }),
           }
-          
-          if (!directQuery.data || directQuery.data.length === 0) {
-            console.log("No data found in the specified date range");
-            setIsLoading(false);
-            return;
-          }
-          
-          console.log(`Retrieved ${directQuery.data.length} records from direct query`);
-          processData(directQuery.data);
-          return;
+        );
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Edge function error:', errorText);
+          throw new Error(`Error from edge function: ${response.status} ${errorText}`);
         }
+
+        const data: PowerData[] = await response.json();
 
         if (!data || data.length === 0) {
           console.log("No data found in the specified date range");
@@ -74,18 +67,19 @@ export const HistoricalPowerMaximum = () => {
           return;
         }
 
-        console.log(`Retrieved ${data.length} records from coes_historical`);
+        console.log(`Retrieved ${data.length} records from edge function`);
         processData(data);
         
       } catch (err: any) {
         console.error('Error processing power data:', err);
         setError(`Error: ${err.message}`);
+        toast.error("Error al cargar datos históricos de potencia");
       } finally {
         setIsLoading(false);
       }
     };
     
-    const processData = (data: any[]) => {
+    const processData = (data: PowerData[]) => {
       try {
         // Process to find daily maximums between 18:00 and 23:00
         const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
