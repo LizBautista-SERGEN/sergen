@@ -187,7 +187,7 @@ export const HistoricalPowerMaximum = () => {
             <p className="text-muted-foreground">No hay datos disponibles en el rango horario de 18:00 a 23:00</p>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={390}> {/* Increased height by 30% from 300 to 390 */}
+          <ResponsiveContainer width="100%" height={390}>
             <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 20, left: 20 }}>
               <XAxis 
                 dataKey="date" 
@@ -196,7 +196,7 @@ export const HistoricalPowerMaximum = () => {
                 height={50}
               />
               <YAxis 
-                domain={[4000, 'auto']} // Start Y-axis from 4000
+                domain={[4000, 'auto']}
               />
               <Tooltip 
                 formatter={formatTooltip}
