@@ -7,8 +7,22 @@ interface HistoricalPowerChartProps {
 }
 
 export const HistoricalPowerChart = ({ chartData }: HistoricalPowerChartProps) => {
-  const formatTooltip = (value: number) => {
+  const formatTooltip = (value: number, name: string, props: { payload: ChartData }) => {
     return [`${value.toFixed(2)} MW`, 'Potencia Máxima'];
+  };
+
+  const formatTooltipLabel = (label: string, payload: { payload: ChartData }[]) => {
+    if (payload && payload.length > 0) {
+      const data = payload[0].payload;
+      // Extract time from the ISO string
+      const fullDate = new Date(data.fullDate);
+      const hours = fullDate.getUTCHours().toString().padStart(2, '0');
+      const minutes = fullDate.getUTCMinutes().toString().padStart(2, '0');
+      const timeString = `${hours}:${minutes}`;
+      
+      return `Fecha: ${label} | Hora: ${timeString}`;
+    }
+    return `Fecha: ${label}`;
   };
 
   return (
@@ -25,7 +39,7 @@ export const HistoricalPowerChart = ({ chartData }: HistoricalPowerChartProps) =
         />
         <Tooltip 
           formatter={formatTooltip}
-          labelFormatter={(label) => `Fecha: ${label}`}
+          labelFormatter={formatTooltipLabel}
         />
         <Bar dataKey="value" name="Potencia Máxima">
           {chartData.map((entry, index) => (
