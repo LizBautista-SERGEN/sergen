@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, isAfter, startOfMonth, endOfMonth, addMonths } from "date-fns";
+import { format, isAfter, isSameDay, startOfMonth, endOfMonth, addMonths, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { AlertTriangle } from "lucide-react";
 
 interface ModulationDay {
   date: string;
@@ -14,10 +16,11 @@ interface ModulationDay {
 }
 
 export const ModulationTab = () => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(2025, 0, 1)); // January 1, 2025
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date(2025, 0, 1));
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [todayData, setTodayData] = useState<ModulationDay | null>(null);
 
   const fetchModulationData = async (month: Date) => {
     setIsLoading(true);
@@ -39,6 +42,11 @@ export const ModulationTab = () => {
       }
 
       setModulationData(data || []);
+      
+      // Get today's data
+      const today = new Date().toISOString().split('T')[0];
+      const todayRecord = data?.find(d => d.date === today) || null;
+      setTodayData(todayRecord);
     } catch (error) {
       console.error('Error en fetchModulationData:', error);
       toast.error('Error al cargar los datos de modulación');
@@ -51,12 +59,14 @@ export const ModulationTab = () => {
     fetchModulationData(selectedMonth);
   }, [selectedMonth]);
 
-  const handleToggleModulation = async (date: string, currentValue: boolean) => {
+  const handleToggleModulation = async (currentValue: boolean) => {
+    const today = new Date().toISOString().split('T')[0];
+    
     try {
       const { error } = await supabase
         .from('modulation_days')
         .upsert({
-          date,
+          date: today,
           is_modulated: !currentValue
         });
 
@@ -95,6 +105,16 @@ export const ModulationTab = () => {
     return "text-green-500"; // Días no modulados en verde
   };
 
+  const isDayModulated = (date: string): boolean => {
+    const record = modulationData.find(d => d.date === date);
+    return record?.is_modulated || false;
+  };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = format(today, 'yyyy-MM-dd');
+  const isModulated = isDayModulated(todayStr);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between mb-4">
@@ -119,59 +139,92 @@ export const ModulationTab = () => {
         <Calendar
           mode="single"
           selected={selectedDate}
-          onSelect={(date) => date && setSelectedDate(date)}
+          onSelect={(date) => date && isSameDay(date, today) && setSelectedDate(date)}
           month={selectedMonth}
           onMonthChange={setSelectedMonth}
           className="rounded-md border"
           components={{
-            Day: (props) => {
-              const date = props.date;
-              return (
-                <div className={cn(getDateClassName(date))}>
-                  {date.getDate()}
-                </div>
-              );
-            }
+            Day: ({ date }) => (
+              <div className={cn(getDateClassName(date))}>
+                {date.getDate()}
+              </div>
+            )
           }}
         />
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="bg-white p-4 rounded-lg border shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Modulación del día actual</h3>
+        <div className="flex items-center justify-between px-4 py-3 border rounded-md">
+          <div>
+            <p className="font-medium">Fecha: {format(today, 'dd/MM/yyyy')}</p>
+            <p className={isModulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
+              Estado: {isModulated ? "Modulado" : "No Modulado"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={isModulated ? "text-red-500" : "text-green-500"}>
+              {isModulated ? "Modulado" : "No Modulado"}
+            </span>
+            <Switch
+              checked={isModulated}
+              onCheckedChange={() => handleToggleModulation(isModulated)}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mt-4 text-amber-600 bg-amber-50 p-3 rounded-md">
+          <AlertTriangle className="h-5 w-5" />
+          <p className="text-sm">Solo se puede modificar el estado de modulación del día actual.</p>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg border shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Leyenda</h3>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+            <span className="text-sm">Con modulación</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <span className="text-sm">Sin modulación</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+            <span className="text-sm">Días futuros (no seleccionables)</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto bg-white p-4 rounded-lg border shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Historial de modulación</h3>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead>Acción</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={2} className="text-center">
                   Cargando datos...
                 </TableCell>
               </TableRow>
             ) : (
-              modulationData.map((day) => (
-                <TableRow key={day.date}>
-                  <TableCell>{format(new Date(day.date), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>
-                    <span className={day.is_modulated ? "text-red-500" : "text-green-500"}>
-                      {day.is_modulated ? "Modulado" : "No Modulado"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggleModulation(day.date, day.is_modulated)}
-                    >
-                      Cambiar Estado
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              modulationData
+                .filter(day => !isAfter(parseISO(day.date), today))
+                .map((day) => (
+                  <TableRow key={day.date}>
+                    <TableCell>{format(new Date(day.date), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>
+                      <span className={day.is_modulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
+                        {day.is_modulated ? "Modulado" : "No Modulado"}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
             )}
           </TableBody>
         </Table>
