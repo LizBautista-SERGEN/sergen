@@ -123,12 +123,11 @@ export const ModulationTab = () => {
     return record?.is_modulated || false;
   };
 
-  // Disable future dates for selection
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const isDateSelectable = (date: Date): boolean => {
-    return !isAfter(date, today);
+  // Fix: Create a custom function for the disabled prop that takes a single Date parameter
+  const isDateInFuture = (date: Date): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return isAfter(date, today);
   };
 
   return (
@@ -156,14 +155,14 @@ export const ModulationTab = () => {
           mode="single"
           selected={selectedDate}
           onSelect={(date) => {
-            if (date && !isAfter(date, today)) {
+            if (date && !isAfter(date, new Date())) {
               setSelectedDate(date);
             }
           }}
           month={selectedMonth}
           onMonthChange={setSelectedMonth}
           className="rounded-md border"
-          disabled={isAfter}
+          disabled={isDateInFuture}
           components={{
             Day: ({ date }) => (
               <div className={cn(getDateClassName(date))}>
@@ -176,7 +175,7 @@ export const ModulationTab = () => {
 
       <div className="bg-white p-4 rounded-lg border shadow-sm">
         <h3 className="text-lg font-semibold mb-4">Modulación del día seleccionado</h3>
-        {selectedDate && !isAfter(selectedDate, today) ? (
+        {selectedDate && !isAfter(selectedDate, new Date()) ? (
           <div className="flex items-center justify-between px-4 py-3 border rounded-md">
             <div>
               <p className="font-medium">Fecha: {format(selectedDate, 'dd/MM/yyyy')}</p>
@@ -242,7 +241,7 @@ export const ModulationTab = () => {
               </TableRow>
             ) : (
               modulationData
-                .filter(day => !isAfter(parseISO(day.date), today))
+                .filter(day => !isAfter(parseISO(day.date), new Date()))
                 .map((day) => (
                   <TableRow key={day.date}>
                     <TableCell>{format(new Date(day.date), 'dd/MM/yyyy')}</TableCell>
