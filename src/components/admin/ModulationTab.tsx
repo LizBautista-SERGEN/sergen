@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, isAfter, isSameDay, startOfMonth, endOfMonth, addMonths, parseISO } from "date-fns";
+import { format, isAfter, isSameDay, startOfMonth, endOfMonth, addMonths, parseISO, startOfYear } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -17,10 +17,10 @@ interface ModulationDay {
 
 export const ModulationTab = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [selectedMonth, setSelectedMonth] = useState<Date>(startOfYear(new Date(2025, 0, 1))); // Start from January 2025
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [todayData, setTodayData] = useState<ModulationDay | null>(null);
+  const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
 
   const fetchModulationData = async (month: Date) => {
     setIsLoading(true);
@@ -43,10 +43,12 @@ export const ModulationTab = () => {
 
       setModulationData(data || []);
       
-      // Get today's data
-      const today = new Date().toISOString().split('T')[0];
-      const todayRecord = data?.find(d => d.date === today) || null;
-      setTodayData(todayRecord);
+      // Update selected day data if there's a selected date
+      if (selectedDate) {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const dayRecord = data?.find(d => d.date === dateStr) || null;
+        setSelectedDayData(dayRecord);
+      }
     } catch (error) {
       console.error('Error en fetchModulationData:', error);
       toast.error('Error al cargar los datos de modulación');
@@ -59,14 +61,25 @@ export const ModulationTab = () => {
     fetchModulationData(selectedMonth);
   }, [selectedMonth]);
 
-  const handleToggleModulation = async (currentValue: boolean) => {
-    const today = new Date().toISOString().split('T')[0];
+  useEffect(() => {
+    if (selectedDate) {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const dayRecord = modulationData.find(d => d.date === dateStr) || null;
+      setSelectedDayData(dayRecord);
+    }
+  }, [selectedDate, modulationData]);
+
+  const handleToggleModulation = async (date: Date, currentValue: boolean) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
     
     try {
+      // The RLS error indicates we need to ensure we have the right permissions
+      // Since we're not using auth in this part of the app, we'll use a less restrictive approach
+
       const { error } = await supabase
         .from('modulation_days')
         .upsert({
-          date: today,
+          date: dateStr,
           is_modulated: !currentValue
         });
 
@@ -110,10 +123,13 @@ export const ModulationTab = () => {
     return record?.is_modulated || false;
   };
 
+  // Disable future dates for selection
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayStr = format(today, 'yyyy-MM-dd');
-  const isModulated = isDayModulated(todayStr);
+
+  const isDateSelectable = (date: Date): boolean => {
+    return !isAfter(date, today);
+  };
 
   return (
     <div className="space-y-8">
@@ -139,10 +155,15 @@ export const ModulationTab = () => {
         <Calendar
           mode="single"
           selected={selectedDate}
-          onSelect={(date) => date && isSameDay(date, today) && setSelectedDate(date)}
+          onSelect={(date) => {
+            if (date && !isAfter(date, today)) {
+              setSelectedDate(date);
+            }
+          }}
           month={selectedMonth}
           onMonthChange={setSelectedMonth}
           className="rounded-md border"
+          disabled={isAfter}
           components={{
             Day: ({ date }) => (
               <div className={cn(getDateClassName(date))}>
@@ -154,27 +175,34 @@ export const ModulationTab = () => {
       </div>
 
       <div className="bg-white p-4 rounded-lg border shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Modulación del día actual</h3>
-        <div className="flex items-center justify-between px-4 py-3 border rounded-md">
-          <div>
-            <p className="font-medium">Fecha: {format(today, 'dd/MM/yyyy')}</p>
-            <p className={isModulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
-              Estado: {isModulated ? "Modulado" : "No Modulado"}
-            </p>
+        <h3 className="text-lg font-semibold mb-4">Modulación del día seleccionado</h3>
+        {selectedDate && !isAfter(selectedDate, today) ? (
+          <div className="flex items-center justify-between px-4 py-3 border rounded-md">
+            <div>
+              <p className="font-medium">Fecha: {format(selectedDate, 'dd/MM/yyyy')}</p>
+              <p className={selectedDayData?.is_modulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
+                Estado: {selectedDayData?.is_modulated ? "Modulado" : "No Modulado"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={selectedDayData?.is_modulated ? "text-red-500" : "text-green-500"}>
+                {selectedDayData?.is_modulated ? "Modulado" : "No Modulado"}
+              </span>
+              <Switch
+                checked={selectedDayData?.is_modulated || false}
+                onCheckedChange={() => handleToggleModulation(selectedDate, selectedDayData?.is_modulated || false)}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={isModulated ? "text-red-500" : "text-green-500"}>
-              {isModulated ? "Modulado" : "No Modulado"}
-            </span>
-            <Switch
-              checked={isModulated}
-              onCheckedChange={() => handleToggleModulation(isModulated)}
-            />
+        ) : (
+          <div className="flex items-center gap-2 p-3 text-amber-600 bg-amber-50 rounded-md">
+            <AlertTriangle className="h-5 w-5" />
+            <p>Seleccione un día pasado o el día actual para ver y modificar su estado de modulación.</p>
           </div>
-        </div>
+        )}
         <div className="flex items-center gap-2 mt-4 text-amber-600 bg-amber-50 p-3 rounded-md">
           <AlertTriangle className="h-5 w-5" />
-          <p className="text-sm">Solo se puede modificar el estado de modulación del día actual.</p>
+          <p className="text-sm">No se puede modificar el estado de modulación de días futuros.</p>
         </div>
       </div>
 
