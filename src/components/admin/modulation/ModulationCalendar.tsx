@@ -36,7 +36,12 @@ export const ModulationCalendar = ({
         locale={es}
         components={{
           Day: ({ date }) => (
-            <div className={cn(getDateClassName(date))}>
+            <div 
+              className={cn(
+                "h-9 w-9 p-0 font-normal flex items-center justify-center",
+                getDateClassName(date)
+              )}
+            >
               {date.getDate()}
             </div>
           )
