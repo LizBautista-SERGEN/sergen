@@ -73,15 +73,12 @@ export const ModulationTab = () => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
     try {
-      // The RLS error indicates we need to ensure we have the right permissions
-      // Since we're not using auth in this part of the app, we'll use a less restrictive approach
-
       const { error } = await supabase
         .from('modulation_days')
-        .upsert({
+        .upsert([{
           date: dateStr,
           is_modulated: !currentValue
-        });
+        }]);
 
       if (error) {
         console.error('Error al actualizar modulación:', error);
@@ -89,7 +86,7 @@ export const ModulationTab = () => {
         return;
       }
 
-      fetchModulationData(selectedMonth);
+      await fetchModulationData(selectedMonth);
       toast.success('Modulación actualizada correctamente');
     } catch (error) {
       console.error('Error en handleToggleModulation:', error);
@@ -116,11 +113,6 @@ export const ModulationTab = () => {
     }
     
     return "text-green-500"; // Días no modulados en verde
-  };
-
-  const isDayModulated = (date: string): boolean => {
-    const record = modulationData.find(d => d.date === date);
-    return record?.is_modulated || false;
   };
 
   // Fix: Create a custom function for the disabled prop that takes a single Date parameter
@@ -155,7 +147,7 @@ export const ModulationTab = () => {
           mode="single"
           selected={selectedDate}
           onSelect={(date) => {
-            if (date && !isAfter(date, new Date())) {
+            if (date && !isDateInFuture(date)) {
               setSelectedDate(date);
             }
           }}
@@ -175,7 +167,7 @@ export const ModulationTab = () => {
 
       <div className="bg-white p-4 rounded-lg border shadow-sm">
         <h3 className="text-lg font-semibold mb-4">Modulación del día seleccionado</h3>
-        {selectedDate && !isAfter(selectedDate, new Date()) ? (
+        {selectedDate && !isDateInFuture(selectedDate) ? (
           <div className="flex items-center justify-between px-4 py-3 border rounded-md">
             <div>
               <p className="font-medium">Fecha: {format(selectedDate, 'dd/MM/yyyy')}</p>
@@ -224,24 +216,31 @@ export const ModulationTab = () => {
       </div>
 
       <div className="overflow-x-auto bg-white p-4 rounded-lg border shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Historial de modulación</h3>
+        <h3 className="text-lg font-semibold mb-4">Tabla de Modulación - {format(selectedMonth, 'MMMM yyyy')}</h3>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead>Acción</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={2} className="text-center">
+                <TableCell colSpan={3} className="text-center">
                   Cargando datos...
+                </TableCell>
+              </TableRow>
+            ) : modulationData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">
+                  No hay datos disponibles para este mes
                 </TableCell>
               </TableRow>
             ) : (
               modulationData
-                .filter(day => !isAfter(parseISO(day.date), new Date()))
+                .filter(day => !isDateInFuture(new Date(day.date)))
                 .map((day) => (
                   <TableRow key={day.date}>
                     <TableCell>{format(new Date(day.date), 'dd/MM/yyyy')}</TableCell>
@@ -249,6 +248,18 @@ export const ModulationTab = () => {
                       <span className={day.is_modulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
                         {day.is_modulated ? "Modulado" : "No Modulado"}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const date = new Date(day.date);
+                          handleToggleModulation(date, day.is_modulated);
+                        }}
+                      >
+                        Cambiar a {day.is_modulated ? "No Modulado" : "Modulado"}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
