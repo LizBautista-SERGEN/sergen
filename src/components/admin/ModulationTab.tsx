@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Calendar as CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { es } from "date-fns/locale";
 
 interface ModulationDay {
   date: string;
@@ -119,7 +120,7 @@ export const ModulationTab = () => {
     return "text-green-500"; // Días no modulados en verde
   };
 
-  // Custom function for the disabled prop
+  // Custom function for the disabled prop that takes a single date parameter
   const isDateInFuture = (date: Date): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -147,7 +148,7 @@ export const ModulationTab = () => {
           Mes Anterior
         </Button>
         <h2 className="text-xl font-bold">
-          {format(selectedMonth, 'MMMM yyyy')}
+          {format(selectedMonth, 'MMMM yyyy', { locale: es })}
         </h2>
         <Button 
           variant="outline" 
@@ -168,7 +169,7 @@ export const ModulationTab = () => {
                   className="w-full justify-start text-left font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : "Seleccione una fecha"}
+                  {selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: es }) : "Seleccione una fecha"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -181,6 +182,7 @@ export const ModulationTab = () => {
                   disabled={isDateInFuture}
                   initialFocus
                   fromDate={startDate}
+                  locale={es}
                   components={{
                     Day: ({ date }) => (
                       <div className={cn(getDateClassName(date))}>
@@ -199,7 +201,7 @@ export const ModulationTab = () => {
             {selectedDate && !isDateInFuture(selectedDate) ? (
               <div className="flex items-center justify-between px-4 py-3 border rounded-md">
                 <div>
-                  <p className="font-medium">Fecha: {format(selectedDate, 'dd/MM/yyyy')}</p>
+                  <p className="font-medium">Fecha: {format(selectedDate, 'dd/MM/yyyy', { locale: es })}</p>
                   <p className={selectedDayData?.is_modulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
                     Estado: {selectedDayData?.is_modulated ? "Modulado" : "No Modulado"}
                   </p>
@@ -235,9 +237,10 @@ export const ModulationTab = () => {
               onSelect={handleDateSelect}
               month={selectedMonth}
               onMonthChange={setSelectedMonth}
-              className="rounded-md border w-full"
+              className="rounded-md border w-full pointer-events-auto"
               disabled={isDateInFuture}
               fromDate={startDate}
+              locale={es}
               components={{
                 Day: ({ date }) => (
                   <div className={cn(getDateClassName(date))}>
@@ -269,7 +272,7 @@ export const ModulationTab = () => {
       </div>
 
       <div className="overflow-x-auto bg-white p-4 rounded-lg border shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Tabla de Modulación - {format(selectedMonth, 'MMMM yyyy')}</h3>
+        <h3 className="text-lg font-semibold mb-4">Tabla de Modulación - {format(selectedMonth, 'MMMM yyyy', { locale: es })}</h3>
         <Table>
           <TableHeader>
             <TableRow>
@@ -296,7 +299,7 @@ export const ModulationTab = () => {
                 .filter(day => !isDateInFuture(new Date(day.date)))
                 .map((day) => (
                   <TableRow key={day.date} className={day.is_modulated ? "bg-red-50" : "bg-green-50"}>
-                    <TableCell>{format(new Date(day.date), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>{format(new Date(day.date), 'dd/MM/yyyy', { locale: es })}</TableCell>
                     <TableCell>
                       <span className={day.is_modulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
                         {day.is_modulated ? "Modulado" : "No Modulado"}
