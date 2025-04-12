@@ -1,8 +1,8 @@
 
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 
 interface ModulationDay {
   date: string;
@@ -32,7 +32,7 @@ export const ModulationTable = ({
           <TableRow>
             <TableHead>Fecha</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead>Acción</TableHead>
+            <TableHead>Modulación</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -60,16 +60,17 @@ export const ModulationTable = ({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const date = new Date(day.date);
-                        onToggleModulation(date, day.is_modulated);
-                      }}
-                    >
-                      Cambiar a {day.is_modulated ? "No Modulado" : "Modulado"}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">No Modulado</span>
+                      <Switch
+                        checked={day.is_modulated}
+                        onCheckedChange={() => {
+                          const date = new Date(day.date);
+                          onToggleModulation(date, day.is_modulated);
+                        }}
+                      />
+                      <span className="text-sm text-gray-500">Modulado</span>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
