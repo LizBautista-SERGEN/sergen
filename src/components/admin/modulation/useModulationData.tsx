@@ -83,7 +83,25 @@ export const useModulationData = () => {
         return;
       }
 
-      await fetchModulationData(selectedMonth);
+      // Update the local state for immediate feedback
+      const updatedData = modulationData.map(day => 
+        day.date === dateStr 
+          ? { ...day, is_modulated: !currentValue } 
+          : day
+      );
+      
+      // If the day doesn't exist in our current data, add it
+      if (!updatedData.find(day => day.date === dateStr)) {
+        updatedData.push({ date: dateStr, is_modulated: !currentValue });
+      }
+      
+      setModulationData(updatedData);
+      
+      // Update selected day data if this is the currently selected day
+      if (format(selectedDate, 'yyyy-MM-dd') === dateStr) {
+        setSelectedDayData({ date: dateStr, is_modulated: !currentValue });
+      }
+      
       toast.success('Modulación actualizada correctamente');
     } catch (error) {
       console.error('Error en handleToggleModulation:', error);

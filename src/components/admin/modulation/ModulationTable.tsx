@@ -1,5 +1,5 @@
 
-import { format } from "date-fns";
+import { format, getDaysInMonth, parseISO, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +24,29 @@ export const ModulationTable = ({
   isDateInFuture,
   onToggleModulation
 }: ModulationTableProps) => {
+  // Generate days for the selected month
+  const generateDaysForMonth = () => {
+    const daysInMonth = getDaysInMonth(selectedMonth);
+    const startDay = startOfMonth(selectedMonth);
+    const days: Date[] = [];
+
+    for (let i = 0; i < daysInMonth; i++) {
+      const day = new Date(startDay);
+      day.setDate(day.getDate() + i);
+      days.push(day);
+    }
+
+    return days.filter(day => !isDateInFuture(day));
+  };
+
+  // Get modulation status for a specific date
+  const getModulationStatus = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return modulationData.find(day => day.date === dateStr)?.is_modulated || false;
+  };
+
+  const daysToDisplay = generateDaysForMonth();
+
   return (
     <div className="overflow-x-auto bg-white p-4 rounded-lg border shadow-sm">
       <h3 className="text-lg font-semibold mb-4">Tabla de Modulación - {format(selectedMonth, 'MMMM yyyy', { locale: es })}</h3>
@@ -42,38 +65,39 @@ export const ModulationTable = ({
                 Cargando datos...
               </TableCell>
             </TableRow>
-          ) : modulationData.length === 0 ? (
+          ) : daysToDisplay.length === 0 ? (
             <TableRow>
               <TableCell colSpan={3} className="text-center">
-                No hay datos disponibles para este mes
+                No hay días disponibles para este mes
               </TableCell>
             </TableRow>
           ) : (
-            modulationData
-              .filter(day => !isDateInFuture(new Date(day.date)))
-              .map((day) => (
-                <TableRow key={day.date} className={day.is_modulated ? "bg-red-50" : "bg-green-50"}>
-                  <TableCell>{format(new Date(day.date), 'dd/MM/yyyy', { locale: es })}</TableCell>
+            daysToDisplay.map((day) => {
+              const isModulated = getModulationStatus(day);
+              
+              return (
+                <TableRow key={format(day, 'yyyy-MM-dd')} className={isModulated ? "bg-red-50" : "bg-green-50"}>
+                  <TableCell>{format(day, 'dd/MM/yyyy', { locale: es })}</TableCell>
                   <TableCell>
-                    <span className={day.is_modulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
-                      {day.is_modulated ? "Modulado" : "No Modulado"}
+                    <span className={isModulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
+                      {isModulated ? "Modulado" : "No Modulado"}
                     </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500">No Modulado</span>
                       <Switch
-                        checked={day.is_modulated}
+                        checked={isModulated}
                         onCheckedChange={() => {
-                          const date = new Date(day.date);
-                          onToggleModulation(date, day.is_modulated);
+                          onToggleModulation(day, isModulated);
                         }}
                       />
                       <span className="text-sm text-gray-500">Modulado</span>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+              );
+            })
           )}
         </TableBody>
       </Table>
