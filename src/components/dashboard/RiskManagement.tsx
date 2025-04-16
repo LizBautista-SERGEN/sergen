@@ -1,9 +1,12 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { EnergyData } from "@/types/energy";
-import { format, startOfMonth, endOfMonth, isBefore, isAfter, isFuture, isPast, isSameDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, isBefore, isAfter, isFuture, isPast, isSameDay, parseISO } from "date-fns";
 import { es } from 'date-fns/locale';
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface RiskManagementProps {
   energyData: EnergyData[];
@@ -11,14 +14,53 @@ interface RiskManagementProps {
   setDate: (date: Date | undefined) => void;
 }
 
+interface ModulationDay {
+  date: string;
+  is_modulated: boolean;
+}
+
 export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProps) => {
   const [maxPower, setMaxPower] = useState<number>(0);
   const [backgroundColor, setBackgroundColor] = useState<string>("#156082");
   const [modulatedDays, setModulatedDays] = useState(0);
+  const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch modulation data
+  useEffect(() => {
+    const fetchModulationData = async () => {
+      setIsLoading(true);
+      try {
+        const now = new Date();
+        const start = startOfMonth(now).toISOString().split('T')[0];
+        const end = endOfMonth(now).toISOString().split('T')[0];
+
+        const { data, error } = await supabase
+          .from('modulation_days')
+          .select('date, is_modulated')
+          .gte('date', start)
+          .lte('date', end)
+          .order('date', { ascending: true });
+
+        if (error) {
+          console.error('Error al cargar datos de modulación:', error);
+          return;
+        }
+
+        setModulationData(data || []);
+      } catch (error) {
+        console.error('Error en fetchModulationData:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchModulationData();
+  }, []);
 
   const isDateModulated = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const dayData = energyData.find(data => data.date === dateStr);
+    const dayData = modulationData.find(data => data.date === dateStr);
     return dayData?.is_modulated || false;
   };
 
@@ -31,7 +73,9 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
       
       if (!dayData) return;
 
-      setBackgroundColor(dayData.is_modulated ? "#C00000" : "#156082");
+      // Highlight red background if the date is modulated
+      const isModulated = isDateModulated(date);
+      setBackgroundColor(isModulated ? "#C00000" : "#156082");
 
       const intervals = [];
       for (let hour = 18; hour <= 23; hour++) {
@@ -48,16 +92,16 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     const interval = setInterval(calculateMaxPower, 60000);
 
     return () => clearInterval(interval);
-  }, [date, energyData]);
+  }, [date, energyData, modulationData]);
 
   useEffect(() => {
     const now = new Date();
     const currentMonth = startOfMonth(now);
-    const monthEnd = endOfMonth(currentMonth);
+    const monthEnd = endOfMonth(now);
     
     let count = 0;
-    energyData.forEach(data => {
-      const dataDate = new Date(data.date);
+    modulationData.forEach(data => {
+      const dataDate = parseISO(data.date);
       if (data.is_modulated && 
           !isFuture(dataDate) &&
           isAfter(dataDate, currentMonth) && 
@@ -67,7 +111,24 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     });
 
     setModulatedDays(count);
-  }, [energyData]);
+  }, [modulationData]);
+
+  // Custom day renderer for the Calendar
+  const getDayClassName = (day: Date): string => {
+    const isModulated = isDateModulated(day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (isFuture(day)) {
+      return "text-gray-400"; // Future days in gray
+    }
+    
+    if (isModulated) {
+      return "text-red-500 font-bold"; // Modulated days in red
+    }
+    
+    return "text-green-500"; // Non-modulated days in green
+  };
 
   return (
     <>
@@ -110,20 +171,17 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
             onSelect={setDate}
             className="rounded-md border"
             locale={es}
-            modifiers={{
-              future: (date) => isFuture(date),
-              modulated: (date) => isPast(date) && isDateModulated(date),
-              notModulated: (date) => isPast(date) && !isDateModulated(date),
-              selected: (currentDate) => date && currentDate ? isSameDay(currentDate, date) : false
-            }}
-            modifiersStyles={{
-              future: { color: "#8E9196" },
-              modulated: { color: "#C00000" },
-              notModulated: { color: "#34D399" },
-              selected: { 
-                backgroundColor: "#FEC6A1",
-                color: "white"
-              }
+            components={{
+              Day: ({ date: dayDate }) => (
+                <div 
+                  className={cn(
+                    "h-9 w-9 p-0 font-normal flex items-center justify-center",
+                    getDayClassName(dayDate)
+                  )}
+                >
+                  {dayDate.getDate()}
+                </div>
+              )
             }}
           />
           <div className="mt-4 space-y-2">
