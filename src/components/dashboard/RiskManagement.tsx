@@ -7,6 +7,7 @@ import { format, startOfMonth, endOfMonth, isBefore, isAfter, isFuture, isPast, 
 import { es } from 'date-fns/locale';
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { ModulationLegend } from "../admin/modulation/ModulationLegend";
 
 interface RiskManagementProps {
   energyData: EnergyData[];
@@ -25,15 +26,15 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
   const [modulatedDays, setModulatedDays] = useState(0);
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   
   // Fetch modulation data
   useEffect(() => {
     const fetchModulationData = async () => {
       setIsLoading(true);
       try {
-        const now = new Date();
-        const start = startOfMonth(now).toISOString().split('T')[0];
-        const end = endOfMonth(now).toISOString().split('T')[0];
+        const start = startOfMonth(selectedMonth).toISOString().split('T')[0];
+        const end = endOfMonth(selectedMonth).toISOString().split('T')[0];
 
         const { data, error } = await supabase
           .from('modulation_days')
@@ -56,12 +57,18 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     };
 
     fetchModulationData();
-  }, []);
+  }, [selectedMonth]);
 
   const isDateModulated = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayData = modulationData.find(data => data.date === dateStr);
     return dayData?.is_modulated || false;
+  };
+
+  const isDateInFuture = (date: Date): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return isAfter(date, today);
   };
 
   useEffect(() => {
@@ -114,20 +121,27 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
   }, [modulationData]);
 
   // Custom day renderer for the Calendar
-  const getDayClassName = (day: Date): string => {
-    const isModulated = isDateModulated(day);
+  const getDateClassName = (date: Date): string => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const modulationDay = modulationData.find(d => d.date === dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (isFuture(day)) {
-      return "text-gray-400"; // Future days in gray
+    if (isAfter(date, today)) {
+      return "text-gray-400"; // Días futuros en gris
     }
     
-    if (isModulated) {
-      return "text-red-500 font-bold"; // Modulated days in red
+    if (modulationDay?.is_modulated) {
+      return "text-red-500 font-bold"; // Días modulados en rojo
     }
     
-    return "text-green-500"; // Non-modulated days in green
+    return "text-green-500"; // Días no modulados en verde
+  };
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate && !isDateInFuture(selectedDate)) {
+      setDate(selectedDate);
+    }
   };
 
   return (
@@ -144,11 +158,13 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
             </div>
             <div className="text-center w-[200px]">
               <p className="text-[#8E9196] text-sm">Rango horario</p>
-              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">Sin modulación</p>
+              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">18:00 - 23:00</p>
             </div>
             <div className="text-center w-[200px]">
               <p className="text-[#8E9196] text-sm">Riesgo de coincidente</p>
-              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">BAJO</p>
+              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">
+                {backgroundColor === "#C00000" ? "ALTO" : "BAJO"}
+              </p>
             </div>
             <div className="text-center w-[200px]">
               <p className="text-sm text-gray-500">Días modulados</p>
@@ -168,32 +184,25 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
           <Calendar
             mode="single"
             selected={date}
-            onSelect={setDate}
+            onSelect={handleDateSelect}
+            month={selectedMonth}
+            onMonthChange={setSelectedMonth}
             className="rounded-md border"
             locale={es}
             components={{
-              Day: ({ date: dayDate }) => (
+              Day: ({ date }) => (
                 <div 
                   className={cn(
                     "h-9 w-9 p-0 font-normal flex items-center justify-center",
-                    getDayClassName(dayDate)
+                    getDateClassName(date)
                   )}
                 >
-                  {dayDate.getDate()}
+                  {date.getDate()}
                 </div>
               )
             }}
           />
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#C00000]"></div>
-              <span className="text-sm">Con modulación</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#34D399]"></div>
-              <span className="text-sm">Sin modulación</span>
-            </div>
-          </div>
+          <ModulationLegend />
         </CardContent>
       </Card>
     </>
