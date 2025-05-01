@@ -8,19 +8,59 @@ import { PowerCharts } from "@/components/dashboard/PowerCharts";
 import { HistoricalPowerMaximum } from "@/components/dashboard/HistoricalPowerMaximum";
 import { EnergyData } from "@/types/energy";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const ServiceControl = () => {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const navigate = useNavigate();
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [loading, setLoading] = useState(false);
 
+  // Effect to check authentication and load initial data
   useEffect(() => {
-    // Set a default lastUpdated date
-    setLastUpdated(new Date());
-    
-    // Set empty energy data to avoid profile-related queries
-    setEnergyData([]);
+    const checkAuth = async () => {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          navigate('/login');
+          return;
+        }
+        
+        // Fetch energy data for the authenticated user
+        const { data, error } = await supabase
+          .from('energy_data')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false });
+          
+        if (error) {
+          console.error('Error loading energy data:', error);
+          toast.error('Error al cargar los datos de energía');
+        } else {
+          setEnergyData(data || []);
+        }
+        
+        // Update coes_forecast data
+        try {
+          await supabase.functions.invoke('get-coes-forecast');
+          setLastUpdated(new Date());
+        } catch (e) {
+          console.error('Error updating forecast data:', e);
+        }
+      } catch (error) {
+        console.error('Authentication error:', error);
+        toast.error('Error de autenticación');
+        navigate('/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, [navigate]);
 
   return (
