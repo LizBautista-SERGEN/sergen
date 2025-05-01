@@ -6,15 +6,13 @@ import { SelectedDayModulation } from "./modulation/SelectedDayModulation";
 import { ModulationCalendar } from "./modulation/ModulationCalendar";
 import { ModulationLegend } from "./modulation/ModulationLegend";
 import { ModulationTable } from "./modulation/ModulationTable";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 
 export const ModulationTab = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [manualRefresh, setManualRefresh] = useState<number>(Date.now());
   
   useEffect(() => {
     // Check if the user is authenticated
@@ -47,14 +45,8 @@ export const ModulationTab = () => {
     getDateClassName,
     isDateInFuture,
     handleDateSelect,
-    setSelectedMonth,
-    fetchModulationData
-  } = useModulationData(manualRefresh);
-  
-  // Manual refresh handler
-  const handleManualRefresh = () => {
-    setManualRefresh(Date.now());
-  };
+    setSelectedMonth
+  } = useModulationData();
 
   if (!isAuthenticated) {
     return (
@@ -70,23 +62,10 @@ export const ModulationTab = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <MonthSelector 
-          selectedMonth={selectedMonth} 
-          onMonthChange={handleMonthChange} 
-        />
-        
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleManualRefresh}
-          className="flex items-center gap-1"
-          disabled={isLoading}
-        >
-          <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-          Actualizar datos
-        </Button>
-      </div>
+      <MonthSelector 
+        selectedMonth={selectedMonth} 
+        onMonthChange={handleMonthChange} 
+      />
 
       <div className="flex justify-between gap-6">
         <div className="w-1/2">

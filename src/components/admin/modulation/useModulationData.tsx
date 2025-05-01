@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { format, isAfter, startOfMonth, endOfMonth, addMonths, startOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ export interface ModulationDay {
   is_modulated: boolean;
 }
 
-export const useModulationData = (refreshTrigger?: number) => {
+export const useModulationData = () => {
   const today = new Date();
   const startDate = startOfYear(new Date(2025, 0, 1)); // January 2025
   
@@ -19,20 +19,11 @@ export const useModulationData = (refreshTrigger?: number) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
 
-  const fetchModulationData = useCallback(async (month: Date) => {
+  const fetchModulationData = async (month: Date) => {
     setIsLoading(true);
-    
     try {
       const start = startOfMonth(month).toISOString().split('T')[0];
       const end = endOfMonth(month).toISOString().split('T')[0];
-
-      // Check authentication before making the request
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) {
-        console.log('User not authenticated, skipping data fetch');
-        setIsLoading(false);
-        return;
-      }
 
       const { data, error } = await supabase
         .from('modulation_days')
@@ -47,7 +38,6 @@ export const useModulationData = (refreshTrigger?: number) => {
         return;
       }
 
-      // Store the fetched data
       setModulationData(data || []);
       
       // Update selected day data if there's a selected date
@@ -62,25 +52,21 @@ export const useModulationData = (refreshTrigger?: number) => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedDate]);
+  };
 
-  // Fetch data only when the month changes or manual refresh is triggered
   useEffect(() => {
-    if (refreshTrigger || selectedMonth) {
-      fetchModulationData(selectedMonth);
-    }
-  }, [selectedMonth, fetchModulationData, refreshTrigger]);
+    fetchModulationData(selectedMonth);
+  }, [selectedMonth]);
 
-  // Update selected day data when the selected date or modulation data changes
   useEffect(() => {
-    if (selectedDate && modulationData.length > 0) {
+    if (selectedDate) {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const dayRecord = modulationData.find(d => d.date === dateStr) || null;
       setSelectedDayData(dayRecord);
     }
   }, [selectedDate, modulationData]);
 
-  const handleToggleModulation = useCallback(async (date: Date, currentValue: boolean) => {
+  const handleToggleModulation = async (date: Date, currentValue: boolean) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
     try {
@@ -91,15 +77,12 @@ export const useModulationData = (refreshTrigger?: number) => {
         return;
       }
 
-      // Log the operation being attempted
-      console.log(`Toggling modulation for ${dateStr} from ${currentValue} to ${!currentValue}`);
-
       const { error } = await supabase
         .from('modulation_days')
-        .upsert({
+        .upsert([{
           date: dateStr,
           is_modulated: !currentValue
-        }, { onConflict: 'date' });
+        }]);
 
       if (error) {
         console.error('Error al actualizar modulación:', error);
@@ -107,29 +90,19 @@ export const useModulationData = (refreshTrigger?: number) => {
         return;
       }
 
-      console.log('Modulation update successful');
-
       // Update the local state for immediate feedback
-      setModulationData(prev => {
-        const updatedData = [...prev];
-        const existingIndex = updatedData.findIndex(day => day.date === dateStr);
-        
-        if (existingIndex >= 0) {
-          // Update existing record
-          updatedData[existingIndex] = { 
-            ...updatedData[existingIndex], 
-            is_modulated: !currentValue 
-          };
-        } else {
-          // Add new record
-          updatedData.push({ 
-            date: dateStr, 
-            is_modulated: !currentValue 
-          });
-        }
-        
-        return updatedData;
-      });
+      const updatedData = modulationData.map(day => 
+        day.date === dateStr 
+          ? { ...day, is_modulated: !currentValue } 
+          : day
+      );
+      
+      // If the day doesn't exist in our current data, add it
+      if (!updatedData.find(day => day.date === dateStr)) {
+        updatedData.push({ date: dateStr, is_modulated: !currentValue });
+      }
+      
+      setModulationData(updatedData);
       
       // Update selected day data if this is the currently selected day
       if (format(selectedDate, 'yyyy-MM-dd') === dateStr) {
@@ -141,13 +114,13 @@ export const useModulationData = (refreshTrigger?: number) => {
       console.error('Error en handleToggleModulation:', error);
       toast.error('Error al actualizar la modulación');
     }
-  }, [selectedDate]);
+  };
 
-  const handleMonthChange = useCallback((increment: boolean) => {
+  const handleMonthChange = (increment: boolean) => {
     setSelectedMonth(prev => addMonths(prev, increment ? 1 : -1));
-  }, []);
+  };
 
-  const getDateClassName = useCallback((date: Date): string => {
+  const getDateClassName = (date: Date): string => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const modulationDay = modulationData.find(d => d.date === dateStr);
     const today = new Date();
@@ -162,15 +135,15 @@ export const useModulationData = (refreshTrigger?: number) => {
     }
     
     return "text-green-500"; // Días no modulados en verde
-  }, [modulationData]);
+  };
 
-  const isDateInFuture = useCallback((date: Date): boolean => {
+  const isDateInFuture = (date: Date): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return isAfter(date, today);
-  }, []);
+  };
 
-  const handleDateSelect = useCallback((date: Date | undefined) => {
+  const handleDateSelect = (date: Date | undefined) => {
     if (date && !isDateInFuture(date)) {
       setSelectedDate(date);
       
@@ -179,7 +152,7 @@ export const useModulationData = (refreshTrigger?: number) => {
       const dayRecord = modulationData.find(d => d.date === dateStr) || null;
       setSelectedDayData(dayRecord);
     }
-  }, [modulationData, isDateInFuture]);
+  };
 
   return {
     selectedDate,
@@ -193,7 +166,6 @@ export const useModulationData = (refreshTrigger?: number) => {
     getDateClassName,
     isDateInFuture,
     handleDateSelect,
-    setSelectedMonth,
-    fetchModulationData
+    setSelectedMonth
   };
 };
