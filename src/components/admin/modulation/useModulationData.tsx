@@ -99,12 +99,11 @@ export const useModulationData = () => {
         setSelectedDayData({ date: dateStr, is_modulated: !currentValue });
       }
 
-      // First check if the record exists
-      const { data: existingData, error: checkError } = await supabase
+      // Check if the record exists - use eq with limit to avoid multiple rows issue
+      const { data: existingRecords, error: checkError } = await supabase
         .from('modulation_days')
         .select('id')
-        .eq('date', dateStr)
-        .maybeSingle();
+        .eq('date', dateStr);
         
       if (checkError) {
         console.error('Error checking existing modulation:', checkError);
@@ -115,14 +114,29 @@ export const useModulationData = () => {
       
       let error;
       
-      if (existingData) {
+      if (existingRecords && existingRecords.length > 0) {
+        // Get the first record's id (in case there are duplicates)
+        const recordId = existingRecords[0].id;
+        
         // Update existing record
         const { error: updateError } = await supabase
           .from('modulation_days')
           .update({ is_modulated: !currentValue })
-          .eq('date', dateStr);
+          .eq('id', recordId);
           
         error = updateError;
+        
+        // If there are multiple records with the same date, remove the duplicates
+        if (existingRecords.length > 1) {
+          // Get all ids except the first one (which we just updated)
+          const duplicateIds = existingRecords.slice(1).map(record => record.id);
+          
+          // Delete the duplicates
+          await supabase
+            .from('modulation_days')
+            .delete()
+            .in('id', duplicateIds);
+        }
       } else {
         // Insert new record
         const { error: insertError } = await supabase
