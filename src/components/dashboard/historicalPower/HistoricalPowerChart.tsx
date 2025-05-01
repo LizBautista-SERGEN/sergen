@@ -25,6 +25,13 @@ export const HistoricalPowerChart = ({ chartData }: HistoricalPowerChartProps) =
     return `Fecha: ${label}`;
   };
 
+  // Calculate a dynamic interval based on the number of data points
+  const calculateInterval = () => {
+    if (chartData.length <= 30) return 0; // Show all labels if 30 or fewer data points
+    if (chartData.length <= 60) return 1; // Show every other label for medium datasets
+    return Math.ceil(chartData.length / 30); // For larger datasets, show approximately 30 labels
+  };
+
   return (
     <ResponsiveContainer width="100%" height={390}>
       <BarChart 
@@ -36,8 +43,9 @@ export const HistoricalPowerChart = ({ chartData }: HistoricalPowerChartProps) =
           angle={-45}
           textAnchor="end"
           height={50}
-          interval={chartData.length > 30 ? Math.ceil(chartData.length / 30) : 0}
+          interval={calculateInterval()}
           fontSize={10}
+          tickMargin={10}
         />
         <YAxis 
           domain={[4000, 'auto']}

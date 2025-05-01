@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { start_date, end_date, limit = 10000 } = await req.json()
+    const { start_date, end_date, limit = 50000 } = await req.json()
     
     if (!start_date || !end_date) {
       return new Response(
@@ -35,7 +35,7 @@ serve(async (req) => {
       .gte('fecha', start_date)
       .lte('fecha', end_date)
       .order('fecha', { ascending: true })
-      .limit(limit)
+      .limit(limit) // Increased to 50000 to ensure we get all records
 
     if (error) {
       console.error("Error fetching data:", error)

@@ -17,12 +17,12 @@ export const useHistoricalPowerData = () => {
       try {
         // Get current date
         const today = new Date();
-        // Get date from 60 days ago to ensure we get all data from the month
-        const sixtyDaysAgo = subDays(today, 60);
+        // Get date from 90 days ago to ensure we get all data from previous months
+        const ninetyDaysAgo = subDays(today, 90);
         
         console.log("Fetching historical power data...");
         console.log("Date range:", {
-          start: sixtyDaysAgo.toISOString(),
+          start: ninetyDaysAgo.toISOString(),
           end: today.toISOString()
         });
         
@@ -39,9 +39,9 @@ export const useHistoricalPowerData = () => {
               "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpiaXhqa2d3cGVyeHFyZGh2dG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkwNzM1MjAsImV4cCI6MjA1NDY0OTUyMH0.ENpjlH5HgHT1Pqx6-tXeYO8gaPeGKx5wk_YUpzP5oHQ",
             },
             body: JSON.stringify({
-              start_date: sixtyDaysAgo.toISOString(),
+              start_date: ninetyDaysAgo.toISOString(),
               end_date: today.toISOString(),
-              limit: 10000, // Increase limit to handle more records
+              limit: 50000, // Significantly increase limit to handle much more records
             }),
           }
         );
