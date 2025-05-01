@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -7,8 +8,6 @@ import { es } from 'date-fns/locale';
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { ModulationLegend } from "../admin/modulation/ModulationLegend";
-import { toast } from "sonner";
-import { ForecastSettings } from "@/types/forecast";
 
 interface RiskManagementProps {
   energyData: EnergyData[];
@@ -28,42 +27,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
-  const [settings, setSettings] = useState<ForecastSettings | null>(null);
-  const [timeRange, setTimeRange] = useState("18:00 - 23:00");
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   
-  // Fetch settings
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('forecast_settings')
-          .select('*')
-          .single();
-        
-        if (error) {
-          console.error('Error fetching settings:', error);
-          return;
-        }
-
-        if (data) {
-          setSettings(data as ForecastSettings);
-          setTimeRange(data.time_range || "18:00 - 23:00");
-          if (data.last_update) {
-            setLastUpdated(new Date(data.last_update));
-          }
-        }
-      } catch (error) {
-        console.error('Error in fetchSettings:', error);
-      }
-    };
-
-    fetchSettings();
-    // Refresh settings every 5 minutes
-    const interval = setInterval(fetchSettings, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   // Fetch modulation data
   useEffect(() => {
     const fetchModulationData = async () => {
@@ -81,14 +45,12 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
 
         if (error) {
           console.error('Error al cargar datos de modulación:', error);
-          toast.error('Error al cargar datos de modulación');
           return;
         }
 
         setModulationData(data || []);
       } catch (error) {
         console.error('Error en fetchModulationData:', error);
-        toast.error('Error al cargar datos de modulación');
       } finally {
         setIsLoading(false);
       }
@@ -96,82 +58,6 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
 
     fetchModulationData();
   }, [selectedMonth]);
-
-  // Fetch max power for the selected date
-  useEffect(() => {
-    const fetchMaxPower = async () => {
-      if (!date) return;
-      
-      try {
-        // Get time range from settings
-        const [startHour, endHour] = (settings?.time_range || "18:00 - 23:00").split('-').map(time => time.trim());
-        
-        // Format the date
-        const dateStr = format(date, 'yyyy-MM-dd');
-        
-        // Query Supabase for the maximum power between the specified time range
-        const { data, error } = await supabase
-          .from('coes_forecast')
-          .select('fecha, pronostico')
-          .gte('fecha', `${dateStr}T${startHour}:00`)
-          .lt('fecha', `${dateStr}T${endHour}:59`)
-          .order('pronostico', { ascending: false })
-          .limit(1);
-
-        if (error) {
-          console.error('Error al obtener potencia máxima:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          setMaxPower(Number(data[0].pronostico.toFixed(2)));
-        } else {
-          // Fallback to the old calculation method
-          if (energyData.length) {
-            const selectedDateStr = format(date, 'yyyy-MM-dd');
-            const dayData = energyData.find(data => data.date === selectedDateStr);
-            
-            if (dayData) {
-              const randomMax = dayData.forecasted_power * (0.85 + Math.random() * 0.3);
-              setMaxPower(Number(randomMax.toFixed(2)));
-            }
-          }
-        }
-
-        // Check if the date is modulated
-        const isModulated = isDateModulated(date);
-        updateBackgroundColor(isModulated, settings?.risk_level);
-      } catch (error) {
-        console.error('Error fetching max power:', error);
-      }
-    };
-
-    fetchMaxPower();
-    const interval = setInterval(fetchMaxPower, 60000);
-    return () => clearInterval(interval);
-  }, [date, energyData, settings, modulationData]);
-
-  const updateBackgroundColor = (isModulated: boolean, riskLevel?: string) => {
-    if (isModulated) {
-      setBackgroundColor("#C00000");
-      return;
-    }
-    
-    // Apply color based on risk level
-    switch (riskLevel) {
-      case "BAJO":
-        setBackgroundColor("#22c55e"); // green-500
-        break;
-      case "MEDIO":
-        setBackgroundColor("#f97316"); // amber-500
-        break;
-      case "ALTO":
-        setBackgroundColor("#ef4444"); // red-500
-        break;
-      default:
-        setBackgroundColor("#156082"); // default blue
-    }
-  };
 
   const isDateModulated = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -184,6 +70,36 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     today.setHours(0, 0, 0, 0);
     return isAfter(date, today);
   };
+
+  useEffect(() => {
+    const calculateMaxPower = () => {
+      if (!date || !energyData.length) return;
+
+      const selectedDateStr = format(date, 'yyyy-MM-dd');
+      const dayData = energyData.find(data => data.date === selectedDateStr);
+      
+      if (!dayData) return;
+
+      // Highlight red background if the date is modulated
+      const isModulated = isDateModulated(date);
+      setBackgroundColor(isModulated ? "#C00000" : "#156082");
+
+      const intervals = [];
+      for (let hour = 18; hour <= 23; hour++) {
+        for (let minute = 0; minute < 60; minute += 15) {
+          intervals.push(dayData.forecasted_power * (0.85 + Math.random() * 0.3));
+        }
+      }
+      
+      const maxValue = Math.max(...intervals);
+      setMaxPower(Number(maxValue.toFixed(2)));
+    };
+
+    calculateMaxPower();
+    const interval = setInterval(calculateMaxPower, 60000);
+
+    return () => clearInterval(interval);
+  }, [date, energyData, modulationData]);
 
   useEffect(() => {
     const now = new Date();
@@ -228,12 +144,6 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     }
   };
 
-  // Get risk level text color based on background
-  const getRiskTextColor = () => {
-    // For medium risk (amber) use black text, for others use white
-    return settings?.risk_level === "MEDIO" ? "text-black" : "text-white";
-  };
-
   return (
     <>
       <Card>
@@ -248,15 +158,12 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
             </div>
             <div className="text-center w-[200px]">
               <p className="text-[#8E9196] text-sm">Rango horario</p>
-              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">{timeRange}</p>
+              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">18:00 - 23:00</p>
             </div>
             <div className="text-center w-[200px]">
               <p className="text-[#8E9196] text-sm">Riesgo de coincidente</p>
-              <p 
-                style={{ backgroundColor }} 
-                className={`px-4 h-[42px] rounded w-full flex items-center justify-center ${getRiskTextColor()}`}
-              >
-                {settings?.risk_level || "BAJO"}
+              <p style={{ backgroundColor }} className="text-white px-4 h-[42px] rounded w-full flex items-center justify-center">
+                {backgroundColor === "#C00000" ? "ALTO" : "BAJO"}
               </p>
             </div>
             <div className="text-center w-[200px]">
