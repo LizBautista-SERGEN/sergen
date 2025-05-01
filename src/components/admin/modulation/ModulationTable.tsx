@@ -1,9 +1,9 @@
 
-import { format, getDaysInMonth, parseISO, startOfMonth } from "date-fns";
+import { format, getDaysInMonth, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { useEffect, useState, memo, useMemo } from "react";
+import { useState, useEffect, memo, useMemo } from "react";
 
 interface ModulationDay {
   date: string;
@@ -16,18 +16,19 @@ interface ModulationTableProps {
   isLoading: boolean;
   isDateInFuture: (date: Date) => boolean;
   onToggleModulation: (date: Date, currentValue: boolean) => void;
-  lastRefresh?: number;
 }
 
 // Create a memoized table row component to prevent re-renders
 const ModulationTableRow = memo(({ 
   day, 
   isModulated, 
-  onToggleModulation 
+  onToggleModulation,
+  disabled
 }: { 
   day: Date, 
   isModulated: boolean, 
-  onToggleModulation: (date: Date, value: boolean) => void 
+  onToggleModulation: (date: Date, value: boolean) => void,
+  disabled: boolean
 }) => {
   return (
     <TableRow className={isModulated ? "bg-red-50" : "bg-green-50"}>
@@ -43,8 +44,11 @@ const ModulationTableRow = memo(({
           <Switch
             checked={isModulated}
             onCheckedChange={() => {
-              onToggleModulation(day, isModulated);
+              if (!disabled) {
+                onToggleModulation(day, isModulated);
+              }
             }}
+            disabled={disabled}
           />
           <span className="text-sm text-gray-500">Modulado</span>
         </div>
@@ -60,19 +64,12 @@ export const ModulationTable = ({
   modulationData,
   isLoading,
   isDateInFuture,
-  onToggleModulation,
-  lastRefresh
+  onToggleModulation
 }: ModulationTableProps) => {
-  const [tableData, setTableData] = useState<ModulationDay[]>([]);
+  // Store the data locally to avoid disappearance during loading
+  const [localData, setLocalData] = useState<ModulationDay[]>([]);
   
-  // Update table data when modulationData changes
-  useEffect(() => {
-    if (!isLoading && modulationData?.length >= 0) {
-      setTableData(modulationData);
-    }
-  }, [modulationData, isLoading]);
-
-  // Generate days for the selected month
+  // Generate days for the selected month - memoized to avoid recalculation
   const daysToDisplay = useMemo(() => {
     const daysInMonth = getDaysInMonth(selectedMonth);
     const startDay = startOfMonth(selectedMonth);
@@ -89,16 +86,24 @@ export const ModulationTable = ({
     return days;
   }, [selectedMonth, isDateInFuture]);
 
-  // Get modulation status for a specific date
+  // Update local data when modulationData changes and is not empty
+  useEffect(() => {
+    if (modulationData?.length > 0) {
+      setLocalData(modulationData);
+    }
+  }, [modulationData]);
+
+  // Get modulation status for a specific date from local data
   const getModulationStatus = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return tableData.find(day => day.date === dateStr)?.is_modulated || false;
+    return localData.find(day => day.date === dateStr)?.is_modulated || false;
   };
 
-  const handleToggleModulation = (date: Date, currentValue: boolean) => {
+  // Handle toggle action with local state update for immediate feedback
+  const handleLocalToggle = (date: Date, currentValue: boolean) => {
     // Update local state immediately for responsive UI
     const dateStr = format(date, 'yyyy-MM-dd');
-    setTableData(prev => {
+    setLocalData(prev => {
       const existingIdx = prev.findIndex(day => day.date === dateStr);
       
       if (existingIdx >= 0) {
@@ -128,13 +133,7 @@ export const ModulationTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={3} className="text-center">
-                Cargando datos...
-              </TableCell>
-            </TableRow>
-          ) : daysToDisplay.length === 0 ? (
+          {daysToDisplay.length === 0 ? (
             <TableRow>
               <TableCell colSpan={3} className="text-center">
                 No hay días disponibles para este mes
@@ -149,7 +148,8 @@ export const ModulationTable = ({
                   key={format(day, 'yyyy-MM-dd')} 
                   day={day} 
                   isModulated={isModulated} 
-                  onToggleModulation={handleToggleModulation} 
+                  onToggleModulation={handleLocalToggle}
+                  disabled={isLoading} 
                 />
               );
             })

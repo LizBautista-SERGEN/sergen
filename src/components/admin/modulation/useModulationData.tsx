@@ -18,17 +18,8 @@ export const useModulationData = (refreshTrigger?: number) => {
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
-  const [lastFetchedMonth, setLastFetchedMonth] = useState<string>('');
 
   const fetchModulationData = useCallback(async (month: Date) => {
-    // Generate a unique identifier for this month
-    const monthKey = format(month, 'yyyy-MM');
-    
-    // Skip if we're already loading or if we've already fetched this month's data recently
-    if (monthKey === lastFetchedMonth && !refreshTrigger) {
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
@@ -53,13 +44,11 @@ export const useModulationData = (refreshTrigger?: number) => {
       if (error) {
         console.error('Error al cargar datos de modulación:', error);
         toast.error("Error al cargar datos de modulación");
-        setModulationData([]);
         return;
       }
 
-      console.log('Fetched modulation data:', data);
+      // Store the fetched data
       setModulationData(data || []);
-      setLastFetchedMonth(monthKey);
       
       // Update selected day data if there's a selected date
       if (selectedDate) {
@@ -70,15 +59,16 @@ export const useModulationData = (refreshTrigger?: number) => {
     } catch (error) {
       console.error('Error en fetchModulationData:', error);
       toast.error('Error al cargar los datos de modulación');
-      setModulationData([]);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedDate, lastFetchedMonth]);
+  }, [selectedDate]);
 
-  // Fetch data when the month changes or refresh is triggered
+  // Fetch data only when the month changes or manual refresh is triggered
   useEffect(() => {
-    fetchModulationData(selectedMonth);
+    if (refreshTrigger || selectedMonth) {
+      fetchModulationData(selectedMonth);
+    }
   }, [selectedMonth, fetchModulationData, refreshTrigger]);
 
   // Update selected day data when the selected date or modulation data changes

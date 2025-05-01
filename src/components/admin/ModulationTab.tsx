@@ -6,7 +6,7 @@ import { SelectedDayModulation } from "./modulation/SelectedDayModulation";
 import { ModulationCalendar } from "./modulation/ModulationCalendar";
 import { ModulationLegend } from "./modulation/ModulationLegend";
 import { ModulationTable } from "./modulation/ModulationTable";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
@@ -14,8 +14,7 @@ import { Button } from "@/components/ui/button";
 
 export const ModulationTab = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
+  const [manualRefresh, setManualRefresh] = useState<number>(Date.now());
   
   useEffect(() => {
     // Check if the user is authenticated
@@ -31,23 +30,10 @@ export const ModulationTab = () => {
       setIsAuthenticated(!!session);
     });
     
-    // Set up visibility detection
-    const handleVisibilityChange = () => {
-      const isTabVisible = document.visibilityState === 'visible';
-      if (isTabVisible && !isVisible) {
-        // Only trigger a refresh when becoming visible from invisible
-        setLastRefresh(Date.now());
-      }
-      setIsVisible(isTabVisible);
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
     return () => {
       subscription.unsubscribe();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isVisible]);
+  }, []);
 
   const {
     selectedDate,
@@ -63,12 +49,12 @@ export const ModulationTab = () => {
     handleDateSelect,
     setSelectedMonth,
     fetchModulationData
-  } = useModulationData(lastRefresh);
+  } = useModulationData(manualRefresh);
   
   // Manual refresh handler
-  const handleManualRefresh = useCallback(() => {
-    setLastRefresh(Date.now());
-  }, []);
+  const handleManualRefresh = () => {
+    setManualRefresh(Date.now());
+  };
 
   if (!isAuthenticated) {
     return (
@@ -143,7 +129,6 @@ export const ModulationTab = () => {
         isLoading={isLoading}
         isDateInFuture={isDateInFuture}
         onToggleModulation={handleToggleModulation}
-        lastRefresh={lastRefresh}
       />
     </div>
   );
