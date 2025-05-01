@@ -18,7 +18,8 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
     modulatedDays,
     modulationData,
     selectedMonth,
-    setSelectedMonth
+    setSelectedMonth,
+    isDateModulated
   } = useRiskManagement(energyData, date, setDate);
 
   return (
