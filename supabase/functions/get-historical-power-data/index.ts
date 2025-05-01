@@ -29,27 +29,46 @@ serve(async (req) => {
 
     console.log(`Fetching historical power data from ${start_date} to ${end_date} with limit ${limit}`)
     
-    const { data, error } = await supabase
-      .from('coes_historical')
-      .select('fecha, ejecutado')
-      .gte('fecha', start_date)
-      .lte('fecha', end_date)
-      .order('fecha', { ascending: true })
-      .limit(limit) // Increased to 50000 to ensure we get all records
+    // Use pagination to fetch all records
+    let allData = [];
+    let page = 0;
+    let hasMore = true;
+    const pageSize = 1000; // Supabase may have a default limit of 1000
+    
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('coes_historical')
+        .select('fecha, ejecutado')
+        .gte('fecha', start_date)
+        .lte('fecha', end_date)
+        .order('fecha', { ascending: true })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
 
-    if (error) {
-      console.error("Error fetching data:", error)
-      throw error
+      if (error) {
+        console.error("Error fetching data:", error);
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        allData = [...allData, ...data];
+        page++;
+        console.log(`Retrieved page ${page} with ${data.length} records. Total so far: ${allData.length}`);
+        
+        // Check if we received fewer records than the page size or hit the overall limit
+        hasMore = data.length === pageSize && allData.length < limit;
+      } else {
+        hasMore = false;
+      }
     }
 
-    console.log(`Retrieved ${data?.length || 0} records from database`)
+    console.log(`Retrieved a total of ${allData.length} records from database`);
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(allData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
-    console.error("Function error:", error)
+    console.error("Function error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

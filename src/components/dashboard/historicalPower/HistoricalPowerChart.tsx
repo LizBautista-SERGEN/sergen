@@ -29,7 +29,8 @@ export const HistoricalPowerChart = ({ chartData }: HistoricalPowerChartProps) =
   const calculateInterval = () => {
     if (chartData.length <= 30) return 0; // Show all labels if 30 or fewer data points
     if (chartData.length <= 60) return 1; // Show every other label for medium datasets
-    return Math.ceil(chartData.length / 30); // For larger datasets, show approximately 30 labels
+    if (chartData.length <= 90) return 2; // Show every third label for larger datasets
+    return Math.ceil(chartData.length / 30); // For very large datasets, show approximately 30 labels
   };
 
   return (
