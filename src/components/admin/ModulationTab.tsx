@@ -13,6 +13,7 @@ import { AlertCircle } from "lucide-react";
 
 export const ModulationTab = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isVisible, setIsVisible] = useState<boolean>(true);
   
   useEffect(() => {
     // Check if the user is authenticated
@@ -28,8 +29,17 @@ export const ModulationTab = () => {
       setIsAuthenticated(!!session);
     });
     
+    // Set up visibility detection
+    const handleVisibilityChange = () => {
+      const isTabVisible = document.visibilityState === 'visible';
+      setIsVisible(isTabVisible);
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
@@ -45,8 +55,17 @@ export const ModulationTab = () => {
     getDateClassName,
     isDateInFuture,
     handleDateSelect,
-    setSelectedMonth
+    setSelectedMonth,
+    fetchModulationData
   } = useModulationData();
+
+  // Refresh data when tab becomes visible or when selectedMonth changes
+  useEffect(() => {
+    if (isVisible) {
+      console.log('Tab is visible, refreshing modulation data');
+      fetchModulationData(selectedMonth);
+    }
+  }, [isVisible, selectedMonth, fetchModulationData]);
 
   if (!isAuthenticated) {
     return (

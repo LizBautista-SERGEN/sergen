@@ -3,6 +3,7 @@ import { format, getDaysInMonth, parseISO, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { useEffect, useState } from "react";
 
 interface ModulationDay {
   date: string;
@@ -24,6 +25,13 @@ export const ModulationTable = ({
   isDateInFuture,
   onToggleModulation
 }: ModulationTableProps) => {
+  const [tableData, setTableData] = useState<ModulationDay[]>([]);
+  
+  // Update table data whenever modulationData changes
+  useEffect(() => {
+    setTableData(modulationData);
+  }, [modulationData]);
+
   // Generate days for the selected month
   const generateDaysForMonth = () => {
     const daysInMonth = getDaysInMonth(selectedMonth);
@@ -42,7 +50,28 @@ export const ModulationTable = ({
   // Get modulation status for a specific date
   const getModulationStatus = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return modulationData.find(day => day.date === dateStr)?.is_modulated || false;
+    return tableData.find(day => day.date === dateStr)?.is_modulated || false;
+  };
+
+  const handleToggleModulation = (date: Date, currentValue: boolean) => {
+    // Update local state immediately for responsive UI
+    const dateStr = format(date, 'yyyy-MM-dd');
+    setTableData(prev => {
+      const existingIdx = prev.findIndex(day => day.date === dateStr);
+      
+      if (existingIdx >= 0) {
+        // Update existing entry
+        const updated = [...prev];
+        updated[existingIdx] = { ...updated[existingIdx], is_modulated: !currentValue };
+        return updated;
+      } else {
+        // Add new entry
+        return [...prev, { date: dateStr, is_modulated: !currentValue }];
+      }
+    });
+    
+    // Call the parent handler
+    onToggleModulation(date, currentValue);
   };
 
   const daysToDisplay = generateDaysForMonth();
@@ -89,7 +118,7 @@ export const ModulationTable = ({
                       <Switch
                         checked={isModulated}
                         onCheckedChange={() => {
-                          onToggleModulation(day, isModulated);
+                          handleToggleModulation(day, isModulated);
                         }}
                       />
                       <span className="text-sm text-gray-500">Modulado</span>

@@ -38,6 +38,7 @@ export const useModulationData = () => {
         return;
       }
 
+      console.log('Fetched modulation data:', data);
       setModulationData(data || []);
       
       // Update selected day data if there's a selected date
@@ -77,18 +78,23 @@ export const useModulationData = () => {
         return;
       }
 
-      const { error } = await supabase
+      // Log the operation being attempted
+      console.log(`Toggling modulation for ${dateStr} from ${currentValue} to ${!currentValue}`);
+
+      const { error, data } = await supabase
         .from('modulation_days')
         .upsert([{
           date: dateStr,
           is_modulated: !currentValue
-        }]);
+        }], { onConflict: 'date', returning: 'representation' });
 
       if (error) {
         console.error('Error al actualizar modulación:', error);
         toast.error('Error al actualizar la modulación: ' + error.message);
         return;
       }
+
+      console.log('Modulation update successful:', data);
 
       // Update the local state for immediate feedback
       const updatedData = modulationData.map(day => 
@@ -166,6 +172,7 @@ export const useModulationData = () => {
     getDateClassName,
     isDateInFuture,
     handleDateSelect,
-    setSelectedMonth
+    setSelectedMonth,
+    fetchModulationData, // Exported to allow manual refresh
   };
 };
