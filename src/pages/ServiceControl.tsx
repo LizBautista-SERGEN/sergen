@@ -78,7 +78,7 @@ const ServiceControl = () => {
               )}
             </div>
             <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-3 space-y-6">
+              <div className="col-span-4 space-y-6">
                 <RiskManagement 
                   energyData={energyData} 
                   date={date} 
@@ -86,7 +86,7 @@ const ServiceControl = () => {
                 />
               </div>
 
-              <div className="col-span-9 space-y-6">
+              <div className="col-span-8 space-y-6">
                 <PowerCharts 
                   energyData={energyData}
                   date={date}

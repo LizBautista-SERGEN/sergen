@@ -21,10 +21,10 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
         
         const { data, error } = await supabase
           .from('coes_forecast')
-          .select('pronostico')
+          .select('reprogramado')
           .gte('fecha', startOfDay.toISOString())
           .lte('fecha', endOfDay.toISOString())
-          .order('pronostico', { ascending: false })
+          .order('reprogramado', { ascending: false })
           .limit(1);
           
         if (error) {
@@ -32,8 +32,8 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
           return;
         }
         
-        if (data && data.length > 0 && data[0].pronostico) {
-          setMaxPower(Number(data[0].pronostico.toFixed(2)));
+        if (data && data.length > 0 && data[0].reprogramado) {
+          setMaxPower(Number(data[0].reprogramado.toFixed(2)));
         } else {
           // Fallback to simulated data if real data not available
           calculateMaxPower();
