@@ -1,8 +1,8 @@
-
 import { format, getDaysInMonth, parseISO, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
 
 interface ModulationDay {
   date: string;
@@ -24,6 +24,9 @@ export const ModulationTable = ({
   isDateInFuture,
   onToggleModulation
 }: ModulationTableProps) => {
+  // State to track pending toggle changes
+  const [pendingToggles, setPendingToggles] = useState<Record<string, boolean>>({});
+  
   // Generate days for the selected month
   const generateDaysForMonth = () => {
     const daysInMonth = getDaysInMonth(selectedMonth);
@@ -42,7 +45,35 @@ export const ModulationTable = ({
   // Get modulation status for a specific date
   const getModulationStatus = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
+    
+    // Check if there's a pending toggle for this date
+    if (dateStr in pendingToggles) {
+      return pendingToggles[dateStr];
+    }
+    
+    // Otherwise use the data from props
     return modulationData.find(day => day.date === dateStr)?.is_modulated || false;
+  };
+
+  const handleToggleModulation = (day: Date, currentValue: boolean) => {
+    // Update local state immediately for UI responsiveness
+    const dateStr = format(day, 'yyyy-MM-dd');
+    setPendingToggles(prev => ({
+      ...prev,
+      [dateStr]: !currentValue
+    }));
+    
+    // Call the parent handler
+    onToggleModulation(day, currentValue);
+    
+    // Clear pending state after successful update
+    setTimeout(() => {
+      setPendingToggles(prev => {
+        const newState = { ...prev };
+        delete newState[dateStr];
+        return newState;
+      });
+    }, 500);
   };
 
   const daysToDisplay = generateDaysForMonth();
@@ -74,9 +105,11 @@ export const ModulationTable = ({
           ) : (
             daysToDisplay.map((day) => {
               const isModulated = getModulationStatus(day);
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const isPending = dateStr in pendingToggles;
               
               return (
-                <TableRow key={format(day, 'yyyy-MM-dd')} className={isModulated ? "bg-red-50" : "bg-green-50"}>
+                <TableRow key={dateStr} className={isModulated ? "bg-red-50" : "bg-green-50"}>
                   <TableCell>{format(day, 'dd/MM/yyyy', { locale: es })}</TableCell>
                   <TableCell>
                     <span className={isModulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
@@ -89,8 +122,9 @@ export const ModulationTable = ({
                       <Switch
                         checked={isModulated}
                         onCheckedChange={() => {
-                          onToggleModulation(day, isModulated);
+                          handleToggleModulation(day, isModulated);
                         }}
+                        className={isPending ? "opacity-70" : ""}
                       />
                       <span className="text-sm text-gray-500">Modulado</span>
                     </div>

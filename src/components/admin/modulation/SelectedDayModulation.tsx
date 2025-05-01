@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
 
 interface ModulationDay {
   date: string;
@@ -22,6 +23,21 @@ export const SelectedDayModulation = ({
   isDateInFuture,
   onToggleModulation 
 }: SelectedDayModulationProps) => {
+  // Local state to track toggle state for immediate UI feedback
+  const [isToggling, setIsToggling] = useState(false);
+  
+  const handleToggleChange = () => {
+    if (isDateInFuture(selectedDate)) return;
+    
+    setIsToggling(true);
+    onToggleModulation(selectedDate, selectedDayData?.is_modulated || false);
+    
+    // Reset toggling state after a delay
+    setTimeout(() => {
+      setIsToggling(false);
+    }, 500);
+  };
+  
   return (
     <div className="bg-white p-4 rounded-lg border shadow-sm">
       <h3 className="text-lg font-semibold mb-4">Modulación del día seleccionado</h3>
@@ -39,7 +55,9 @@ export const SelectedDayModulation = ({
             </span>
             <Switch
               checked={selectedDayData?.is_modulated || false}
-              onCheckedChange={() => onToggleModulation(selectedDate, selectedDayData?.is_modulated || false)}
+              onCheckedChange={handleToggleChange}
+              disabled={isToggling}
+              className={isToggling ? "opacity-70" : ""}
             />
           </div>
         </div>

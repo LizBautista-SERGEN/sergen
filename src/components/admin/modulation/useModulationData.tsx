@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format, isAfter, startOfMonth, endOfMonth, addMonths, startOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,8 +18,9 @@ export const useModulationData = () => {
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(Date.now());
 
-  const fetchModulationData = async (month: Date) => {
+  const fetchModulationData = useCallback(async (month: Date) => {
     setIsLoading(true);
     try {
       const start = startOfMonth(month).toISOString().split('T')[0];
@@ -46,17 +47,19 @@ export const useModulationData = () => {
         const dayRecord = data?.find(d => d.date === dateStr) || null;
         setSelectedDayData(dayRecord);
       }
+      
+      setLastFetchTime(Date.now());
     } catch (error) {
       console.error('Error en fetchModulationData:', error);
       toast.error('Error al cargar los datos de modulación');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedDate]);
 
   useEffect(() => {
     fetchModulationData(selectedMonth);
-  }, [selectedMonth]);
+  }, [selectedMonth, fetchModulationData]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -77,20 +80,7 @@ export const useModulationData = () => {
         return;
       }
 
-      const { error } = await supabase
-        .from('modulation_days')
-        .upsert([{
-          date: dateStr,
-          is_modulated: !currentValue
-        }]);
-
-      if (error) {
-        console.error('Error al actualizar modulación:', error);
-        toast.error('Error al actualizar la modulación: ' + error.message);
-        return;
-      }
-
-      // Update the local state for immediate feedback
+      // Optimistically update the UI first
       const updatedData = modulationData.map(day => 
         day.date === dateStr 
           ? { ...day, is_modulated: !currentValue } 
@@ -108,11 +98,33 @@ export const useModulationData = () => {
       if (format(selectedDate, 'yyyy-MM-dd') === dateStr) {
         setSelectedDayData({ date: dateStr, is_modulated: !currentValue });
       }
+
+      // Now persist to database
+      const { error } = await supabase
+        .from('modulation_days')
+        .upsert([{
+          date: dateStr,
+          is_modulated: !currentValue
+        }], {
+          onConflict: 'date'
+        });
+
+      if (error) {
+        console.error('Error al actualizar modulación:', error);
+        toast.error('Error al actualizar la modulación: ' + error.message);
+        
+        // Revert optimistic update on error
+        fetchModulationData(selectedMonth);
+        return;
+      }
       
       toast.success('Modulación actualizada correctamente');
     } catch (error) {
       console.error('Error en handleToggleModulation:', error);
       toast.error('Error al actualizar la modulación');
+      
+      // Revert optimistic update on error
+      fetchModulationData(selectedMonth);
     }
   };
 
@@ -154,6 +166,11 @@ export const useModulationData = () => {
     }
   };
 
+  // Manual refresh function
+  const refreshModulationData = () => {
+    fetchModulationData(selectedMonth);
+  };
+
   return {
     selectedDate,
     selectedMonth,
@@ -166,6 +183,8 @@ export const useModulationData = () => {
     getDateClassName,
     isDateInFuture,
     handleDateSelect,
-    setSelectedMonth
+    setSelectedMonth,
+    refreshModulationData,
+    lastFetchTime
   };
 };
