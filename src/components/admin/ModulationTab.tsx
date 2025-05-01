@@ -6,14 +6,16 @@ import { SelectedDayModulation } from "./modulation/SelectedDayModulation";
 import { ModulationCalendar } from "./modulation/ModulationCalendar";
 import { ModulationLegend } from "./modulation/ModulationLegend";
 import { ModulationTable } from "./modulation/ModulationTable";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const ModulationTab = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
   
   useEffect(() => {
     // Check if the user is authenticated
@@ -32,6 +34,10 @@ export const ModulationTab = () => {
     // Set up visibility detection
     const handleVisibilityChange = () => {
       const isTabVisible = document.visibilityState === 'visible';
+      if (isTabVisible && !isVisible) {
+        // Only trigger a refresh when becoming visible from invisible
+        setLastRefresh(Date.now());
+      }
       setIsVisible(isTabVisible);
     };
     
@@ -41,7 +47,7 @@ export const ModulationTab = () => {
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [isVisible]);
 
   const {
     selectedDate,
@@ -57,15 +63,12 @@ export const ModulationTab = () => {
     handleDateSelect,
     setSelectedMonth,
     fetchModulationData
-  } = useModulationData();
-
-  // Refresh data when tab becomes visible or when selectedMonth changes
-  useEffect(() => {
-    if (isVisible) {
-      console.log('Tab is visible, refreshing modulation data');
-      fetchModulationData(selectedMonth);
-    }
-  }, [isVisible, selectedMonth, fetchModulationData]);
+  } = useModulationData(lastRefresh);
+  
+  // Manual refresh handler
+  const handleManualRefresh = useCallback(() => {
+    setLastRefresh(Date.now());
+  }, []);
 
   if (!isAuthenticated) {
     return (
@@ -81,10 +84,23 @@ export const ModulationTab = () => {
 
   return (
     <div className="space-y-8">
-      <MonthSelector 
-        selectedMonth={selectedMonth} 
-        onMonthChange={handleMonthChange} 
-      />
+      <div className="flex justify-between items-center">
+        <MonthSelector 
+          selectedMonth={selectedMonth} 
+          onMonthChange={handleMonthChange} 
+        />
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={handleManualRefresh}
+          className="flex items-center gap-1"
+          disabled={isLoading}
+        >
+          <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+          Actualizar datos
+        </Button>
+      </div>
 
       <div className="flex justify-between gap-6">
         <div className="w-1/2">
@@ -127,6 +143,7 @@ export const ModulationTab = () => {
         isLoading={isLoading}
         isDateInFuture={isDateInFuture}
         onToggleModulation={handleToggleModulation}
+        lastRefresh={lastRefresh}
       />
     </div>
   );

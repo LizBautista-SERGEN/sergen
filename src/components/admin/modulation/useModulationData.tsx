@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format, isAfter, startOfMonth, endOfMonth, addMonths, startOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ export interface ModulationDay {
   is_modulated: boolean;
 }
 
-export const useModulationData = () => {
+export const useModulationData = (refreshTrigger?: number) => {
   const today = new Date();
   const startDate = startOfYear(new Date(2025, 0, 1)); // January 2025
   
@@ -18,12 +18,30 @@ export const useModulationData = () => {
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
+  const [lastFetchedMonth, setLastFetchedMonth] = useState<string>('');
 
-  const fetchModulationData = async (month: Date) => {
+  const fetchModulationData = useCallback(async (month: Date) => {
+    // Generate a unique identifier for this month
+    const monthKey = format(month, 'yyyy-MM');
+    
+    // Skip if we're already loading or if we've already fetched this month's data recently
+    if (monthKey === lastFetchedMonth && !refreshTrigger) {
+      return;
+    }
+    
     setIsLoading(true);
+    
     try {
       const start = startOfMonth(month).toISOString().split('T')[0];
       const end = endOfMonth(month).toISOString().split('T')[0];
+
+      // Check authentication before making the request
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        console.log('User not authenticated, skipping data fetch');
+        setIsLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('modulation_days')
@@ -35,11 +53,13 @@ export const useModulationData = () => {
       if (error) {
         console.error('Error al cargar datos de modulación:', error);
         toast.error("Error al cargar datos de modulación");
+        setModulationData([]);
         return;
       }
 
       console.log('Fetched modulation data:', data);
       setModulationData(data || []);
+      setLastFetchedMonth(monthKey);
       
       // Update selected day data if there's a selected date
       if (selectedDate) {
@@ -50,24 +70,27 @@ export const useModulationData = () => {
     } catch (error) {
       console.error('Error en fetchModulationData:', error);
       toast.error('Error al cargar los datos de modulación');
+      setModulationData([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedDate, lastFetchedMonth]);
 
+  // Fetch data when the month changes or refresh is triggered
   useEffect(() => {
     fetchModulationData(selectedMonth);
-  }, [selectedMonth]);
+  }, [selectedMonth, fetchModulationData, refreshTrigger]);
 
+  // Update selected day data when the selected date or modulation data changes
   useEffect(() => {
-    if (selectedDate) {
+    if (selectedDate && modulationData.length > 0) {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const dayRecord = modulationData.find(d => d.date === dateStr) || null;
       setSelectedDayData(dayRecord);
     }
   }, [selectedDate, modulationData]);
 
-  const handleToggleModulation = async (date: Date, currentValue: boolean) => {
+  const handleToggleModulation = useCallback(async (date: Date, currentValue: boolean) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
     try {
@@ -81,12 +104,12 @@ export const useModulationData = () => {
       // Log the operation being attempted
       console.log(`Toggling modulation for ${dateStr} from ${currentValue} to ${!currentValue}`);
 
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from('modulation_days')
-        .upsert([{
+        .upsert({
           date: dateStr,
           is_modulated: !currentValue
-        }], { onConflict: 'date', returning: 'representation' });
+        }, { onConflict: 'date' });
 
       if (error) {
         console.error('Error al actualizar modulación:', error);
@@ -94,21 +117,29 @@ export const useModulationData = () => {
         return;
       }
 
-      console.log('Modulation update successful:', data);
+      console.log('Modulation update successful');
 
       // Update the local state for immediate feedback
-      const updatedData = modulationData.map(day => 
-        day.date === dateStr 
-          ? { ...day, is_modulated: !currentValue } 
-          : day
-      );
-      
-      // If the day doesn't exist in our current data, add it
-      if (!updatedData.find(day => day.date === dateStr)) {
-        updatedData.push({ date: dateStr, is_modulated: !currentValue });
-      }
-      
-      setModulationData(updatedData);
+      setModulationData(prev => {
+        const updatedData = [...prev];
+        const existingIndex = updatedData.findIndex(day => day.date === dateStr);
+        
+        if (existingIndex >= 0) {
+          // Update existing record
+          updatedData[existingIndex] = { 
+            ...updatedData[existingIndex], 
+            is_modulated: !currentValue 
+          };
+        } else {
+          // Add new record
+          updatedData.push({ 
+            date: dateStr, 
+            is_modulated: !currentValue 
+          });
+        }
+        
+        return updatedData;
+      });
       
       // Update selected day data if this is the currently selected day
       if (format(selectedDate, 'yyyy-MM-dd') === dateStr) {
@@ -120,13 +151,13 @@ export const useModulationData = () => {
       console.error('Error en handleToggleModulation:', error);
       toast.error('Error al actualizar la modulación');
     }
-  };
+  }, [selectedDate]);
 
-  const handleMonthChange = (increment: boolean) => {
+  const handleMonthChange = useCallback((increment: boolean) => {
     setSelectedMonth(prev => addMonths(prev, increment ? 1 : -1));
-  };
+  }, []);
 
-  const getDateClassName = (date: Date): string => {
+  const getDateClassName = useCallback((date: Date): string => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const modulationDay = modulationData.find(d => d.date === dateStr);
     const today = new Date();
@@ -141,15 +172,15 @@ export const useModulationData = () => {
     }
     
     return "text-green-500"; // Días no modulados en verde
-  };
+  }, [modulationData]);
 
-  const isDateInFuture = (date: Date): boolean => {
+  const isDateInFuture = useCallback((date: Date): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return isAfter(date, today);
-  };
+  }, []);
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = useCallback((date: Date | undefined) => {
     if (date && !isDateInFuture(date)) {
       setSelectedDate(date);
       
@@ -158,7 +189,7 @@ export const useModulationData = () => {
       const dayRecord = modulationData.find(d => d.date === dateStr) || null;
       setSelectedDayData(dayRecord);
     }
-  };
+  }, [modulationData, isDateInFuture]);
 
   return {
     selectedDate,
@@ -173,6 +204,6 @@ export const useModulationData = () => {
     isDateInFuture,
     handleDateSelect,
     setSelectedMonth,
-    fetchModulationData, // Exported to allow manual refresh
+    fetchModulationData
   };
 };

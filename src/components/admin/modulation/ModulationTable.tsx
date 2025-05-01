@@ -3,7 +3,7 @@ import { format, getDaysInMonth, parseISO, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useMemo } from "react";
 
 interface ModulationDay {
   date: string;
@@ -16,24 +16,64 @@ interface ModulationTableProps {
   isLoading: boolean;
   isDateInFuture: (date: Date) => boolean;
   onToggleModulation: (date: Date, currentValue: boolean) => void;
+  lastRefresh?: number;
 }
+
+// Create a memoized table row component to prevent re-renders
+const ModulationTableRow = memo(({ 
+  day, 
+  isModulated, 
+  onToggleModulation 
+}: { 
+  day: Date, 
+  isModulated: boolean, 
+  onToggleModulation: (date: Date, value: boolean) => void 
+}) => {
+  return (
+    <TableRow className={isModulated ? "bg-red-50" : "bg-green-50"}>
+      <TableCell>{format(day, 'dd/MM/yyyy', { locale: es })}</TableCell>
+      <TableCell>
+        <span className={isModulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
+          {isModulated ? "Modulado" : "No Modulado"}
+        </span>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">No Modulado</span>
+          <Switch
+            checked={isModulated}
+            onCheckedChange={() => {
+              onToggleModulation(day, isModulated);
+            }}
+          />
+          <span className="text-sm text-gray-500">Modulado</span>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
+
+ModulationTableRow.displayName = "ModulationTableRow";
 
 export const ModulationTable = ({
   selectedMonth,
   modulationData,
   isLoading,
   isDateInFuture,
-  onToggleModulation
+  onToggleModulation,
+  lastRefresh
 }: ModulationTableProps) => {
   const [tableData, setTableData] = useState<ModulationDay[]>([]);
   
-  // Update table data whenever modulationData changes
+  // Update table data when modulationData changes
   useEffect(() => {
-    setTableData(modulationData);
-  }, [modulationData]);
+    if (!isLoading && modulationData?.length >= 0) {
+      setTableData(modulationData);
+    }
+  }, [modulationData, isLoading]);
 
   // Generate days for the selected month
-  const generateDaysForMonth = () => {
+  const daysToDisplay = useMemo(() => {
     const daysInMonth = getDaysInMonth(selectedMonth);
     const startDay = startOfMonth(selectedMonth);
     const days: Date[] = [];
@@ -41,11 +81,13 @@ export const ModulationTable = ({
     for (let i = 0; i < daysInMonth; i++) {
       const day = new Date(startDay);
       day.setDate(day.getDate() + i);
-      days.push(day);
+      if (!isDateInFuture(day)) {
+        days.push(day);
+      }
     }
 
-    return days.filter(day => !isDateInFuture(day));
-  };
+    return days;
+  }, [selectedMonth, isDateInFuture]);
 
   // Get modulation status for a specific date
   const getModulationStatus = (date: Date) => {
@@ -73,8 +115,6 @@ export const ModulationTable = ({
     // Call the parent handler
     onToggleModulation(date, currentValue);
   };
-
-  const daysToDisplay = generateDaysForMonth();
 
   return (
     <div className="overflow-x-auto bg-white p-4 rounded-lg border shadow-sm">
@@ -105,26 +145,12 @@ export const ModulationTable = ({
               const isModulated = getModulationStatus(day);
               
               return (
-                <TableRow key={format(day, 'yyyy-MM-dd')} className={isModulated ? "bg-red-50" : "bg-green-50"}>
-                  <TableCell>{format(day, 'dd/MM/yyyy', { locale: es })}</TableCell>
-                  <TableCell>
-                    <span className={isModulated ? "text-red-500 font-medium" : "text-green-500 font-medium"}>
-                      {isModulated ? "Modulado" : "No Modulado"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">No Modulado</span>
-                      <Switch
-                        checked={isModulated}
-                        onCheckedChange={() => {
-                          handleToggleModulation(day, isModulated);
-                        }}
-                      />
-                      <span className="text-sm text-gray-500">Modulado</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <ModulationTableRow 
+                  key={format(day, 'yyyy-MM-dd')} 
+                  day={day} 
+                  isModulated={isModulated} 
+                  onToggleModulation={handleToggleModulation} 
+                />
               );
             })
           )}
