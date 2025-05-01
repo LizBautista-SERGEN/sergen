@@ -3,7 +3,7 @@ import { format, getDaysInMonth, parseISO, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 
 interface ModulationDay {
   date: string;
@@ -29,13 +29,11 @@ export const ModulationTable = ({
   
   // Update table data whenever modulationData changes
   useEffect(() => {
-    if (modulationData.length > 0) {
-      setTableData(modulationData);
-    }
+    setTableData(modulationData);
   }, [modulationData]);
 
-  // Generate days for the selected month - memoize this calculation
-  const daysToDisplay = useMemo(() => {
+  // Generate days for the selected month
+  const generateDaysForMonth = () => {
     const daysInMonth = getDaysInMonth(selectedMonth);
     const startDay = startOfMonth(selectedMonth);
     const days: Date[] = [];
@@ -46,9 +44,8 @@ export const ModulationTable = ({
       days.push(day);
     }
 
-    // Filter out future days
     return days.filter(day => !isDateInFuture(day));
-  }, [selectedMonth, isDateInFuture]);
+  };
 
   // Get modulation status for a specific date
   const getModulationStatus = (date: Date) => {
@@ -77,30 +74,7 @@ export const ModulationTable = ({
     onToggleModulation(date, currentValue);
   };
 
-  // If there's no data yet, show a placeholder row instead of empty state
-  if (isLoading) {
-    return (
-      <div className="overflow-x-auto bg-white p-4 rounded-lg border shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Tabla de Modulación - {format(selectedMonth, 'MMMM yyyy', { locale: es })}</h3>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Modulación</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell colSpan={3} className="text-center">
-                Cargando datos...
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-    );
-  }
+  const daysToDisplay = generateDaysForMonth();
 
   return (
     <div className="overflow-x-auto bg-white p-4 rounded-lg border shadow-sm">
@@ -114,7 +88,13 @@ export const ModulationTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {daysToDisplay.length === 0 ? (
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center">
+                Cargando datos...
+              </TableCell>
+            </TableRow>
+          ) : daysToDisplay.length === 0 ? (
             <TableRow>
               <TableCell colSpan={3} className="text-center">
                 No hay días disponibles para este mes
