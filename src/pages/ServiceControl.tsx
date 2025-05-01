@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { RiskManagement } from "@/components/dashboard/RiskManagement";
+import { RiskManagement } from "@/components/dashboard/risk-management/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/PowerCharts";
 import { HistoricalPowerMaximum } from "@/components/dashboard/HistoricalPowerMaximum";
 import { EnergyData } from "@/types/energy";
