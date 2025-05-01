@@ -70,6 +70,13 @@ export const useModulationData = () => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
     try {
+      // Ensure we have an authenticated session before updating
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        toast.error('Debe iniciar sesión para actualizar la modulación');
+        return;
+      }
+
       const { error } = await supabase
         .from('modulation_days')
         .upsert([{
@@ -79,7 +86,7 @@ export const useModulationData = () => {
 
       if (error) {
         console.error('Error al actualizar modulación:', error);
-        toast.error('Error al actualizar la modulación');
+        toast.error('Error al actualizar la modulación: ' + error.message);
         return;
       }
 
