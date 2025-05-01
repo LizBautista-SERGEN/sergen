@@ -117,7 +117,7 @@ export const useRiskManagement = (energyData: EnergyData[], date: Date | undefin
     fetchModulationData();
   }, [selectedMonth]);
 
-  // Count modulated days
+  // Count modulated days - FIX: Count all modulated days, not just those in the future
   useEffect(() => {
     const now = new Date();
     const currentMonth = startOfMonth(now);
@@ -126,8 +126,8 @@ export const useRiskManagement = (energyData: EnergyData[], date: Date | undefin
     let count = 0;
     modulationData.forEach(data => {
       const dataDate = parseISO(data.date);
+      // FIX: Remove the !isFuture(dataDate) condition to count all modulated days
       if (data.is_modulated && 
-          !isFuture(dataDate) &&
           isAfter(dataDate, currentMonth) && 
           isBefore(dataDate, monthEnd)) {
         count++;

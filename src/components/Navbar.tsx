@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,13 +95,21 @@ const Navbar = () => {
                 {item.text}
               </Link>
             ))}
-            {isLoggedIn && (
+            {isLoggedIn ? (
               <Button
                 onClick={handleLogout}
                 variant="outline"
                 className="text-sergen-500 hover:text-sergen-600"
               >
                 Cerrar Sesión
+              </Button>
+            ) : (
+              <Button
+                onClick={() => navigate('/login')}
+                variant="outline"
+                className="text-sergen-500 hover:text-sergen-600 flex items-center gap-2"
+              >
+                <LogIn size={16} /> Iniciar Sesión
               </Button>
             )}
           </div>
@@ -133,7 +141,7 @@ const Navbar = () => {
                 {item.text}
               </Link>
             ))}
-            {isLoggedIn && (
+            {isLoggedIn ? (
               <button
                 onClick={() => {
                   handleLogout();
@@ -142,6 +150,16 @@ const Navbar = () => {
                 className="block w-full text-left text-gray-600 hover:text-sergen-500 transition-colors"
               >
                 Cerrar Sesión
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  navigate('/login');
+                  setIsOpen(false);
+                }}
+                className="block w-full text-left text-gray-600 hover:text-sergen-500 transition-colors flex items-center gap-2"
+              >
+                <LogIn size={16} /> Iniciar Sesión
               </button>
             )}
           </div>
