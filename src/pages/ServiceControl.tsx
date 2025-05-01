@@ -8,6 +8,7 @@ import { PowerCharts } from "@/components/dashboard/PowerCharts";
 import { HistoricalPowerMaximum } from "@/components/dashboard/HistoricalPowerMaximum";
 import { EnergyData } from "@/types/energy";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 const ServiceControl = () => {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
@@ -21,6 +22,29 @@ const ServiceControl = () => {
     
     // Set empty energy data to avoid profile-related queries
     setEnergyData([]);
+
+    // Fetch last updated time from settings
+    const fetchLastUpdated = async () => {
+      const { data, error } = await supabase
+        .from('forecast_settings')
+        .select('last_update')
+        .single();
+        
+      if (error) {
+        console.error('Error fetching last update time:', error);
+        return;
+      }
+      
+      if (data?.last_update) {
+        setLastUpdated(new Date(data.last_update));
+      }
+    };
+    
+    fetchLastUpdated();
+    
+    // Check for updates every 5 minutes
+    const interval = setInterval(fetchLastUpdated, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [navigate]);
 
   return (
