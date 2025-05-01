@@ -2,20 +2,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CoesData } from "@/types/forecast";
-import { ForecastChart } from "@/components/admin/forecast/ForecastChart";
-import { format, startOfDay, endOfDay, subDays } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { startOfDay, endOfDay, subDays } from "date-fns";
 
-type Props = {
-  energyData: any[];
-  date: Date | undefined;
-};
-
-export const PowerCharts = ({ date }: Props) => {
+export const useForecastData = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<CoesData[]>([]);
-  const currentDate = format(new Date(), "dd/MM/yyyy");
 
   const fetchData = async () => {
     try {
@@ -63,20 +55,5 @@ export const PowerCharts = ({ date }: Props) => {
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle>Pronóstico de Demanda - {currentDate}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4">
-        {data.length > 0 ? (
-          <ForecastChart data={data} />
-        ) : (
-          <div className="flex justify-center items-center h-64">
-            <p className="text-gray-500">No hay datos disponibles para los últimos días</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  return { data, loading };
 };
