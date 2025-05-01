@@ -27,12 +27,17 @@ export const HistoricalPowerChart = ({ chartData }: HistoricalPowerChartProps) =
 
   return (
     <ResponsiveContainer width="100%" height={390}>
-      <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 20, left: 20 }}>
+      <BarChart 
+        data={chartData} 
+        margin={{ top: 5, right: 20, bottom: 20, left: 20 }}
+      >
         <XAxis 
           dataKey="date" 
           angle={-45}
           textAnchor="end"
           height={50}
+          interval={chartData.length > 30 ? Math.ceil(chartData.length / 30) : 0}
+          fontSize={10}
         />
         <YAxis 
           domain={[4000, 'auto']}

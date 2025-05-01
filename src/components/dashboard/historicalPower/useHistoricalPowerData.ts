@@ -17,12 +17,12 @@ export const useHistoricalPowerData = () => {
       try {
         // Get current date
         const today = new Date();
-        // Get date from 30 days ago for a reasonable date range
-        const thirtyDaysAgo = subDays(today, 30);
+        // Get date from 60 days ago to ensure we get all data from the month
+        const sixtyDaysAgo = subDays(today, 60);
         
         console.log("Fetching historical power data...");
         console.log("Date range:", {
-          start: thirtyDaysAgo.toISOString(),
+          start: sixtyDaysAgo.toISOString(),
           end: today.toISOString()
         });
         
@@ -39,8 +39,9 @@ export const useHistoricalPowerData = () => {
               "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpiaXhqa2d3cGVyeHFyZGh2dG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkwNzM1MjAsImV4cCI6MjA1NDY0OTUyMH0.ENpjlH5HgHT1Pqx6-tXeYO8gaPeGKx5wk_YUpzP5oHQ",
             },
             body: JSON.stringify({
-              start_date: thirtyDaysAgo.toISOString(),
+              start_date: sixtyDaysAgo.toISOString(),
               end_date: today.toISOString(),
+              limit: 10000, // Increase limit to handle more records
             }),
           }
         );
@@ -104,7 +105,7 @@ export const useHistoricalPowerData = () => {
           }
         });
         
-        console.log('Daily maximums processed:', dailyMaximums);
+        console.log('Daily maximums processed:', Object.keys(dailyMaximums).length);
         
         // Convert to chart data format
         const formattedData = Object.values(dailyMaximums)
@@ -118,6 +119,8 @@ export const useHistoricalPowerData = () => {
             };
           })
           .sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime());
+        
+        console.log('Formatted data count:', formattedData.length);
         
         // Find maximum value and assign color
         if (formattedData.length > 0) {
@@ -137,7 +140,7 @@ export const useHistoricalPowerData = () => {
         }
         
         setChartData(formattedData);
-        console.log('Power maximum data:', formattedData);
+        console.log('Power maximum data count:', formattedData.length);
       } catch (err: any) {
         console.error('Error in processData:', err);
         setError(`Error processing data: ${err.message}`);
