@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format, isAfter, startOfMonth, endOfMonth, addMonths, startOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ export const useModulationData = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
 
-  const fetchModulationData = async (month: Date) => {
+  const fetchModulationData = useCallback(async (month: Date) => {
     setIsLoading(true);
     try {
       const start = startOfMonth(month).toISOString().split('T')[0];
@@ -53,11 +53,11 @@ export const useModulationData = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedDate]);
 
   useEffect(() => {
     fetchModulationData(selectedMonth);
-  }, [selectedMonth]);
+  }, [selectedMonth, fetchModulationData]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -81,12 +81,15 @@ export const useModulationData = () => {
       // Log the operation being attempted
       console.log(`Toggling modulation for ${dateStr} from ${currentValue} to ${!currentValue}`);
 
+      // Fix: update the upsert call to match the expected type
       const { error, data } = await supabase
         .from('modulation_days')
-        .upsert([{
+        .upsert({
           date: dateStr,
           is_modulated: !currentValue
-        }], { onConflict: 'date', returning: 'representation' });
+        }, { 
+          onConflict: 'date' 
+        });
 
       if (error) {
         console.error('Error al actualizar modulación:', error);
