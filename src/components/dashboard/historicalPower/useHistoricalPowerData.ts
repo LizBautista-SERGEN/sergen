@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { format, subDays, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PowerData, ChartData } from "./types";
@@ -75,12 +75,22 @@ export const useHistoricalPowerData = () => {
         
         // Get time range from forecast_settings
         const fetchTimeRange = async () => {
-          const { data: settingsData } = await supabase
-            .from('forecast_settings')
-            .select('time_range')
-            .single();
+          try {
+            const { data: settingsData, error } = await supabase
+              .from('forecast_settings')
+              .select('*')
+              .single();
+              
+            if (error) {
+              console.error('Error fetching time range:', error);
+              return "18:00 - 23:00"; // Default fallback
+            }
             
-          return settingsData?.time_range || "18:00 - 23:00";
+            return settingsData?.time_range || "18:00 - 23:00";
+          } catch (err) {
+            console.error('Error in fetchTimeRange:', err);
+            return "18:00 - 23:00"; // Default fallback on error
+          }
         };
         
         fetchTimeRange().then(timeRange => {

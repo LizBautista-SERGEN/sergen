@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { ModulationLegend } from "../admin/modulation/ModulationLegend";
 import { toast } from "sonner";
+import { ForecastSettings } from "@/types/forecast";
 
 interface RiskManagementProps {
   energyData: EnergyData[];
@@ -19,13 +19,6 @@ interface RiskManagementProps {
 interface ModulationDay {
   date: string;
   is_modulated: boolean;
-}
-
-interface ForecastSettings {
-  id: string;
-  risk_level: string;
-  time_range: string;
-  last_update: string;
 }
 
 export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProps) => {
@@ -54,7 +47,7 @@ export const RiskManagement = ({ energyData, date, setDate }: RiskManagementProp
         }
 
         if (data) {
-          setSettings(data);
+          setSettings(data as ForecastSettings);
           setTimeRange(data.time_range || "18:00 - 23:00");
           if (data.last_update) {
             setLastUpdated(new Date(data.last_update));

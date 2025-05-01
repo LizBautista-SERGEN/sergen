@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ForecastSettings } from "@/types/forecast";
 
 export const RiskSettingsTab = () => {
   const [riskLevel, setRiskLevel] = useState("MEDIO");
@@ -40,6 +41,10 @@ export const RiskSettingsTab = () => {
             setStartHour(start.trim());
             setEndHour(end.trim());
           }
+        } else {
+          // Default values if time_range doesn't exist
+          setStartHour("18:00");
+          setEndHour("23:00");
         }
       }
     } catch (error) {
