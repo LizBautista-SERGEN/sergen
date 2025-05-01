@@ -99,15 +99,41 @@ export const useModulationData = () => {
         setSelectedDayData({ date: dateStr, is_modulated: !currentValue });
       }
 
-      // Now persist to database
-      const { error } = await supabase
+      // First check if the record exists
+      const { data: existingData, error: checkError } = await supabase
         .from('modulation_days')
-        .upsert([{
-          date: dateStr,
-          is_modulated: !currentValue
-        }], {
-          onConflict: 'date'
-        });
+        .select('id')
+        .eq('date', dateStr)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error('Error checking existing modulation:', checkError);
+        toast.error('Error al verificar modulación existente');
+        fetchModulationData(selectedMonth); // Revert optimistic update
+        return;
+      }
+      
+      let error;
+      
+      if (existingData) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('modulation_days')
+          .update({ is_modulated: !currentValue })
+          .eq('date', dateStr);
+          
+        error = updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('modulation_days')
+          .insert([{
+            date: dateStr,
+            is_modulated: !currentValue
+          }]);
+          
+        error = insertError;
+      }
 
       if (error) {
         console.error('Error al actualizar modulación:', error);
