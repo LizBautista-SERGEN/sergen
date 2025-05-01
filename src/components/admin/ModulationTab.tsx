@@ -6,10 +6,11 @@ import { SelectedDayModulation } from "./modulation/SelectedDayModulation";
 import { ModulationCalendar } from "./modulation/ModulationCalendar";
 import { ModulationLegend } from "./modulation/ModulationLegend";
 import { ModulationTable } from "./modulation/ModulationTable";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const ModulationTab = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -48,6 +49,7 @@ export const ModulationTab = () => {
     selectedMonth,
     modulationData,
     isLoading,
+    isRefreshing,
     selectedDayData,
     startDate,
     handleToggleModulation,
@@ -56,16 +58,23 @@ export const ModulationTab = () => {
     isDateInFuture,
     handleDateSelect,
     setSelectedMonth,
-    fetchModulationData
+    fetchModulationData,
+    refreshData
   } = useModulationData();
 
-  // Refresh data when tab becomes visible or when selectedMonth changes
+  // Manual refresh handler
+  const handleManualRefresh = useCallback(() => {
+    console.log('Manual refresh triggered');
+    refreshData();
+  }, [refreshData]);
+
+  // Refresh data when tab becomes visible
   useEffect(() => {
     if (isVisible) {
       console.log('Tab is visible, refreshing modulation data');
-      fetchModulationData(selectedMonth);
+      refreshData();
     }
-  }, [isVisible, selectedMonth, fetchModulationData]);
+  }, [isVisible, refreshData]);
 
   if (!isAuthenticated) {
     return (
@@ -81,10 +90,22 @@ export const ModulationTab = () => {
 
   return (
     <div className="space-y-8">
-      <MonthSelector 
-        selectedMonth={selectedMonth} 
-        onMonthChange={handleMonthChange} 
-      />
+      <div className="flex justify-between items-center">
+        <MonthSelector 
+          selectedMonth={selectedMonth} 
+          onMonthChange={handleMonthChange} 
+        />
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleManualRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Actualizar datos
+        </Button>
+      </div>
 
       <div className="flex justify-between gap-6">
         <div className="w-1/2">

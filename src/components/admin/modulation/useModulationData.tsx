@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { format, isAfter, startOfMonth, endOfMonth, addMonths, startOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,12 +17,16 @@ export const useModulationData = () => {
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchModulationData = useCallback(async (month: Date) => {
     setIsLoading(true);
     try {
       const start = startOfMonth(month).toISOString().split('T')[0];
       const end = endOfMonth(month).toISOString().split('T')[0];
+
+      // Log fetching operation
+      console.log(`Fetching modulation data from ${start} to ${end}`);
 
       const { data, error } = await supabase
         .from('modulation_days')
@@ -38,13 +41,24 @@ export const useModulationData = () => {
         return;
       }
 
-      console.log('Fetched modulation data:', data);
-      setModulationData(data || []);
+      // Remove duplicates (keep the latest entry for each date)
+      const uniqueData: Record<string, ModulationDay> = {};
+      
+      if (data) {
+        data.forEach(item => {
+          uniqueData[item.date] = item;
+        });
+      }
+      
+      const cleanedData = Object.values(uniqueData);
+      console.log('Fetched and cleaned modulation data:', cleanedData);
+      
+      setModulationData(cleanedData);
       
       // Update selected day data if there's a selected date
       if (selectedDate) {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const dayRecord = data?.find(d => d.date === dateStr) || null;
+        const dayRecord = cleanedData.find(d => d.date === dateStr) || null;
         setSelectedDayData(dayRecord);
       }
     } catch (error) {
@@ -52,13 +66,16 @@ export const useModulationData = () => {
       toast.error('Error al cargar los datos de modulación');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, [selectedDate]);
 
+  // Initial fetch and when month changes
   useEffect(() => {
     fetchModulationData(selectedMonth);
   }, [selectedMonth, fetchModulationData]);
 
+  // Update selected day data when selectedDate or modulationData changes
   useEffect(() => {
     if (selectedDate) {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -81,8 +98,8 @@ export const useModulationData = () => {
       // Log the operation being attempted
       console.log(`Toggling modulation for ${dateStr} from ${currentValue} to ${!currentValue}`);
 
-      // Fix: update the upsert call to match the expected type
-      const { error, data } = await supabase
+      // Update the database
+      const { error } = await supabase
         .from('modulation_days')
         .upsert({
           date: dateStr,
@@ -97,7 +114,7 @@ export const useModulationData = () => {
         return;
       }
 
-      console.log('Modulation update successful:', data);
+      console.log('Modulation update successful for date', dateStr);
 
       // Update the local state for immediate feedback
       const updatedData = modulationData.map(day => 
@@ -123,6 +140,11 @@ export const useModulationData = () => {
       console.error('Error en handleToggleModulation:', error);
       toast.error('Error al actualizar la modulación');
     }
+  };
+
+  const refreshData = () => {
+    setIsRefreshing(true);
+    fetchModulationData(selectedMonth);
   };
 
   const handleMonthChange = (increment: boolean) => {
@@ -168,6 +190,7 @@ export const useModulationData = () => {
     selectedMonth,
     modulationData,
     isLoading,
+    isRefreshing,
     selectedDayData,
     startDate,
     handleToggleModulation,
@@ -176,6 +199,7 @@ export const useModulationData = () => {
     isDateInFuture,
     handleDateSelect,
     setSelectedMonth,
-    fetchModulationData, // Exported to allow manual refresh
+    fetchModulationData,
+    refreshData, // Exported to allow manual refresh
   };
 };
