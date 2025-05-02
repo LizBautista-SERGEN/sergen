@@ -831,6 +831,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_user_account: {
+        Args: {
+          p_id: string
+          p_email: string
+          p_role: string
+          p_has_access: boolean
+          p_business_name?: string
+        }
+        Returns: undefined
+      }
       clear_monthly_forecast: {
         Args: Record<PropertyKey, never>
         Returns: undefined

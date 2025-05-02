@@ -15,12 +15,19 @@ export const useAuth = () => {
     try {
       const { data, error } = await supabase
         .from('user_accounts')
-        .select('role')
+        .select('role, has_access')
         .eq('id', userId)
         .single();
       
       if (error) {
         console.error('Error fetching user role:', error);
+        return false;
+      }
+      
+      // Si el usuario no tiene acceso, cerrar sesión
+      if (!data?.has_access) {
+        toast.error('Su cuenta está suspendida. Contacte al administrador.');
+        await supabase.auth.signOut();
         return false;
       }
       
@@ -81,6 +88,10 @@ export const useAuth = () => {
               // Verificar si es superuser
               const isSuperUserResult = await checkUserRole(session.user.id);
               setIsSuperUser(isSuperUserResult);
+              
+              if (!isSuperUserResult) {
+                navigate('/servicios/control');
+              }
               
               // Actualizamos el último login sin bloquear el flujo usando setTimeout
               setTimeout(() => {

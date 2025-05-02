@@ -24,6 +24,12 @@ interface NewUserData {
   business_name: string;
 }
 
+// Función para validar formato de email
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void }) => {
   const [newUser, setNewUser] = useState<NewUserData>({
     email: "",
@@ -39,10 +45,17 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       
       if (!newUser.email || !newUser.password) {
         toast.error('El correo y la contraseña son obligatorios');
+        setIsSubmitting(false);
         return;
       }
 
+      // Validar formato de correo electrónico
       const trimmedEmail = newUser.email.toLowerCase().trim();
+      if (!validateEmail(trimmedEmail)) {
+        toast.error('Formato de correo electrónico inválido');
+        setIsSubmitting(false);
+        return;
+      }
 
       // Verificar si el usuario ya existe en user_accounts
       const { data: existingUsers, error: existingError } = await supabase
@@ -80,35 +93,36 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         const knownUserId = 'b99fc3a6-9529-43c8-8fc6-18ec986b1c25';
         
         try {
-          // Primero intentamos crear el usuario en Auth
-          await supabase.auth.signUp({
-            email: trimmedEmail,
-            password: newUser.password,
-            options: {
-              data: {
-                business_name: newUser.business_name,
-                role: newUser.role
+          // Crear en Auth o manejar el error si ya existe
+          try {
+            await supabase.auth.signUp({
+              email: trimmedEmail,
+              password: newUser.password,
+              options: {
+                data: {
+                  business_name: newUser.business_name,
+                  role: newUser.role
+                }
               }
-            }
-          });
-        } catch (authError) {
-          // Si falla la creación en Auth, podría ser porque ya existe
-          console.log('Registro de Auth falló, probablemente el usuario ya existe:', authError);
-        }
-        
-        // Crear la entrada en user_accounts usando una función RPC
-        try {
-          const { error: rpcError } = await supabase.rpc('admin_create_user_account', {
-            p_id: knownUserId,
-            p_email: trimmedEmail,
-            p_role: newUser.role,
-            p_has_access: true,
-            p_business_name: newUser.business_name || null
-          });
+            });
+          } catch (authError) {
+            console.log('Registro de Auth falló, probablemente el usuario ya existe:', authError);
+          }
           
-          if (rpcError) {
-            console.error('Error usando RPC para crear usuario:', rpcError);
-            toast.error('Error al registrar usuario especial');
+          // Insertar directamente en user_accounts
+          const { error: insertError } = await supabase
+            .from('user_accounts')
+            .insert({
+              id: knownUserId,
+              email: trimmedEmail,
+              role: newUser.role,
+              has_access: true,
+              business_name: newUser.business_name || null
+            });
+            
+          if (insertError) {
+            console.error('Error al crear usuario especial:', insertError);
+            toast.error(`Error al registrar usuario especial: ${insertError.message}`);
             setIsSubmitting(false);
             return;
           }
@@ -123,8 +137,11 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
           onUserCreated();
           setIsSubmitting(false);
           return;
-        } catch (rpcError) {
-          console.error('Error en RPC para crear usuario:', rpcError);
+        } catch (error: any) {
+          console.error('Error en la creación de usuario especial:', error);
+          toast.error(`Error: ${error.message || 'Error desconocido'}`);
+          setIsSubmitting(false);
+          return;
         }
       }
       
@@ -141,50 +158,8 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       });
 
       if (error) {
-        // Si hay un error específico de usuario ya existente
-        if (error.message.includes("already")) {
-          // Intentamos iniciar sesión para obtener el ID de usuario
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: trimmedEmail,
-            password: newUser.password,
-          });
-          
-          if (signInError) {
-            toast.error(`El usuario existe pero no pudimos sincronizarlo: ${signInError.message}`);
-            setIsSubmitting(false);
-            return;
-          }
-          
-          // Si el inicio de sesión fue exitoso, creamos la entrada en user_accounts
-          if (signInData.user) {
-            const { error: rpcError } = await supabase.rpc('admin_create_user_account', {
-              p_id: signInData.user.id,
-              p_email: trimmedEmail,
-              p_role: newUser.role,
-              p_has_access: true,
-              p_business_name: newUser.business_name || null
-            });
-            
-            if (rpcError) {
-              console.error('Error usando RPC para crear usuario:', rpcError);
-              toast.error('Error al sincronizar usuario existente');
-              setIsSubmitting(false);
-              return;
-            }
-            
-            toast.success('Usuario sincronizado correctamente');
-            setNewUser({
-              email: "",
-              password: "",
-              role: "user",
-              business_name: ""
-            });
-            onUserCreated();
-          }
-        } else {
-          console.error('Error creating user:', error);
-          toast.error(`Error al crear usuario: ${error.message}`);
-        }
+        console.error('Error de registro:', error);
+        toast.error(`Error al crear usuario: ${error.message}`);
         setIsSubmitting(false);
         return;
       }
@@ -192,32 +167,36 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       if (data.user) {
         console.log('Usuario creado exitosamente:', data.user.id);
         
-        // Crear la entrada en user_accounts usando una función RPC
-        const { error: rpcError } = await supabase.rpc('admin_create_user_account', {
-          p_id: data.user.id,
-          p_email: trimmedEmail,
-          p_role: newUser.role,
-          p_has_access: true,
-          p_business_name: newUser.business_name || null
+        // Insertar directamente en user_accounts
+        const { error: insertError } = await supabase
+          .from('user_accounts')
+          .insert({
+            id: data.user.id,
+            email: trimmedEmail,
+            role: newUser.role,
+            has_access: true,
+            business_name: newUser.business_name || null
+          });
+        
+        if (insertError) {
+          console.error('Error registrando usuario en user_accounts:', insertError);
+          toast.error(`Error al configurar perfil: ${insertError.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+        
+        toast.success('Usuario creado exitosamente');
+        
+        // Reset form
+        setNewUser({
+          email: "",
+          password: "",
+          role: "user",
+          business_name: ""
         });
         
-        if (rpcError) {
-          console.error('Error usando RPC para crear usuario:', rpcError);
-          toast.error("La cuenta fue creada pero hubo un error al configurar el perfil");
-        } else {
-          toast.success('Usuario creado exitosamente');
-          
-          // Reset form
-          setNewUser({
-            email: "",
-            password: "",
-            role: "user",
-            business_name: ""
-          });
-          
-          // Callback to refresh user list
-          onUserCreated();
-        }
+        // Callback to refresh user list
+        onUserCreated();
       }
     } catch (error: any) {
       console.error('Error creating user:', error);

@@ -60,17 +60,19 @@ export const useUserManagement = () => {
     }
   };
 
-  // Función para añadir un usuario manualmente a user_accounts usando service role
-  const addUserManually = async (userId: string, userEmail: string, role: string = 'user') => {
+  // Función para añadir un usuario manualmente a user_accounts sin usar RPC
+  const addUserManually = async (userId: string, userEmail: string, role: string = 'user', businessName?: string) => {
     try {
-      // Use the server-side RLS bypass with service role key
-      // This operation should be done through a secure edge function in production
-      const { error } = await supabase.rpc('admin_create_user_account', {
-        p_id: userId,
-        p_email: userEmail.toLowerCase(),
-        p_role: role,
-        p_has_access: true
-      });
+      // Insert directly into user_accounts table 
+      const { error } = await supabase
+        .from('user_accounts')
+        .insert({
+          id: userId,
+          email: userEmail.toLowerCase(),
+          role: role,
+          has_access: true,
+          business_name: businessName || null
+        });
         
       if (error) {
         console.error('Error adding user manually:', error);
