@@ -43,21 +43,72 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         return;
       }
 
+      const trimmedEmail = newUser.email.toLowerCase().trim();
+
       // Primero verificar si el usuario ya existe en user_accounts
       const { data: existingUser } = await supabase
         .from('user_accounts')
-        .select('id, email')
-        .eq('email', newUser.email.toLowerCase().trim())
+        .select('id, email, has_access')
+        .eq('email', trimmedEmail)
         .single();
       
       if (existingUser) {
-        toast.error('Este correo ya está registrado en el sistema');
+        if (!existingUser.has_access) {
+          // Si el usuario existe pero no tiene acceso, le damos acceso
+          const { error: updateError } = await supabase
+            .from('user_accounts')
+            .update({ has_access: true })
+            .eq('id', existingUser.id);
+            
+          if (updateError) {
+            toast.error('Error al restaurar acceso al usuario');
+          } else {
+            toast.success('Se ha restaurado el acceso al usuario');
+            onUserCreated();
+          }
+        } else {
+          toast.error('Este correo ya está registrado en el sistema');
+        }
         return;
       }
 
-      // Intentamos registrar el usuario con la API de Auth
+      // Verificar si el usuario existe en Auth
+      const { data: authData } = await supabase.auth.admin.listUsers();
+      const existingAuthUser = authData?.users?.find(
+        (user: User) => user.email?.toLowerCase() === trimmedEmail
+      );
+      
+      if (existingAuthUser) {
+        // Si existe en Auth pero no en user_accounts, lo agregamos a user_accounts
+        const { error: insertError } = await supabase
+          .from('user_accounts')
+          .insert({
+            id: existingAuthUser.id,
+            email: trimmedEmail,
+            role: newUser.role,
+            has_access: true,
+            business_name: newUser.business_name
+          });
+          
+        if (insertError) {
+          console.error('Error registrando usuario en user_accounts:', insertError);
+          toast.error('Error al sincronizar el usuario');
+        } else {
+          toast.success('Usuario sincronizado correctamente');
+          setNewUser({
+            email: "",
+            password: "",
+            role: "user",
+            business_name: ""
+          });
+          onUserCreated();
+        }
+        return;
+      }
+
+      // Si no existe el usuario, lo creamos en Auth
       const { data, error } = await supabase.auth.signUp({
-        email: newUser.email.toLowerCase().trim(),
+        email: trimmedEmail,
         password: newUser.password,
         options: {
           data: {
@@ -68,56 +119,31 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       });
 
       if (error) {
-        // Si el error es que el usuario ya existe, intentamos insertar directamente en user_accounts
-        if (error.message.includes('already registered') || error.code === 'user_already_exists') {
-          // Esta línea tiene un error, la API ha cambiado y no existe getUserByEmail
-          // Intentemos buscar al usuario por su email con listUsers() en su lugar
-          const { data: authUsers } = await supabase.auth.admin.listUsers();
-          
-          const authUser = authUsers?.users?.find(
-            (user: User) => user.email?.toLowerCase() === newUser.email.toLowerCase().trim()
-          );
-          
-          if (authUser) {
-            // Insertar manualmente en user_accounts
-            const { error: insertError } = await supabase
-              .from('user_accounts')
-              .insert({
-                id: authUser.id,
-                email: newUser.email.toLowerCase().trim(),
-                role: newUser.role,
-                has_access: true,
-                business_name: newUser.business_name
-              });
-              
-            if (insertError) {
-              console.error('Error inserting user in user_accounts:', insertError);
-              toast.error(`Error al crear usuario: ${insertError.message}`);
-              return;
-            }
-            
-            toast.success('Usuario creado exitosamente');
-            setNewUser({
-              email: "",
-              password: "",
-              role: "user",
-              business_name: ""
-            });
-            onUserCreated();
-            return;
-          } else {
-            toast.error('El correo ya está registrado pero no se pudo recuperar la información del usuario');
-            return;
-          }
-        }
-        
         console.error('Error creating user:', error);
         toast.error(`Error al crear usuario: ${error.message}`);
         return;
       }
 
-      toast.success('Usuario creado exitosamente');
-      
+      if (data.user) {
+        // Asegurarnos de que el usuario también se registre en user_accounts
+        const { error: insertError } = await supabase
+          .from('user_accounts')
+          .insert({
+            id: data.user.id,
+            email: trimmedEmail,
+            role: newUser.role,
+            has_access: true,
+            business_name: newUser.business_name
+          });
+          
+        if (insertError) {
+          console.error('Error creating user account:', insertError);
+          toast.error("La cuenta fue creada pero hubo un error al configurar el perfil");
+        } else {
+          toast.success('Usuario creado exitosamente');
+        }
+      }
+
       // Reset form
       setNewUser({
         email: "",

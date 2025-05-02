@@ -58,12 +58,16 @@ export const useAuthForms = () => {
         // Verificar si el usuario existe en user_accounts
         const { data: userAccountData, error: userAccountError } = await supabase
           .from('user_accounts')
-          .select('email')
+          .select('email, has_access')
           .eq('email', trimmedEmail)
           .single();
           
         if (!userAccountError && userAccountData) {
-          toast.error("Contraseña incorrecta");
+          if (!userAccountData.has_access) {
+            toast.error("Su cuenta está suspendida. Contacte al administrador.");
+          } else {
+            toast.error("Contraseña incorrecta");
+          }
         } else {
           // Verificar si existe en auth pero no en user_accounts
           try {
@@ -85,7 +89,7 @@ export const useAuthForms = () => {
                 
               if (insertError) {
                 console.error('Error creating user account:', insertError);
-                toast.error("Credenciales inválidas");
+                toast.error("Error al sincronizar su cuenta. Contacte al administrador.");
               } else {
                 // Intentar iniciar sesión de nuevo
                 const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -101,10 +105,11 @@ export const useAuthForms = () => {
                 }
               }
             } else {
-              toast.error("Credenciales inválidas");
+              toast.error("Credenciales inválidas o usuario no registrado");
             }
-          } catch {
-            toast.error("Credenciales inválidas");
+          } catch (error) {
+            console.error('Error verificando usuario:', error);
+            toast.error("Error en la autenticación");
           }
         }
         

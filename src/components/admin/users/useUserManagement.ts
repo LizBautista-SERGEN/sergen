@@ -35,6 +35,9 @@ export const useUserManagement = () => {
       const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
       
       if (!authError && authData?.users) {
+        console.log('Auth users:', authData.users.length);
+        console.log('User accounts:', data?.length || 0);
+        
         // Crear un mapa de usuarios existentes para búsqueda rápida
         const existingUserMap = new Map((data || []).map(user => [user.email.toLowerCase(), user]));
         
@@ -43,25 +46,33 @@ export const useUserManagement = () => {
           (authUser: SupabaseUser) => authUser.email && !existingUserMap.has(authUser.email.toLowerCase())
         );
         
+        console.log('Missing users to add:', missingUsers.length);
+        if (missingUsers.length > 0) {
+          console.log('Missing users details:', missingUsers.map(u => u.email));
+        }
+        
         // Si hay usuarios faltantes, los agregamos a user_accounts
         if (missingUsers.length > 0) {
           const usersToAdd = missingUsers.map((user: SupabaseUser) => ({
             id: user.id,
             email: user.email || '',
-            role: 'user',
+            role: user.user_metadata?.role || 'user',
             has_access: true,
             business_name: user.user_metadata?.business_name || null,
             created_at: user.created_at
           }));
           
           if (usersToAdd.length > 0) {
+            console.log('Adding users to user_accounts:', usersToAdd);
             const { error: insertError } = await supabase
               .from('user_accounts')
               .insert(usersToAdd);
               
             if (insertError) {
               console.error('Error synchronizing users:', insertError);
+              toast.error('Error al sincronizar usuarios');
             } else {
+              toast.success(`Se sincronizaron ${usersToAdd.length} usuarios correctamente`);
               // Si se agregaron usuarios, actualizamos la lista
               const { data: updatedData, error: fetchError } = await supabase
                 .from('user_accounts')
@@ -70,6 +81,7 @@ export const useUserManagement = () => {
                 
               if (!fetchError && updatedData) {
                 setUsers(updatedData);
+                setLoading(false);
                 return;
               }
             }
