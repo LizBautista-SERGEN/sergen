@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { format, startOfMonth, endOfMonth, isAfter, isBefore, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { ModulationDay } from "../types";
 
@@ -40,24 +40,19 @@ export const useModulationData = (selectedMonth: Date) => {
     fetchModulationData();
   }, [selectedMonth]);
 
-  // Count modulated days in the current month
+  // Count modulated days in the selected month
   useEffect(() => {
-    const now = new Date();
-    const currentMonth = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-    
     let count = 0;
+    
+    // Count days where is_modulated is true for the selected month
     modulationData.forEach(data => {
-      const dataDate = parseISO(data.date);
-      if (data.is_modulated && 
-          isAfter(dataDate, currentMonth) && 
-          isBefore(dataDate, monthEnd)) {
+      if (data.is_modulated) {
         count++;
       }
     });
 
     setModulatedDays(count);
-  }, [modulationData]);
+  }, [modulationData, selectedMonth]);
 
   const isDateModulated = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');

@@ -8,8 +8,8 @@ export const HistoricalPowerMaximum = () => {
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Potencia Máxima (18:00 - 23:00)</CardTitle>
+      <CardHeader className="pb-4">
+        <CardTitle>Potencia Máxima (18:00 - 23:00)</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
