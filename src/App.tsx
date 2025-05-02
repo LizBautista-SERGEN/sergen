@@ -18,7 +18,6 @@ import ServiceControl from "./pages/ServiceControl";
 import ServiceContractual from "./pages/ServiceContractual";
 import ServiceEfficiency from "./pages/ServiceEfficiency";
 import ServiceDemanda from "./pages/ServiceDemanda";
-import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
@@ -57,10 +56,8 @@ const App = () => {
                   
                   {/* Rutas con layout de dashboard */}
                   <Route element={<DashboardLayout />}>
-                    <Route path="/perfil" element={<ProfilePage />} />
                     <Route path="/servicios/control" element={<ServiceControl />} />
                     <Route path="/configuracion" element={<ConfiguracionPage />} />
-                    <Route path="/admin/panel" element={<AdminPanel />} />
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />
