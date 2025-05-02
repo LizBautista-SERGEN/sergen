@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,11 +45,8 @@ const LoginPage = () => {
         }
 
         console.log('Perfil obtenido:', profile);
-        if (profile?.role === 'superuser') {
-          navigate('/admin/panel');
-        } else {
-          navigate('/dashboard');
-        }
+        // Redirigir directamente a servicios/control en lugar de dashboard o admin/panel
+        navigate('/servicios/control');
       }
     } catch (error) {
       console.error('Error inesperado al verificar sesión:', error);
@@ -114,11 +110,8 @@ const LoginPage = () => {
         setPassword("");
         
         toast.success("Inicio de sesión exitoso");
-        if (profile?.role === 'superuser') {
-          navigate('/admin/panel');
-        } else {
-          navigate('/dashboard');
-        }
+        // Redirigir directamente a servicios/control en lugar de dashboard o admin/panel
+        navigate('/servicios/control');
       }
     } catch (error: any) {
       console.error('Error de autenticación:', error);
