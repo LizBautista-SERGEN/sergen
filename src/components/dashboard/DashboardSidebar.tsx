@@ -1,5 +1,5 @@
 
-import { User, BarChart2, FileText, HelpCircle, Settings } from "lucide-react";
+import { User, BarChart2, Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const links = [
@@ -12,16 +12,6 @@ const links = [
     label: "Control de Demanda", 
     href: "/servicios/control",
     icon: <BarChart2 className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
-  },
-  { 
-    label: "Reporte Técnico", 
-    href: "/informes",
-    icon: <FileText className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
-  },
-  { 
-    label: "Asistente Técnico", 
-    href: "/asistente",
-    icon: <HelpCircle className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
   },
   { 
     label: "Configuración", 

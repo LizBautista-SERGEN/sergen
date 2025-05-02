@@ -20,8 +20,6 @@ import ServiceEfficiency from "./pages/ServiceEfficiency";
 import ServiceDemanda from "./pages/ServiceDemanda";
 import AdminPanel from "./pages/AdminPanel";
 import ProfilePage from "./pages/ProfilePage";
-import InformesPage from "./pages/InformesPage";
-import AsistentePage from "./pages/AsistentePage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 
@@ -61,8 +59,6 @@ const App = () => {
                   <Route element={<DashboardLayout />}>
                     <Route path="/perfil" element={<ProfilePage />} />
                     <Route path="/servicios/control" element={<ServiceControl />} />
-                    <Route path="/informes" element={<InformesPage />} />
-                    <Route path="/asistente" element={<AsistentePage />} />
                     <Route path="/configuracion" element={<ConfiguracionPage />} />
                     <Route path="/admin/panel" element={<AdminPanel />} />
                   </Route>
