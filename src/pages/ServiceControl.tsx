@@ -10,6 +10,7 @@ import { EnergyData } from "@/types/energy";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const ServiceControl = () => {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
@@ -17,24 +18,23 @@ const ServiceControl = () => {
   const navigate = useNavigate();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(false);
+  const { session } = useAuth();
 
-  // Effect to check authentication and load initial data
+  // Effect to load data when session is available
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadData = async () => {
+      if (!session?.user) {
+        return;
+      }
+      
       try {
         setLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          navigate('/login');
-          return;
-        }
         
         // Fetch energy data for the authenticated user
         const { data, error } = await supabase
           .from('energy_data')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', session.user.id)
           .order('date', { ascending: false });
           
         if (error) {
@@ -52,16 +52,21 @@ const ServiceControl = () => {
           console.error('Error updating forecast data:', e);
         }
       } catch (error) {
-        console.error('Authentication error:', error);
-        toast.error('Error de autenticación');
-        navigate('/login');
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
-  }, [navigate]);
+    loadData();
+  }, [session]);
+
+  // Redirect to login if no session
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate('/login');
+    }
+  }, [session, loading, navigate]);
 
   return (
     <SidebarProvider>
@@ -77,24 +82,30 @@ const ServiceControl = () => {
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-4 space-y-6">
-                <RiskManagement 
-                  energyData={energyData} 
-                  date={date} 
-                  setDate={setDate}
-                />
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <p className="text-lg text-gray-600">Cargando datos...</p>
               </div>
+            ) : (
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-4 space-y-6">
+                  <RiskManagement 
+                    energyData={energyData} 
+                    date={date} 
+                    setDate={setDate}
+                  />
+                </div>
 
-              <div className="col-span-8 space-y-6">
-                <PowerCharts 
-                  energyData={energyData}
-                  date={date}
-                />
-                
-                <HistoricalPowerMaximum />
+                <div className="col-span-8 space-y-6">
+                  <PowerCharts 
+                    energyData={energyData}
+                    date={date}
+                  />
+                  
+                  <HistoricalPowerMaximum />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
