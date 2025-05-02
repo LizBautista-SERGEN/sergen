@@ -22,7 +22,7 @@ export const RiskLevelIndicator = ({ riskLevel }: RiskLevelIndicatorProps) => {
   return (
     <div className="text-center w-[242px]">
       <p className="text-[#8E9196] text-lg font-medium mb-2">Riesgo de coincidente</p>
-      <p style={{ backgroundColor: getRiskLevelColor(riskLevel) }} className="text-white px-4 h-[95px] rounded w-full flex items-center justify-center text-xl font-medium">
+      <p style={{ backgroundColor: getRiskLevelColor(riskLevel) }} className="text-white px-4 h-[66px] rounded w-full flex items-center justify-center text-2xl font-medium">
         {riskLevel}
       </p>
     </div>
