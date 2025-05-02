@@ -69,15 +69,20 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       if (error) {
         // Si el error es que el usuario ya existe, intentamos insertar directamente en user_accounts
         if (error.message.includes('already registered') || error.code === 'user_already_exists') {
-          // Obtener el usuario desde auth.users (esto requiere permisos de servicio)
-          const { data: authUser } = await supabase.auth.admin.getUserByEmail(newUser.email);
+          // Esta línea tiene un error, la API ha cambiado y no existe getUserByEmail
+          // Intentemos buscar al usuario por su email con listUsers() en su lugar
+          const { data: authUsers } = await supabase.auth.admin.listUsers();
           
-          if (authUser?.user) {
+          const authUser = authUsers?.users?.find(
+            user => user.email?.toLowerCase() === newUser.email.toLowerCase().trim()
+          );
+          
+          if (authUser) {
             // Insertar manualmente en user_accounts
             const { error: insertError } = await supabase
               .from('user_accounts')
               .insert({
-                id: authUser.user.id,
+                id: authUser.id,
                 email: newUser.email.toLowerCase().trim(),
                 role: newUser.role,
                 has_access: true,

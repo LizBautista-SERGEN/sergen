@@ -66,18 +66,20 @@ export const useAuthForms = () => {
         } else {
           // Verificar si existe en auth pero no en user_accounts
           try {
-            const { data: authUserData } = await supabase.auth.admin.getUserByEmail(trimmedEmail);
-            if (authUserData?.user) {
+            const { data: authData } = await supabase.auth.admin.listUsers();
+            const authUser = authData?.users?.find(user => user.email?.toLowerCase() === trimmedEmail);
+            
+            if (authUser) {
               // El usuario existe en auth pero no en user_accounts
               // Intentar crear el registro en user_accounts
               const { error: insertError } = await supabase
                 .from('user_accounts')
                 .insert({
-                  id: authUserData.user.id,
+                  id: authUser.id,
                   email: trimmedEmail,
-                  role: authUserData.user.user_metadata?.role || 'user',
+                  role: authUser.user_metadata?.role || 'user',
                   has_access: true,
-                  business_name: authUserData.user.user_metadata?.business_name || null
+                  business_name: authUser.user_metadata?.business_name || null
                 });
                 
               if (insertError) {

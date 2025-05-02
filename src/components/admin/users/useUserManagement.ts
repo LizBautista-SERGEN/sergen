@@ -31,14 +31,14 @@ export const useUserManagement = () => {
       }
 
       // Verificar si hay usuarios en auth que no estén en user_accounts
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
       
-      if (!authError && authUsers.users) {
+      if (!authError && authData?.users) {
         // Crear un mapa de usuarios existentes para búsqueda rápida
-        const existingUserMap = new Map(data?.map(user => [user.email.toLowerCase(), user]) || []);
+        const existingUserMap = new Map((data || []).map(user => [user.email.toLowerCase(), user]));
         
         // Usuarios que están en auth pero no en user_accounts
-        const missingUsers = authUsers.users.filter(
+        const missingUsers = authData.users.filter(
           authUser => authUser.email && !existingUserMap.has(authUser.email.toLowerCase())
         );
         
