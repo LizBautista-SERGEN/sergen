@@ -15,22 +15,32 @@ import { useAuth } from "@/hooks/useAuth";
 const ServiceControl = () => {
   const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
-  const navigate = useNavigate();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(false);
-  const { session } = useAuth();
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const navigate = useNavigate();
+  const { session, loading: authLoading } = useAuth();
 
-  // Effect to load data when session is available
+  // Redirigir si no hay sesión
+  useEffect(() => {
+    if (!authLoading && !session) {
+      console.log("No hay sesión activa, redirigiendo a login");
+      navigate('/login');
+    }
+  }, [session, authLoading, navigate]);
+
+  // Cargar datos solo cuando tengamos sesión
   useEffect(() => {
     const loadData = async () => {
-      if (!session?.user) {
+      if (authLoading || !session?.user || dataLoaded) {
         return;
       }
       
       try {
         setLoading(true);
+        console.log("Cargando datos para el usuario:", session.user.id);
         
-        // Fetch energy data for the authenticated user
+        // Consultar datos de energía para el usuario autenticado
         const { data, error } = await supabase
           .from('energy_data')
           .select('*')
@@ -41,10 +51,12 @@ const ServiceControl = () => {
           console.error('Error loading energy data:', error);
           toast.error('Error al cargar los datos de energía');
         } else {
+          console.log("Datos obtenidos:", data?.length || 0, "registros");
           setEnergyData(data || []);
+          setDataLoaded(true);
         }
         
-        // Update coes_forecast data
+        // Actualizar datos de pronóstico COES
         try {
           await supabase.functions.invoke('get-coes-forecast');
           setLastUpdated(new Date());
@@ -52,21 +64,28 @@ const ServiceControl = () => {
           console.error('Error updating forecast data:', e);
         }
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Error general al cargar datos:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [session]);
+  }, [session, authLoading, dataLoaded, navigate]);
 
-  // Redirect to login if no session
-  useEffect(() => {
-    if (!loading && !session) {
-      navigate('/login');
-    }
-  }, [session, loading, navigate]);
+  // Solo renderizar el contenido cuando no estemos cargando autenticación
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-lg text-gray-600">Cargando autenticación...</p>
+      </div>
+    );
+  }
+
+  // Si no hay sesión, no renderizar nada (el efecto redireccionará)
+  if (!session) {
+    return null;
+  }
 
   return (
     <SidebarProvider>

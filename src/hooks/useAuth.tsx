@@ -11,53 +11,61 @@ export const useAuth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener first
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (_event === 'SIGNED_OUT') {
-        console.log('Auth state changed: SIGNED_OUT');
-        setSession(null);
-        navigate('/login');
-      } else if (_event === 'TOKEN_REFRESHED') {
-        console.log('Auth state changed: TOKEN_REFRESHED');
-      }
-      
-      setSession(session);
-      
-      if (session) {
-        // When a session exists, update last_login in users_auth
-        setTimeout(() => {
-          supabase
-            .from('users_auth')
-            .update({ last_login: new Date().toISOString() })
-            .eq('id', session.user.id)
-            .then(({ error }) => {
-              if (error && !error.message.includes('JSON object requested')) {
-                console.error('Error updating last login:', error);
-              }
-            });
-        }, 0);
-      }
-      
-      setLoading(false);
-    });
-
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('Error getting session:', error);
-        setSession(null);
+    // Primero obtenemos la sesión actual
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting initial session:', error);
+        }
+        
+        setSession(session);
         setLoading(false);
-        navigate('/login');
-        return;
+      } catch (error) {
+        console.error('Unexpected error getting session:', error);
+        setLoading(false);
       }
-      
-      setSession(session);
-      setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    getInitialSession();
+    
+    // Configuramos el listener para cambios de sesión
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        console.log('Auth state change:', _event);
+        setSession(session);
+        
+        if (_event === 'SIGNED_OUT') {
+          navigate('/login');
+        } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
+          if (session?.user) {
+            // Actualizamos el último login sin bloquear el flujo
+            try {
+              setTimeout(() => {
+                supabase
+                  .from('users_auth')
+                  .update({ last_login: new Date().toISOString() })
+                  .eq('id', session.user.id)
+                  .then(({ error }) => {
+                    if (error && !error.message.includes('JSON object requested')) {
+                      console.error('Error updating last login:', error);
+                    }
+                  });
+              }, 0);
+            } catch (err) {
+              console.error('Error in update attempt:', err);
+            }
+          }
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [navigate]);
 
   return {

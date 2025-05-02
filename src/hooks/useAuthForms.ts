@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -15,21 +14,25 @@ export const useAuthForms = () => {
 
   const checkSession = async () => {
     try {
+      setLoading(true);
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
         console.error('Error al verificar sesión:', error);
+        setLoading(false);
         return;
       }
       
       if (session) {
         console.log('Sesión encontrada:', session);
-        
-        // Omit checking users_auth as it's not necessary to proceed
+        setLoading(false);
         navigate('/servicios/control');
+      } else {
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error inesperado al verificar sesión:', error);
+      setLoading(false);
     }
   };
 
