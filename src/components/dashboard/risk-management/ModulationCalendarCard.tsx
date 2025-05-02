@@ -2,7 +2,7 @@
 import React from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, isBefore, isAfter, isSameDay, parseISO } from "date-fns";
+import { format, isBefore, isAfter, isSameDay, parseISO, isSameMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { ModulationLegend } from "@/components/admin/modulation/ModulationLegend";
@@ -35,20 +35,25 @@ export const ModulationCalendarCard = ({
   };
 
   const getDateClassName = (date: Date): string => {
+    // First, check if the date is from a different month
+    if (!isSameMonth(date, selectedMonth)) {
+      return "text-white"; // Days from other months in white
+    }
+    
     const dateStr = format(date, 'yyyy-MM-dd');
     const modulationDay = modulationData.find(d => d.date === dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (isAfter(date, today)) {
-      return "text-gray-400"; // Días futuros en gris
+      return "text-gray-400"; // Future days in gray
     }
     
     if (modulationDay?.is_modulated) {
-      return "text-red-500 font-bold"; // Días modulados en rojo
+      return "text-red-500 font-bold"; // Modulated days in red
     }
     
-    return "text-green-500"; // Días no modulados en verde
+    return "text-green-500"; // Non-modulated days in green
   };
 
   const handleDateSelect = (selectedDate: Date | undefined) => {

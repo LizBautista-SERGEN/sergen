@@ -2,6 +2,7 @@
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { es } from "date-fns/locale";
+import { isSameMonth } from "date-fns";
 
 interface ModulationCalendarProps {
   selectedDate: Date;
@@ -22,6 +23,16 @@ export const ModulationCalendar = ({
   isDateInFuture,
   getDateClassName
 }: ModulationCalendarProps) => {
+  const getCalendarDateClassName = (date: Date): string => {
+    // Check if the date is from a different month first
+    if (!isSameMonth(date, selectedMonth)) {
+      return "text-white"; // Days from other months in white
+    }
+    
+    // Then apply the existing classification
+    return getDateClassName(date);
+  };
+
   return (
     <div className="bg-white p-4 rounded-lg border shadow-sm">
       <Calendar
@@ -39,7 +50,7 @@ export const ModulationCalendar = ({
             <div 
               className={cn(
                 "h-9 w-9 p-0 font-normal flex items-center justify-center",
-                getDateClassName(date)
+                getCalendarDateClassName(date)
               )}
             >
               {date.getDate()}
