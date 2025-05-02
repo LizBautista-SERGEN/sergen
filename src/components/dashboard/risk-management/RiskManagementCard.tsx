@@ -24,8 +24,8 @@ export const RiskManagementCard = ({
       <CardHeader className="pb-2">
         <CardTitle className="text-center">Gestión de riesgo</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="space-y-2 flex flex-col items-center">
+      <CardContent className="space-y-4">
+        <div className="space-y-4 flex flex-col items-center">
           <MaxPowerDisplay maxPower={maxPower} />
           <TimeRangeDisplay timeRange={timeRange} />
           <RiskLevelIndicator riskLevel={riskLevel} />
