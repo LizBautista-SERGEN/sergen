@@ -20,7 +20,7 @@ export const RiskManagementCard = ({
   modulatedDays
 }: RiskManagementCardProps) => {
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-center">Gestión de riesgo</CardTitle>
       </CardHeader>

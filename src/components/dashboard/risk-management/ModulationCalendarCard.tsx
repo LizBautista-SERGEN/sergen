@@ -1,17 +1,16 @@
 
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { format, parseISO } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format, isBefore, isAfter, isSameDay, parseISO } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { ModulationLegend } from "@/components/admin/modulation/ModulationLegend";
-import { ModulationDay } from "./types";
 
 interface ModulationCalendarCardProps {
   date: Date | undefined;
   selectedMonth: Date;
-  modulationData: ModulationDay[];
+  modulationData: { date: string; is_modulated: boolean }[];
   onDateSelect: (date: Date | undefined) => void;
   onMonthChange: (date: Date) => void;
 }
@@ -23,14 +22,25 @@ export const ModulationCalendarCard = ({
   onDateSelect,
   onMonthChange
 }: ModulationCalendarCardProps) => {
-  
+  const isDateModulated = (date: Date): boolean => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayData = modulationData.find(data => data.date === dateStr);
+    return dayData?.is_modulated || false;
+  };
+
+  const isDateInFuture = (date: Date): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return isAfter(date, today);
+  };
+
   const getDateClassName = (date: Date): string => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const modulationDay = modulationData.find(d => d.date === dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (isDateInFuture(date)) {
+    if (isAfter(date, today)) {
       return "text-gray-400"; // Días futuros en gris
     }
     
@@ -41,12 +51,6 @@ export const ModulationCalendarCard = ({
     return "text-green-500"; // Días no modulados en verde
   };
 
-  const isDateInFuture = (date: Date): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date > today;
-  };
-
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate && !isDateInFuture(selectedDate)) {
       onDateSelect(selectedDate);
@@ -54,7 +58,7 @@ export const ModulationCalendarCard = ({
   };
 
   return (
-    <Card className="mt-6">
+    <Card className="w-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-center">Calendario</CardTitle>
       </CardHeader>
