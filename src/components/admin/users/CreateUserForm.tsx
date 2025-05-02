@@ -72,6 +72,8 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         return;
       }
 
+      console.log('Intentando crear usuario:', trimmedEmail);
+      
       // Si no está en user_accounts, intentamos crear el usuario
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
@@ -87,10 +89,10 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       if (error) {
         // Si hay un error específico de usuario ya existente
         if (error.message.includes("already")) {
-          // Usuario existe en Auth pero no en user_accounts
-          // Ya que no podemos usar admin.getUserByEmail, intentaremos una solución alternativa
+          console.log('Usuario ya existe en Auth pero no en user_accounts');
           
           // Intentar iniciar sesión temporalmente para obtener el userId
+          // Esta sesión se cerrará al final
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: trimmedEmail,
             password: newUser.password
@@ -102,6 +104,8 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
             setIsSubmitting(false);
             return;
           }
+          
+          console.log('Sesión temporal creada para usuario:', signInData.user.id);
           
           // Ahora que tenemos el ID, intentamos crear en user_accounts
           const { error: insertError } = await supabase
@@ -121,6 +125,7 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
             console.error('Error registrando usuario en user_accounts:', insertError);
             toast.error('Error al sincronizar el usuario');
           } else {
+            console.log('Usuario sincronizado correctamente');
             toast.success('Usuario sincronizado correctamente');
             setNewUser({
               email: "",
@@ -139,6 +144,8 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       }
 
       if (data.user) {
+        console.log('Usuario creado exitosamente:', data.user.id);
+        
         // Asegurarnos de que el usuario también se registre en user_accounts
         const { error: insertError } = await supabase
           .from('user_accounts')
