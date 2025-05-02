@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -17,12 +17,8 @@ const ServiceControl = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
   const navigate = useNavigate();
   const { session, loading: authLoading, isAuthenticated } = useAuth();
-
-  // Memoizado para evitar re-renderizados innecesarios
-  const userId = useMemo(() => session?.user?.id, [session]);
 
   // Efecto para redirigir cuando no hay sesión (autenticación)
   useEffect(() => {
@@ -32,35 +28,19 @@ const ServiceControl = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Efecto separado para cargar datos solo cuando tengamos sesión
+  // Efecto para actualizar la información de pronóstico sin cargar datos de energy_data
   useEffect(() => {
-    // Si todavía está cargando la autenticación o si ya cargamos los datos, no hacemos nada
-    if (authLoading || !userId || dataLoaded) {
+    // Si todavía está cargando la autenticación, no hacemos nada
+    if (authLoading || !isAuthenticated) {
       return;
     }
     
-    const loadData = async () => {
+    const updateForecastData = async () => {
       try {
         setLoading(true);
-        console.log("Cargando datos para el usuario:", userId);
+        console.log("Actualizando datos de pronóstico COES");
         
-        // Consultar datos de energía para el usuario autenticado
-        const { data, error } = await supabase
-          .from('energy_data')
-          .select('*')
-          .eq('user_id', userId)
-          .order('date', { ascending: false });
-          
-        if (error) {
-          console.error('Error loading energy data:', error);
-          toast.error('Error al cargar los datos de energía');
-        } else {
-          console.log("Datos obtenidos:", data?.length || 0, "registros");
-          setEnergyData(data || []);
-          setDataLoaded(true);
-        }
-        
-        // Actualizar datos de pronóstico COES
+        // Actualizar datos de pronóstico COES sin cargar energy_data
         try {
           await supabase.functions.invoke('get-coes-forecast');
           setLastUpdated(new Date());
@@ -68,14 +48,19 @@ const ServiceControl = () => {
           console.error('Error updating forecast data:', e);
         }
       } catch (error) {
-        console.error('Error general al cargar datos:', error);
+        console.error('Error general:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
-  }, [userId, authLoading, dataLoaded]);
+    updateForecastData();
+    
+    // Actualizar cada 15 minutos
+    const interval = setInterval(updateForecastData, 15 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [authLoading, isAuthenticated]);
 
   // Si está cargando la autenticación, mostrar loading spinner
   if (authLoading) {
@@ -119,7 +104,7 @@ const ServiceControl = () => {
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-4 space-y-6">
                   <RiskManagement 
-                    energyData={energyData} 
+                    energyData={[]} 
                     date={date} 
                     setDate={setDate}
                   />
@@ -127,7 +112,7 @@ const ServiceControl = () => {
 
                 <div className="col-span-8 space-y-6">
                   <PowerCharts 
-                    energyData={energyData}
+                    energyData={[]}
                     date={date}
                   />
                   

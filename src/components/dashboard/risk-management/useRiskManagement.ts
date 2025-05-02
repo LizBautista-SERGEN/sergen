@@ -10,7 +10,8 @@ export const useRiskManagement = (energyData: EnergyData[], date: Date | undefin
   
   // Use our new custom hooks
   const settings = useForecastSettings();
-  const maxPower = useMaxPower(date, energyData);
+  // Pasar array vacío si energyData es undefined
+  const maxPower = useMaxPower(date, energyData || []);
   const { 
     modulationData, 
     modulatedDays, 
