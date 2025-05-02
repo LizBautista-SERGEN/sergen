@@ -31,6 +31,7 @@ interface User {
   role: string;
   created_at: string;
   has_access: boolean;
+  business_name: string | null;
 }
 
 export const UserManagementTab = () => {
