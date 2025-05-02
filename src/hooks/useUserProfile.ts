@@ -47,11 +47,12 @@ export const useUserProfile = () => {
         return;
       }
 
-      // Use direct query to user_accounts table instead of profiles
+      // Usar la tabla user_accounts directamente sin depender de la tabla profiles
       const { data, error: profileError } = await supabase
         .from('user_accounts')
         .select('*')
-        .eq('id', session.user.id);
+        .eq('id', session.user.id)
+        .single();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
@@ -59,8 +60,8 @@ export const useUserProfile = () => {
         return;
       }
       
-      if (data && data.length > 0) {
-        const userProfile = data[0] as ProfileType;
+      if (data) {
+        const userProfile = data as ProfileType;
         console.log('Profile loaded successfully:', userProfile);
         setProfile(userProfile);
         setIsSuperUser(userProfile.role === 'superuser');

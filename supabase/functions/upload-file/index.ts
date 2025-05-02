@@ -64,9 +64,10 @@ serve(async (req) => {
       .getPublicUrl(`${userId}/${fileName}`)
 
     if (type === 'profile') {
+      // Actualizar la tabla user_accounts en lugar de profiles
       const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .from('user_accounts')
+        .update({ profile_image: publicUrl })
         .eq('id', userId)
 
       if (updateError) throw updateError
