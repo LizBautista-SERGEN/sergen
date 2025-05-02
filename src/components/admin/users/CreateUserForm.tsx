@@ -74,31 +74,46 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
 
       console.log('Intentando crear usuario:', trimmedEmail);
 
-      // Caso especial para usuarios conocidos que existen en Auth pero no en user_accounts
+      // Caso especial para usuarios conocidos
       if (trimmedEmail === 'antonio_yupa@sergen.pe') {
-        const knownUsers: Record<string, string> = {
-          'antonio_yupa@sergen.pe': 'b99fc3a6-9529-43c8-8fc6-18ec986b1c25'
-        };
+        // Para antonio_yupa@sergen.pe, usamos un ID conocido
+        const knownUserId = 'b99fc3a6-9529-43c8-8fc6-18ec986b1c25';
         
-        const userId = knownUsers[trimmedEmail];
-        
-        // Crear el registro en user_accounts directamente
-        const { error: insertError } = await supabase
-          .from('user_accounts')
-          .insert({
-            id: userId,
+        try {
+          // Primero intentamos crear el usuario en Auth
+          await supabase.auth.signUp({
             email: trimmedEmail,
-            role: newUser.role,
-            has_access: true,
-            business_name: newUser.business_name
+            password: newUser.password,
+            options: {
+              data: {
+                business_name: newUser.business_name,
+                role: newUser.role
+              }
+            }
+          });
+        } catch (authError) {
+          // Si falla la creación en Auth, podría ser porque ya existe
+          console.log('Registro de Auth falló, probablemente el usuario ya existe:', authError);
+        }
+        
+        // Crear la entrada en user_accounts usando una función RPC
+        try {
+          const { error: rpcError } = await supabase.rpc('admin_create_user_account', {
+            p_id: knownUserId,
+            p_email: trimmedEmail,
+            p_role: newUser.role,
+            p_has_access: true,
+            p_business_name: newUser.business_name || null
           });
           
-        if (insertError) {
-          console.error('Error registrando usuario en user_accounts:', insertError);
-          toast.error('Error al sincronizar el usuario');
-        } else {
-          console.log('Usuario sincronizado correctamente');
-          toast.success('Usuario sincronizado correctamente');
+          if (rpcError) {
+            console.error('Error usando RPC para crear usuario:', rpcError);
+            toast.error('Error al registrar usuario especial');
+            setIsSubmitting(false);
+            return;
+          }
+          
+          toast.success('Usuario especial creado correctamente');
           setNewUser({
             email: "",
             password: "",
@@ -106,12 +121,14 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
             business_name: ""
           });
           onUserCreated();
+          setIsSubmitting(false);
+          return;
+        } catch (rpcError) {
+          console.error('Error en RPC para crear usuario:', rpcError);
         }
-        setIsSubmitting(false);
-        return;
       }
       
-      // Si no está en user_accounts, intentamos crear el usuario en Auth
+      // Para usuarios regulares, creamos primero en Auth
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password: newUser.password,
@@ -126,7 +143,44 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       if (error) {
         // Si hay un error específico de usuario ya existente
         if (error.message.includes("already")) {
-          toast.error('Este usuario ya existe pero no pudimos sincronizarlo automáticamente. Contacte al administrador.');
+          // Intentamos iniciar sesión para obtener el ID de usuario
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password: newUser.password,
+          });
+          
+          if (signInError) {
+            toast.error(`El usuario existe pero no pudimos sincronizarlo: ${signInError.message}`);
+            setIsSubmitting(false);
+            return;
+          }
+          
+          // Si el inicio de sesión fue exitoso, creamos la entrada en user_accounts
+          if (signInData.user) {
+            const { error: rpcError } = await supabase.rpc('admin_create_user_account', {
+              p_id: signInData.user.id,
+              p_email: trimmedEmail,
+              p_role: newUser.role,
+              p_has_access: true,
+              p_business_name: newUser.business_name || null
+            });
+            
+            if (rpcError) {
+              console.error('Error usando RPC para crear usuario:', rpcError);
+              toast.error('Error al sincronizar usuario existente');
+              setIsSubmitting(false);
+              return;
+            }
+            
+            toast.success('Usuario sincronizado correctamente');
+            setNewUser({
+              email: "",
+              password: "",
+              role: "user",
+              business_name: ""
+            });
+            onUserCreated();
+          }
         } else {
           console.error('Error creating user:', error);
           toast.error(`Error al crear usuario: ${error.message}`);
@@ -138,34 +192,32 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       if (data.user) {
         console.log('Usuario creado exitosamente:', data.user.id);
         
-        // Asegurarnos de que el usuario también se registre en user_accounts
-        const { error: insertError } = await supabase
-          .from('user_accounts')
-          .insert({
-            id: data.user.id,
-            email: trimmedEmail,
-            role: newUser.role,
-            has_access: true,
-            business_name: newUser.business_name
-          });
-          
-        if (insertError) {
-          console.error('Error creating user account:', insertError);
+        // Crear la entrada en user_accounts usando una función RPC
+        const { error: rpcError } = await supabase.rpc('admin_create_user_account', {
+          p_id: data.user.id,
+          p_email: trimmedEmail,
+          p_role: newUser.role,
+          p_has_access: true,
+          p_business_name: newUser.business_name || null
+        });
+        
+        if (rpcError) {
+          console.error('Error usando RPC para crear usuario:', rpcError);
           toast.error("La cuenta fue creada pero hubo un error al configurar el perfil");
         } else {
           toast.success('Usuario creado exitosamente');
+          
+          // Reset form
+          setNewUser({
+            email: "",
+            password: "",
+            role: "user",
+            business_name: ""
+          });
+          
+          // Callback to refresh user list
+          onUserCreated();
         }
-
-        // Reset form
-        setNewUser({
-          email: "",
-          password: "",
-          role: "user",
-          business_name: ""
-        });
-        
-        // Callback to refresh user list
-        onUserCreated();
       }
     } catch (error: any) {
       console.error('Error creating user:', error);
