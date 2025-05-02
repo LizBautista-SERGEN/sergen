@@ -15,23 +15,15 @@ export const useAuthForms = () => {
   const checkSession = async () => {
     try {
       setLoading(true);
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
       
-      if (error) {
-        console.error('Error al verificar sesión:', error);
-        setLoading(false);
-        return;
-      }
-      
-      if (session) {
-        console.log('Sesión encontrada:', session);
-        setLoading(false);
+      if (data.session) {
+        console.log('Sesión encontrada, redirigiendo');
         navigate('/servicios/control');
-      } else {
-        setLoading(false);
       }
     } catch (error) {
       console.error('Error inesperado al verificar sesión:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -49,7 +41,7 @@ export const useAuthForms = () => {
         return;
       }
 
-      // Cerrar cualquier sesión anterior
+      // Cerrar cualquier sesión anterior para evitar conflictos
       await supabase.auth.signOut();
 
       console.log('Intentando iniciar sesión con:', trimmedEmail);
@@ -68,17 +60,18 @@ export const useAuthForms = () => {
       if (data.user) {
         console.log('Usuario autenticado:', data.user);
         
-        // No need to verify users_auth explicitly since it should be created by trigger
-        // Just update last_login if possible
-        try {
-          await supabase
+        // Actualizar last_login sin bloquear el flujo principal
+        setTimeout(() => {
+          supabase
             .from('users_auth')
             .update({ last_login: new Date().toISOString() })
-            .eq('id', data.user.id);
-        } catch (err) {
-          // Don't block the login flow if this fails
-          console.error('Error updating last login:', err);
-        }
+            .eq('id', data.user!.id)
+            .then(({ error }) => {
+              if (error && !error.message.includes('JSON object requested') && !error.message.includes('rows returned')) {
+                console.error('Error updating last login:', error);
+              }
+            });
+        }, 0);
         
         setEmail("");
         setPassword("");

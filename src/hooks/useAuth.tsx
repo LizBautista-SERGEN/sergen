@@ -11,59 +11,71 @@ export const useAuth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Primero obtenemos la sesión actual
+    let mounted = true;
+    
+    // Función para obtener la sesión inicial
     const getInitialSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting initial session:', error);
         }
         
-        setSession(session);
-        setLoading(false);
+        // Solo actualizar el estado si el componente sigue montado
+        if (mounted) {
+          setSession(data.session);
+          setLoading(false);
+        }
       } catch (error) {
         console.error('Unexpected error getting session:', error);
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     getInitialSession();
     
-    // Configuramos el listener para cambios de sesión
+    // Configurar el listener para cambios de sesión
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         console.log('Auth state change:', _event);
-        setSession(session);
         
-        if (_event === 'SIGNED_OUT') {
-          navigate('/login');
-        } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
-          if (session?.user) {
-            // Actualizamos el último login sin bloquear el flujo
-            try {
+        if (mounted) {
+          setSession(session);
+        
+          if (_event === 'SIGNED_OUT') {
+            navigate('/login');
+          } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
+            if (session?.user) {
+              // Actualizamos el último login sin bloquear el flujo usando setTimeout
               setTimeout(() => {
-                supabase
-                  .from('users_auth')
-                  .update({ last_login: new Date().toISOString() })
-                  .eq('id', session.user.id)
-                  .then(({ error }) => {
-                    if (error && !error.message.includes('JSON object requested')) {
-                      console.error('Error updating last login:', error);
-                    }
-                  });
+                try {
+                  supabase
+                    .from('users_auth')
+                    .update({ last_login: new Date().toISOString() })
+                    .eq('id', session.user.id)
+                    .then(({ error }) => {
+                      if (error && !error.message.includes('JSON object requested') && !error.message.includes('rows returned')) {
+                        console.error('Error updating last login:', error);
+                      }
+                    });
+                } catch (err) {
+                  console.error('Error in update attempt:', err);
+                }
               }, 0);
-            } catch (err) {
-              console.error('Error in update attempt:', err);
             }
           }
+          
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
+    // Cleanup function
     return () => {
+      mounted = false;
       subscription?.unsubscribe();
     };
   }, [navigate]);
@@ -71,5 +83,6 @@ export const useAuth = () => {
   return {
     session,
     loading,
+    isAuthenticated: !!session,
   };
 };

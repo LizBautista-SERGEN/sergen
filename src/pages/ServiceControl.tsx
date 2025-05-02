@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -19,32 +19,36 @@ const ServiceControl = () => {
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const navigate = useNavigate();
-  const { session, loading: authLoading } = useAuth();
+  const { session, loading: authLoading, isAuthenticated } = useAuth();
 
-  // Redirigir si no hay sesión
+  // Memoizado para evitar re-renderizados innecesarios
+  const userId = useMemo(() => session?.user?.id, [session]);
+
+  // Efecto para redirigir cuando no hay sesión (autenticación)
   useEffect(() => {
-    if (!authLoading && !session) {
+    if (!authLoading && !isAuthenticated) {
       console.log("No hay sesión activa, redirigiendo a login");
       navigate('/login');
     }
-  }, [session, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
-  // Cargar datos solo cuando tengamos sesión
+  // Efecto separado para cargar datos solo cuando tengamos sesión
   useEffect(() => {
+    // Si todavía está cargando la autenticación o si ya cargamos los datos, no hacemos nada
+    if (authLoading || !userId || dataLoaded) {
+      return;
+    }
+    
     const loadData = async () => {
-      if (authLoading || !session?.user || dataLoaded) {
-        return;
-      }
-      
       try {
         setLoading(true);
-        console.log("Cargando datos para el usuario:", session.user.id);
+        console.log("Cargando datos para el usuario:", userId);
         
         // Consultar datos de energía para el usuario autenticado
         const { data, error } = await supabase
           .from('energy_data')
           .select('*')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .order('date', { ascending: false });
           
         if (error) {
@@ -71,19 +75,22 @@ const ServiceControl = () => {
     };
 
     loadData();
-  }, [session, authLoading, dataLoaded, navigate]);
+  }, [userId, authLoading, dataLoaded]);
 
-  // Solo renderizar el contenido cuando no estemos cargando autenticación
+  // Si está cargando la autenticación, mostrar loading spinner
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-lg text-gray-600">Cargando autenticación...</p>
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-t-sergen-500 border-gray-200 rounded-full animate-spin mb-4"></div>
+          <p className="text-lg text-gray-600">Verificando autenticación...</p>
+        </div>
       </div>
     );
   }
 
-  // Si no hay sesión, no renderizar nada (el efecto redireccionará)
-  if (!session) {
+  // Si no hay sesión, no renderizamos nada (el efecto redireccionará)
+  if (!isAuthenticated) {
     return null;
   }
 
@@ -103,7 +110,10 @@ const ServiceControl = () => {
             </div>
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <p className="text-lg text-gray-600">Cargando datos...</p>
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 border-4 border-t-sergen-500 border-gray-200 rounded-full animate-spin mb-4"></div>
+                  <p className="text-lg text-gray-600">Cargando datos...</p>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-12 gap-6">
