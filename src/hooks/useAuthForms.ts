@@ -3,7 +3,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { User } from '@supabase/supabase-js';
 
 export const useAuthForms = () => {
   const [email, setEmail] = useState("");
@@ -59,53 +58,29 @@ export const useAuthForms = () => {
         const { data: userAccountData, error: userAccountError } = await supabase
           .from('user_accounts')
           .select('email, has_access')
-          .eq('email', trimmedEmail)
-          .single();
+          .eq('email', trimmedEmail);
           
-        if (!userAccountError && userAccountData) {
-          if (!userAccountData.has_access) {
+        if (!userAccountError && userAccountData && userAccountData.length > 0) {
+          const userData = userAccountData[0];
+          if (!userData.has_access) {
             toast.error("Su cuenta está suspendida. Contacte al administrador.");
           } else {
             toast.error("Contraseña incorrecta");
           }
         } else {
-          // Verificar si existe en auth pero no en user_accounts
+          // Intentar crear un registro en user_accounts si existe en auth
           try {
-            const { data: authData } = await supabase.auth.admin.listUsers();
-            const authUser = authData?.users?.find((user: User) => user.email?.toLowerCase() === trimmedEmail);
+            // Primero intentamos iniciar sesión una vez más para asegurar que no es un error temporal
+            const { error: retryError } = await supabase.auth.signInWithPassword({
+              email: trimmedEmail,
+              password,
+            });
             
-            if (authUser) {
-              // El usuario existe en auth pero no en user_accounts
-              // Intentar crear el registro en user_accounts
-              const { error: insertError } = await supabase
-                .from('user_accounts')
-                .insert({
-                  id: authUser.id,
-                  email: trimmedEmail,
-                  role: authUser.user_metadata?.role || 'user',
-                  has_access: true,
-                  business_name: authUser.user_metadata?.business_name || null
-                });
-                
-              if (insertError) {
-                console.error('Error creating user account:', insertError);
-                toast.error("Error al sincronizar su cuenta. Contacte al administrador.");
-              } else {
-                // Intentar iniciar sesión de nuevo
-                const { error: loginError } = await supabase.auth.signInWithPassword({
-                  email: trimmedEmail,
-                  password,
-                });
-                
-                if (loginError) {
-                  toast.error("Credenciales inválidas");
-                } else {
-                  toast.success("Inicio de sesión exitoso");
-                  navigate('/servicios/control');
-                }
-              }
-            } else {
+            if (retryError) {
               toast.error("Credenciales inválidas o usuario no registrado");
+            } else {
+              toast.success("Inicio de sesión exitoso");
+              navigate('/servicios/control');
             }
           } catch (error) {
             console.error('Error verificando usuario:', error);
@@ -119,6 +94,29 @@ export const useAuthForms = () => {
 
       if (data.user) {
         console.log('Usuario autenticado:', data.user);
+        
+        // Verificar si el usuario existe en user_accounts
+        const { data: userAccountData, error: userAccountError } = await supabase
+          .from('user_accounts')
+          .select('id')
+          .eq('id', data.user.id);
+          
+        // Si no existe, lo creamos
+        if (!userAccountError && (!userAccountData || userAccountData.length === 0)) {
+          const { error: insertError } = await supabase
+            .from('user_accounts')
+            .insert({
+              id: data.user.id,
+              email: data.user.email || '',
+              role: data.user.user_metadata?.role || 'user',
+              has_access: true,
+              business_name: data.user.user_metadata?.business_name || null
+            });
+            
+          if (insertError) {
+            console.error('Error creating user account:', insertError);
+          }
+        }
         
         // Actualizar last_login sin bloquear el flujo principal
         setTimeout(() => {
@@ -176,10 +174,9 @@ export const useAuthForms = () => {
       const { data: existingUser, error: checkError } = await supabase
         .from('user_accounts')
         .select('email')
-        .eq('email', trimmedEmail)
-        .single();
+        .eq('email', trimmedEmail);
         
-      if (!checkError && existingUser) {
+      if (!checkError && existingUser && existingUser.length > 0) {
         toast.error("Este correo ya está registrado");
         setLoading(false);
         return;
