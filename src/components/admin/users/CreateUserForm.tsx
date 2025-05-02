@@ -88,12 +88,17 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         // Si hay un error específico de usuario ya existente
         if (error.message.includes("already")) {
           // Usuario existe en Auth pero no en user_accounts
-          // Intentar obtener el usuario de auth para tener su ID
-          const { data: authData, error: authError } = await supabase.auth.admin.getUserByEmail(trimmedEmail);
+          // Ya que no podemos usar admin.getUserByEmail, intentaremos una solución alternativa
           
-          if (authError || !authData?.user) {
-            console.error('Error obteniendo usuario por email:', authError);
-            toast.error('Error al sincronizar el usuario');
+          // Intentar iniciar sesión temporalmente para obtener el userId
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password: newUser.password
+          });
+          
+          if (signInError || !signInData?.user) {
+            console.error('Error obteniendo usuario para sincronización:', signInError);
+            toast.error('No se pudo sincronizar el usuario. La contraseña proporcionada podría ser incorrecta.');
             setIsSubmitting(false);
             return;
           }
@@ -102,13 +107,16 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
           const { error: insertError } = await supabase
             .from('user_accounts')
             .insert({
-              id: authData.user.id,
+              id: signInData.user.id,
               email: trimmedEmail,
               role: newUser.role,
               has_access: true,
               business_name: newUser.business_name
             });
             
+          // Cerramos la sesión temporal que creamos
+          await supabase.auth.signOut();
+          
           if (insertError) {
             console.error('Error registrando usuario en user_accounts:', insertError);
             toast.error('Error al sincronizar el usuario');
