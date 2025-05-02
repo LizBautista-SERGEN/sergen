@@ -19,32 +19,47 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
         const endOfDay = new Date(date);
         endOfDay.setHours(23, 59, 59, 999);
         
-        // Instead of getting just the first record, let's get all records in the range
-        // and find the maximum value manually
+        console.log('Fetching max power for range:', startOfDay.toISOString(), 'to', endOfDay.toISOString());
+        
         const { data, error } = await supabase
           .from('coes_forecast')
-          .select('reprogramado')
+          .select('fecha, reprogramado')
           .gte('fecha', startOfDay.toISOString())
           .lte('fecha', endOfDay.toISOString());
           
         if (error) {
           console.error('Error fetching max power:', error);
+          calculateMaxPower(); // Fallback
           return;
         }
         
         if (data && data.length > 0) {
+          // Log all values to help with debugging
+          data.forEach(item => {
+            const time = new Date(item.fecha).toLocaleTimeString();
+            console.log(`Time: ${time}, Value: ${item.reprogramado}`);
+          });
+          
           // Find the maximum reprogramado value in the dataset
           let maxValue = 0;
+          let maxTime = '';
+          
           data.forEach(record => {
             if (record.reprogramado && record.reprogramado > maxValue) {
               maxValue = record.reprogramado;
+              maxTime = new Date(record.fecha).toLocaleTimeString();
             }
           });
           
           if (maxValue > 0) {
+            console.log(`Selected max value: ${maxValue} at ${maxTime}`);
             setMaxPower(Number(maxValue.toFixed(2)));
             return;
+          } else {
+            console.log('No valid reprogramado values found in range');
           }
+        } else {
+          console.log('No data found for the selected date');
         }
         
         // Fallback to simulated data if real data not available
