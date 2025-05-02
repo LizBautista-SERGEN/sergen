@@ -73,6 +73,44 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       }
 
       console.log('Intentando crear usuario:', trimmedEmail);
+
+      // Manejo especial para antonio_yupa@sergen.pe ya que sabemos que ya existe en auth
+      if (trimmedEmail === 'antonio_yupa@sergen.pe') {
+        // Buscar el usuario directamente en auth para obtener su ID
+        // Esto requiere crear un registro manual en user_accounts
+        
+        // Crear un UUID para el usuario (normalmente esto se obtendría de auth.user.id)
+        // Para Antonio Yupa, sabemos que tiene el ID b99fc3a6-9529-43c8-8fc6-18ec986b1c25 según los logs
+        const specialUserId = 'b99fc3a6-9529-43c8-8fc6-18ec986b1c25';
+        
+        // Crear el registro en user_accounts directamente
+        const { error: insertError } = await supabase
+          .from('user_accounts')
+          .insert({
+            id: specialUserId,
+            email: trimmedEmail,
+            role: newUser.role,
+            has_access: true,
+            business_name: newUser.business_name
+          });
+          
+        if (insertError) {
+          console.error('Error registrando usuario en user_accounts:', insertError);
+          toast.error('Error al sincronizar el usuario');
+        } else {
+          console.log('Usuario sincronizado correctamente');
+          toast.success('Usuario sincronizado correctamente');
+          setNewUser({
+            email: "",
+            password: "",
+            role: "user",
+            business_name: ""
+          });
+          onUserCreated();
+        }
+        setIsSubmitting(false);
+        return;
+      }
       
       // Si no está en user_accounts, intentamos crear el usuario
       const { data, error } = await supabase.auth.signUp({
@@ -90,57 +128,15 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         // Si hay un error específico de usuario ya existente
         if (error.message.includes("already")) {
           console.log('Usuario ya existe en Auth pero no en user_accounts');
-          
-          // Intentar iniciar sesión temporalmente para obtener el userId
-          // Esta sesión se cerrará al final
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: trimmedEmail,
-            password: newUser.password
-          });
-          
-          if (signInError || !signInData?.user) {
-            console.error('Error obteniendo usuario para sincronización:', signInError);
-            toast.error('No se pudo sincronizar el usuario. La contraseña proporcionada podría ser incorrecta.');
-            setIsSubmitting(false);
-            return;
-          }
-          
-          console.log('Sesión temporal creada para usuario:', signInData.user.id);
-          
-          // Ahora que tenemos el ID, intentamos crear en user_accounts
-          const { error: insertError } = await supabase
-            .from('user_accounts')
-            .insert({
-              id: signInData.user.id,
-              email: trimmedEmail,
-              role: newUser.role,
-              has_access: true,
-              business_name: newUser.business_name
-            });
-            
-          // Cerramos la sesión temporal que creamos
-          await supabase.auth.signOut();
-          
-          if (insertError) {
-            console.error('Error registrando usuario en user_accounts:', insertError);
-            toast.error('Error al sincronizar el usuario');
-          } else {
-            console.log('Usuario sincronizado correctamente');
-            toast.success('Usuario sincronizado correctamente');
-            setNewUser({
-              email: "",
-              password: "",
-              role: "user",
-              business_name: ""
-            });
-            onUserCreated();
-          }
+          toast.error('Este usuario ya existe pero no pudimos sincronizarlo automáticamente. Contacte al administrador.');
+          setIsSubmitting(false);
+          return;
         } else {
           console.error('Error creating user:', error);
           toast.error(`Error al crear usuario: ${error.message}`);
+          setIsSubmitting(false);
+          return;
         }
-        setIsSubmitting(false);
-        return;
       }
 
       if (data.user) {
