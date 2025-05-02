@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { User } from '@supabase/supabase-js';
 
 export const useAuthForms = () => {
   const [email, setEmail] = useState("");
@@ -67,7 +68,7 @@ export const useAuthForms = () => {
           // Verificar si existe en auth pero no en user_accounts
           try {
             const { data: authData } = await supabase.auth.admin.listUsers();
-            const authUser = authData?.users?.find(user => user.email?.toLowerCase() === trimmedEmail);
+            const authUser = authData?.users?.find((user: User) => user.email?.toLowerCase() === trimmedEmail);
             
             if (authUser) {
               // El usuario existe en auth pero no en user_accounts

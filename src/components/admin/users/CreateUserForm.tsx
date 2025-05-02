@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { User } from '@supabase/supabase-js';
 
 interface NewUserData {
   email: string;
@@ -74,7 +75,7 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
           const { data: authUsers } = await supabase.auth.admin.listUsers();
           
           const authUser = authUsers?.users?.find(
-            user => user.email?.toLowerCase() === newUser.email.toLowerCase().trim()
+            (user: User) => user.email?.toLowerCase() === newUser.email.toLowerCase().trim()
           );
           
           if (authUser) {
