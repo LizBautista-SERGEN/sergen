@@ -24,18 +24,6 @@ export const useAuthForms = () => {
       
       if (session) {
         console.log('Sesión encontrada:', session);
-        const { data: profile, error: profileError } = await supabase
-          .from('user_accounts')
-          .select('role, has_access')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error al obtener perfil:', profileError);
-          return;
-        }
-
-        console.log('Perfil obtenido:', profile);
         navigate('/servicios/control');
       }
     } catch (error) {
@@ -52,9 +40,11 @@ export const useAuthForms = () => {
       
       if (!trimmedEmail || !password) {
         toast.error("Por favor ingrese su correo y contraseña");
+        setLoading(false);
         return;
       }
 
+      // Cerrar cualquier sesión anterior
       await supabase.auth.signOut();
 
       console.log('Intentando iniciar sesión con:', trimmedEmail);
@@ -65,36 +55,14 @@ export const useAuthForms = () => {
 
       if (error) {
         console.error('Error de inicio de sesión:', error);
-        if (error.message.includes('Invalid login credentials')) {
-          toast.error("Credenciales inválidas");
-        } else {
-          toast.error("Error al iniciar sesión: " + error.message);
-        }
+        toast.error("Credenciales inválidas");
+        setLoading(false);
         return;
       }
 
       if (data.user) {
         console.log('Usuario autenticado:', data.user);
-        const { data: profile, error: profileError } = await supabase
-          .from('user_accounts')
-          .select('role, has_access')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error al obtener perfil:', profileError);
-          toast.error("Error al cargar el perfil");
-          return;
-        }
-
-        console.log('Perfil obtenido:', profile);
-
-        if (!profile?.has_access) {
-          toast.error("Su cuenta está pendiente de activación");
-          await supabase.auth.signOut();
-          return;
-        }
-
+        
         setEmail("");
         setPassword("");
         
@@ -149,16 +117,15 @@ export const useAuthForms = () => {
         console.error('Signup error:', error);
         if (error.message.includes('already registered')) {
           toast.error("Este correo ya está registrado");
-        } else if (error.message.includes('Signups not allowed')) {
-          toast.error("El registro de usuarios está deshabilitado temporalmente. Por favor, contacte al administrador.");
         } else {
           toast.error("Error al crear la cuenta");
         }
+        setLoading(false);
         return;
       }
 
       if (data.user) {
-        toast.success("Cuenta creada exitosamente. Por favor espere la activación de su cuenta.");
+        toast.success("Cuenta creada exitosamente. Ahora puede iniciar sesión.");
         setEmail("");
         setPassword("");
         setConfirmPassword("");

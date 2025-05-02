@@ -14,11 +14,7 @@ export const useAuth = () => {
     // Obtener la sesión actual
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        if (!error.message.includes('Invalid Refresh Token')) {
-          console.error('Error getting session:', error);
-          toast.error('Error al verificar la sesión');
-        }
-        // Si hay error de refresh token, redirigimos al login
+        console.error('Error getting session:', error);
         setSession(null);
         setLoading(false);
         navigate('/login');

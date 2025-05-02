@@ -43,6 +43,7 @@ export const RegisterForm = ({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
         />
       </div>
       <div className="space-y-2">
@@ -75,6 +76,7 @@ export const RegisterForm = ({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="new-password"
         />
       </div>
       <div className="space-y-2">
@@ -85,6 +87,7 @@ export const RegisterForm = ({
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
+          autoComplete="new-password"
         />
       </div>
       <Button 
