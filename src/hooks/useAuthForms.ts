@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -52,7 +53,58 @@ export const useAuthForms = () => {
 
       if (error) {
         console.error('Error de inicio de sesión:', error);
-        toast.error("Credenciales inválidas");
+        
+        // Verificar si el usuario existe en user_accounts
+        const { data: userAccountData, error: userAccountError } = await supabase
+          .from('user_accounts')
+          .select('email')
+          .eq('email', trimmedEmail)
+          .single();
+          
+        if (!userAccountError && userAccountData) {
+          toast.error("Contraseña incorrecta");
+        } else {
+          // Verificar si existe en auth pero no en user_accounts
+          try {
+            const { data: authUserData } = await supabase.auth.admin.getUserByEmail(trimmedEmail);
+            if (authUserData?.user) {
+              // El usuario existe en auth pero no en user_accounts
+              // Intentar crear el registro en user_accounts
+              const { error: insertError } = await supabase
+                .from('user_accounts')
+                .insert({
+                  id: authUserData.user.id,
+                  email: trimmedEmail,
+                  role: authUserData.user.user_metadata?.role || 'user',
+                  has_access: true,
+                  business_name: authUserData.user.user_metadata?.business_name || null
+                });
+                
+              if (insertError) {
+                console.error('Error creating user account:', insertError);
+                toast.error("Credenciales inválidas");
+              } else {
+                // Intentar iniciar sesión de nuevo
+                const { error: loginError } = await supabase.auth.signInWithPassword({
+                  email: trimmedEmail,
+                  password,
+                });
+                
+                if (loginError) {
+                  toast.error("Credenciales inválidas");
+                } else {
+                  toast.success("Inicio de sesión exitoso");
+                  navigate('/servicios/control');
+                }
+              }
+            } else {
+              toast.error("Credenciales inválidas");
+            }
+          } catch {
+            toast.error("Credenciales inválidas");
+          }
+        }
+        
         setLoading(false);
         return;
       }
@@ -112,6 +164,19 @@ export const useAuthForms = () => {
         return;
       }
 
+      // Verificar si el usuario ya existe en user_accounts
+      const { data: existingUser, error: checkError } = await supabase
+        .from('user_accounts')
+        .select('email')
+        .eq('email', trimmedEmail)
+        .single();
+        
+      if (!checkError && existingUser) {
+        toast.error("Este correo ya está registrado");
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
@@ -135,7 +200,25 @@ export const useAuthForms = () => {
       }
 
       if (data.user) {
-        toast.success("Cuenta creada exitosamente. Ahora puede iniciar sesión.");
+        // Asegurarnos de que el usuario también se registre en user_accounts
+        const { error: insertError } = await supabase
+          .from('user_accounts')
+          .insert({
+            id: data.user.id,
+            email: trimmedEmail,
+            business_name: businessName,
+            ruc: ruc,
+            role: 'user',
+            has_access: true
+          });
+          
+        if (insertError && !insertError.message.includes('duplicate key')) {
+          console.error('Error creating user account:', insertError);
+          toast.error("La cuenta fue creada pero hubo un error al configurar el perfil");
+        } else {
+          toast.success("Cuenta creada exitosamente. Ahora puede iniciar sesión.");
+        }
+        
         setEmail("");
         setPassword("");
         setConfirmPassword("");

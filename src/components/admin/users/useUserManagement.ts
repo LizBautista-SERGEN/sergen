@@ -30,6 +30,52 @@ export const useUserManagement = () => {
         return;
       }
 
+      // Verificar si hay usuarios en auth que no estén en user_accounts
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (!authError && authUsers.users) {
+        // Crear un mapa de usuarios existentes para búsqueda rápida
+        const existingUserMap = new Map(data?.map(user => [user.email.toLowerCase(), user]) || []);
+        
+        // Usuarios que están en auth pero no en user_accounts
+        const missingUsers = authUsers.users.filter(
+          authUser => authUser.email && !existingUserMap.has(authUser.email.toLowerCase())
+        );
+        
+        // Si hay usuarios faltantes, los agregamos a user_accounts
+        if (missingUsers.length > 0) {
+          const usersToAdd = missingUsers.map(user => ({
+            id: user.id,
+            email: user.email || '',
+            role: 'user',
+            has_access: true,
+            business_name: user.user_metadata?.business_name || null,
+            created_at: user.created_at
+          }));
+          
+          if (usersToAdd.length > 0) {
+            const { error: insertError } = await supabase
+              .from('user_accounts')
+              .insert(usersToAdd);
+              
+            if (insertError) {
+              console.error('Error synchronizing users:', insertError);
+            } else {
+              // Si se agregaron usuarios, actualizamos la lista
+              const { data: updatedData, error: fetchError } = await supabase
+                .from('user_accounts')
+                .select('*')
+                .order('created_at', { ascending: false });
+                
+              if (!fetchError && updatedData) {
+                setUsers(updatedData);
+                return;
+              }
+            }
+          }
+        }
+      }
+
       setUsers(data || []);
     } catch (error) {
       console.error('Error:', error);

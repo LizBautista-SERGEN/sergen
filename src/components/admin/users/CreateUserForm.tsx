@@ -42,10 +42,21 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         return;
       }
 
-      // Instead of trying to use the admin API directly, we'll insert a record into user_accounts
-      // after the user signs up through the standard auth API
+      // Primero verificar si el usuario ya existe en user_accounts
+      const { data: existingUser } = await supabase
+        .from('user_accounts')
+        .select('id, email')
+        .eq('email', newUser.email.toLowerCase().trim())
+        .single();
+      
+      if (existingUser) {
+        toast.error('Este correo ya está registrado en el sistema');
+        return;
+      }
+
+      // Intentamos registrar el usuario con la API de Auth
       const { data, error } = await supabase.auth.signUp({
-        email: newUser.email,
+        email: newUser.email.toLowerCase().trim(),
         password: newUser.password,
         options: {
           data: {
@@ -56,6 +67,44 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       });
 
       if (error) {
+        // Si el error es que el usuario ya existe, intentamos insertar directamente en user_accounts
+        if (error.message.includes('already registered') || error.code === 'user_already_exists') {
+          // Obtener el usuario desde auth.users (esto requiere permisos de servicio)
+          const { data: authUser } = await supabase.auth.admin.getUserByEmail(newUser.email);
+          
+          if (authUser?.user) {
+            // Insertar manualmente en user_accounts
+            const { error: insertError } = await supabase
+              .from('user_accounts')
+              .insert({
+                id: authUser.user.id,
+                email: newUser.email.toLowerCase().trim(),
+                role: newUser.role,
+                has_access: true,
+                business_name: newUser.business_name
+              });
+              
+            if (insertError) {
+              console.error('Error inserting user in user_accounts:', insertError);
+              toast.error(`Error al crear usuario: ${insertError.message}`);
+              return;
+            }
+            
+            toast.success('Usuario creado exitosamente');
+            setNewUser({
+              email: "",
+              password: "",
+              role: "user",
+              business_name: ""
+            });
+            onUserCreated();
+            return;
+          } else {
+            toast.error('El correo ya está registrado pero no se pudo recuperar la información del usuario');
+            return;
+          }
+        }
+        
         console.error('Error creating user:', error);
         toast.error(`Error al crear usuario: ${error.message}`);
         return;
