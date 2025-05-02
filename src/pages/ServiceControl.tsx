@@ -6,14 +6,12 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { RiskManagement } from "@/components/dashboard/risk-management/RiskManagement";
 import { PowerCharts } from "@/components/dashboard/forecast/PowerCharts";
 import { HistoricalPowerMaximum } from "@/components/dashboard/HistoricalPowerMaximum";
-import { EnergyData } from "@/types/energy";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 const ServiceControl = () => {
-  const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(false);
