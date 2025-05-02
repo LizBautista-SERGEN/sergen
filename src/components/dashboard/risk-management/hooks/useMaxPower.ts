@@ -24,7 +24,7 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
           .select('reprogramado')
           .gte('fecha', startOfDay.toISOString())
           .lte('fecha', endOfDay.toISOString())
-          .order('reprogramado', { ascending: false })
+          .order('reprogramado', { ascending: false }) // This is already correct - descending order for highest value first
           .limit(1);
           
         if (error) {
