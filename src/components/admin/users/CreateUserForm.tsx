@@ -88,10 +88,21 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         // Si hay un error específico de usuario ya existente
         if (error.message.includes("already")) {
           // Usuario existe en Auth pero no en user_accounts
-          // Intentar crear manualmente en user_accounts
+          // Intentar obtener el usuario de auth para tener su ID
+          const { data: authData, error: authError } = await supabase.auth.admin.getUserByEmail(trimmedEmail);
+          
+          if (authError || !authData?.user) {
+            console.error('Error obteniendo usuario por email:', authError);
+            toast.error('Error al sincronizar el usuario');
+            setIsSubmitting(false);
+            return;
+          }
+          
+          // Ahora que tenemos el ID, intentamos crear en user_accounts
           const { error: insertError } = await supabase
             .from('user_accounts')
             .insert({
+              id: authData.user.id,
               email: trimmedEmail,
               role: newUser.role,
               has_access: true,
