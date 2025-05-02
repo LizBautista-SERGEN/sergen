@@ -21,6 +21,30 @@ export const useAuth = () => {
         return;
       }
       setSession(session);
+
+      if (session) {
+        // Verificar si el usuario existe en users_auth
+        supabase
+          .from('users_auth')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data, error: userError }) => {
+            if (userError) {
+              console.error('Error verificando usuario:', userError);
+              return;
+            }
+            
+            if (data) {
+              // Actualizar el último login
+              supabase
+                .from('users_auth')
+                .update({ last_login: new Date().toISOString() })
+                .eq('id', session.user.id);
+            }
+          });
+      }
+
       setLoading(false);
     });
 
@@ -37,6 +61,29 @@ export const useAuth = () => {
       }
       
       setSession(session);
+      
+      if (session) {
+        // Cuando se inicia sesión, verificar y actualizar users_auth
+        supabase
+          .from('users_auth')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data, error: userError }) => {
+            if (userError && !userError.message.includes('No rows found')) {
+              console.error('Error verificando usuario:', userError);
+            }
+            
+            if (data) {
+              // Actualizar el último login
+              supabase
+                .from('users_auth')
+                .update({ last_login: new Date().toISOString() })
+                .eq('id', session.user.id);
+            }
+          });
+      }
+      
       setLoading(false);
     });
 

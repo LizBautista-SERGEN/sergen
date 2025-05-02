@@ -24,6 +24,25 @@ export const useAuthForms = () => {
       
       if (session) {
         console.log('Sesión encontrada:', session);
+        
+        // Verificar si el usuario existe en users_auth
+        const { data: userData, error: userError } = await supabase
+          .from('users_auth')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (userError) {
+          console.error('Error al verificar usuario:', userError);
+          return;
+        }
+
+        // Actualizar el último login
+        await supabase
+          .from('users_auth')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', session.user.id);
+
         navigate('/servicios/control');
       }
     } catch (error) {
@@ -62,6 +81,26 @@ export const useAuthForms = () => {
 
       if (data.user) {
         console.log('Usuario autenticado:', data.user);
+        
+        // Verificar si el usuario existe en users_auth
+        const { data: userData, error: userError } = await supabase
+          .from('users_auth')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (userError) {
+          console.error('Error al verificar usuario:', userError);
+          toast.error("Error al verificar usuario");
+          setLoading(false);
+          return;
+        }
+
+        // Actualizar el último login
+        await supabase
+          .from('users_auth')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', data.user.id);
         
         setEmail("");
         setPassword("");
