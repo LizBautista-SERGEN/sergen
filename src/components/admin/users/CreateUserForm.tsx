@@ -31,22 +31,28 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
     role: "user",
     business_name: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreateUser = async () => {
     try {
+      setIsSubmitting(true);
+      
       if (!newUser.email || !newUser.password) {
         toast.error('El correo y la contraseña son obligatorios');
         return;
       }
 
-      const { data, error } = await supabase.auth.admin.createUser({
+      // Instead of trying to use the admin API directly, we'll insert a record into user_accounts
+      // after the user signs up through the standard auth API
+      const { data, error } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
-        email_confirm: true,
-        user_metadata: {
-          business_name: newUser.business_name,
-          role: newUser.role
-        },
+        options: {
+          data: {
+            business_name: newUser.business_name,
+            role: newUser.role
+          }
+        }
       });
 
       if (error) {
@@ -71,6 +77,8 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast.error(`Error al crear usuario: ${error.message || 'Error desconocido'}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -139,7 +147,9 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         <DialogClose asChild>
           <Button variant="outline">Cancelar</Button>
         </DialogClose>
-        <Button onClick={handleCreateUser}>Crear Usuario</Button>
+        <Button onClick={handleCreateUser} disabled={isSubmitting}>
+          {isSubmitting ? 'Creando...' : 'Crear Usuario'}
+        </Button>
       </DialogFooter>
     </>
   );
