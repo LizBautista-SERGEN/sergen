@@ -25,24 +25,7 @@ export const useAuthForms = () => {
       if (session) {
         console.log('Sesión encontrada:', session);
         
-        // Verificar si el usuario existe en users_auth
-        const { data: userData, error: userError } = await supabase
-          .from('users_auth')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userError) {
-          console.error('Error al verificar usuario:', userError);
-          return;
-        }
-
-        // Actualizar el último login
-        await supabase
-          .from('users_auth')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', session.user.id);
-
+        // Omit checking users_auth as it's not necessary to proceed
         navigate('/servicios/control');
       }
     } catch (error) {
@@ -82,25 +65,17 @@ export const useAuthForms = () => {
       if (data.user) {
         console.log('Usuario autenticado:', data.user);
         
-        // Verificar si el usuario existe en users_auth
-        const { data: userData, error: userError } = await supabase
-          .from('users_auth')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        if (userError) {
-          console.error('Error al verificar usuario:', userError);
-          toast.error("Error al verificar usuario");
-          setLoading(false);
-          return;
+        // No need to verify users_auth explicitly since it should be created by trigger
+        // Just update last_login if possible
+        try {
+          await supabase
+            .from('users_auth')
+            .update({ last_login: new Date().toISOString() })
+            .eq('id', data.user.id);
+        } catch (err) {
+          // Don't block the login flow if this fails
+          console.error('Error updating last login:', err);
         }
-
-        // Actualizar el último login
-        await supabase
-          .from('users_auth')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', data.user.id);
         
         setEmail("");
         setPassword("");

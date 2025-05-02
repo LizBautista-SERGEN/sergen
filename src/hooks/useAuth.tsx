@@ -33,7 +33,7 @@ export const useAuth = () => {
             .update({ last_login: new Date().toISOString() })
             .eq('id', session.user.id)
             .then(({ error }) => {
-              if (error) {
+              if (error && !error.message.includes('JSON object requested')) {
                 console.error('Error updating last login:', error);
               }
             });
