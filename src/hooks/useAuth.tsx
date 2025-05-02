@@ -8,7 +8,28 @@ import { toast } from 'sonner';
 export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSuperUser, setIsSuperUser] = useState(false);
   const navigate = useNavigate();
+
+  const checkUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_accounts')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return false;
+      }
+      
+      return data?.role === 'superuser';
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -25,6 +46,13 @@ export const useAuth = () => {
         // Solo actualizar el estado si el componente sigue montado
         if (mounted) {
           setSession(data.session);
+          
+          // Verificar si es superuser
+          if (data.session?.user) {
+            const isSuperUserResult = await checkUserRole(data.session.user.id);
+            setIsSuperUser(isSuperUserResult);
+          }
+          
           setLoading(false);
         }
       } catch (error) {
@@ -39,16 +67,21 @@ export const useAuth = () => {
     
     // Configurar el listener para cambios de sesión
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         console.log('Auth state change:', _event);
         
         if (mounted) {
           setSession(session);
         
           if (_event === 'SIGNED_OUT') {
+            setIsSuperUser(false);
             navigate('/login');
           } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
             if (session?.user) {
+              // Verificar si es superuser
+              const isSuperUserResult = await checkUserRole(session.user.id);
+              setIsSuperUser(isSuperUserResult);
+              
               // Actualizamos el último login sin bloquear el flujo usando setTimeout
               setTimeout(() => {
                 try {
@@ -84,5 +117,6 @@ export const useAuth = () => {
     session,
     loading,
     isAuthenticated: !!session,
+    isSuperUser,
   };
 };

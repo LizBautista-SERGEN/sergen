@@ -19,7 +19,20 @@ export const useUserManagement = () => {
         return;
       }
 
-      // Get all users from user_accounts
+      // Verificar primero si el usuario actual es superuser
+      const { data: currentUserProfile, error: profileError } = await supabase
+        .from('user_accounts')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+        
+      if (profileError || currentUserProfile?.role !== 'superuser') {
+        toast.error('No tienes permisos para administrar usuarios');
+        setLoading(false);
+        return;
+      }
+
+      // Obtener todos los usuarios de user_accounts
       const { data, error } = await supabase
         .from('user_accounts')
         .select('*')
@@ -32,40 +45,13 @@ export const useUserManagement = () => {
         return;
       }
 
-      // Get current authenticated users from auth
-      const { data: authUser, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('Error obteniendo usuario actual:', userError);
-        toast.error('Error al verificar permisos');
-        setLoading(false);
-        return;
-      }
-      
-      // Verificar si el usuario actual es superuser para poder continuar
-      const { data: currentUserProfile, error: profileError } = await supabase
-        .from('user_accounts')
-        .select('role')
-        .eq('id', authUser.user.id)
-        .single();
-        
-      if (profileError || currentUserProfile?.role !== 'superuser') {
-        toast.error('No tienes permisos para administrar usuarios');
-        setLoading(false);
-        return;
-      }
-
-      // Si hay datos, los devolvemos directamente
       if (data && data.length > 0) {
         setUsers(data);
-        setLoading(false);
-        return;
+      } else {
+        // Si no hay usuarios en user_accounts, es posible que necesitemos sincronizar
+        toast.info('No hay usuarios registrados en el sistema');
+        setUsers([]);
       }
-
-      // Si no hay usuarios en user_accounts, es posible que necesitemos sincronizar
-      toast.info('No hay usuarios registrados en el sistema');
-      setUsers([]);
-
     } catch (error) {
       console.error('Error:', error);
       toast.error('Error al cargar usuarios');
@@ -74,42 +60,26 @@ export const useUserManagement = () => {
     }
   };
 
-  // Función para sincronizar manualmente un usuario específico
-  const syncUserByEmail = async (email: string) => {
+  // Función para añadir un usuario manualmente a user_accounts
+  const addUserManually = async (userId: string, userEmail: string, role: string = 'user') => {
     try {
-      // Buscar usuario en Auth
-      const { data: userData } = await supabase.auth.getUser();
-      
-      if (!userData?.user) {
-        toast.error('No se puede sincronizar: sin sesión');
+      const { error } = await supabase
+        .from('user_accounts')
+        .insert({
+          id: userId,
+          email: userEmail.toLowerCase(),
+          role: role,
+          has_access: true
+        });
+        
+      if (error) {
+        console.error('Error adding user manually:', error);
         return false;
       }
       
-      // Verificar si el usuario existe en user_accounts
-      const { data: existingAccount } = await supabase
-        .from('user_accounts')
-        .select('id, email')
-        .eq('email', email.toLowerCase())
-        .single();
-        
-      if (existingAccount) {
-        // Si ya existe, actualizamos el acceso
-        const { error: updateError } = await supabase
-          .from('user_accounts')
-          .update({ has_access: true })
-          .eq('id', existingAccount.id);
-          
-        if (updateError) {
-          console.error('Error actualizando acceso:', updateError);
-          return false;
-        }
-        
-        return true;
-      }
-      
-      return false;
+      return true;
     } catch (error) {
-      console.error('Error sincronizando usuario:', error);
+      console.error('Error:', error);
       return false;
     }
   };
@@ -122,6 +92,6 @@ export const useUserManagement = () => {
     users,
     loading,
     fetchUsers,
-    syncUserByEmail
+    addUserManually
   };
 };

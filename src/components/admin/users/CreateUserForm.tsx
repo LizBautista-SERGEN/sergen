@@ -44,7 +44,7 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
 
       const trimmedEmail = newUser.email.toLowerCase().trim();
 
-      // Primero verificar si el usuario ya existe en user_accounts
+      // Verificar si el usuario ya existe en user_accounts
       const { data: existingUsers, error: existingError } = await supabase
         .from('user_accounts')
         .select('id, email, has_access')
@@ -74,20 +74,19 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
 
       console.log('Intentando crear usuario:', trimmedEmail);
 
-      // Manejo especial para antonio_yupa@sergen.pe ya que sabemos que ya existe en auth
+      // Caso especial para usuarios conocidos que existen en Auth pero no en user_accounts
       if (trimmedEmail === 'antonio_yupa@sergen.pe') {
-        // Buscar el usuario directamente en auth para obtener su ID
-        // Esto requiere crear un registro manual en user_accounts
+        const knownUsers: Record<string, string> = {
+          'antonio_yupa@sergen.pe': 'b99fc3a6-9529-43c8-8fc6-18ec986b1c25'
+        };
         
-        // Crear un UUID para el usuario (normalmente esto se obtendría de auth.user.id)
-        // Para Antonio Yupa, sabemos que tiene el ID b99fc3a6-9529-43c8-8fc6-18ec986b1c25 según los logs
-        const specialUserId = 'b99fc3a6-9529-43c8-8fc6-18ec986b1c25';
+        const userId = knownUsers[trimmedEmail];
         
         // Crear el registro en user_accounts directamente
         const { error: insertError } = await supabase
           .from('user_accounts')
           .insert({
-            id: specialUserId,
+            id: userId,
             email: trimmedEmail,
             role: newUser.role,
             has_access: true,
@@ -112,7 +111,7 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
         return;
       }
       
-      // Si no está en user_accounts, intentamos crear el usuario
+      // Si no está en user_accounts, intentamos crear el usuario en Auth
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password: newUser.password,
@@ -127,16 +126,13 @@ export const CreateUserForm = ({ onUserCreated }: { onUserCreated: () => void })
       if (error) {
         // Si hay un error específico de usuario ya existente
         if (error.message.includes("already")) {
-          console.log('Usuario ya existe en Auth pero no en user_accounts');
           toast.error('Este usuario ya existe pero no pudimos sincronizarlo automáticamente. Contacte al administrador.');
-          setIsSubmitting(false);
-          return;
         } else {
           console.error('Error creating user:', error);
           toast.error(`Error al crear usuario: ${error.message}`);
-          setIsSubmitting(false);
-          return;
         }
+        setIsSubmitting(false);
+        return;
       }
 
       if (data.user) {

@@ -42,6 +42,19 @@ export const useAuthForms = () => {
         return;
       }
 
+      // Verificar primero si el usuario existe y tiene acceso antes de intentar iniciar sesión
+      const { data: userAccountData, error: userAccountError } = await supabase
+        .from('user_accounts')
+        .select('has_access')
+        .eq('email', trimmedEmail)
+        .single();
+        
+      if (!userAccountError && userAccountData && !userAccountData.has_access) {
+        toast.error("Su cuenta está suspendida. Contacte al administrador.");
+        setLoading(false);
+        return;
+      }
+
       // Cerrar cualquier sesión anterior para evitar conflictos
       await supabase.auth.signOut();
 
@@ -53,41 +66,7 @@ export const useAuthForms = () => {
 
       if (error) {
         console.error('Error de inicio de sesión:', error);
-        
-        // Verificar si el usuario existe en user_accounts
-        const { data: userAccountData, error: userAccountError } = await supabase
-          .from('user_accounts')
-          .select('email, has_access')
-          .eq('email', trimmedEmail);
-          
-        if (!userAccountError && userAccountData && userAccountData.length > 0) {
-          const userData = userAccountData[0];
-          if (!userData.has_access) {
-            toast.error("Su cuenta está suspendida. Contacte al administrador.");
-          } else {
-            toast.error("Contraseña incorrecta");
-          }
-        } else {
-          // Intentar crear un registro en user_accounts si existe en auth
-          try {
-            // Primero intentamos iniciar sesión una vez más para asegurar que no es un error temporal
-            const { error: retryError } = await supabase.auth.signInWithPassword({
-              email: trimmedEmail,
-              password,
-            });
-            
-            if (retryError) {
-              toast.error("Credenciales inválidas o usuario no registrado");
-            } else {
-              toast.success("Inicio de sesión exitoso");
-              navigate('/servicios/control');
-            }
-          } catch (error) {
-            console.error('Error verificando usuario:', error);
-            toast.error("Error en la autenticación");
-          }
-        }
-        
+        toast.error("Credenciales inválidas. Verifique su correo y contraseña.");
         setLoading(false);
         return;
       }
@@ -96,13 +75,13 @@ export const useAuthForms = () => {
         console.log('Usuario autenticado:', data.user);
         
         // Verificar si el usuario existe en user_accounts
-        const { data: userAccountData, error: userAccountError } = await supabase
+        const { data: userAccount, error: accountError } = await supabase
           .from('user_accounts')
           .select('id')
           .eq('id', data.user.id);
           
         // Si no existe, lo creamos
-        if (!userAccountError && (!userAccountData || userAccountData.length === 0)) {
+        if (!accountError && (!userAccount || userAccount.length === 0)) {
           const { error: insertError } = await supabase
             .from('user_accounts')
             .insert({
@@ -189,6 +168,7 @@ export const useAuthForms = () => {
           data: {
             business_name: businessName,
             ruc: ruc,
+            role: 'user'
           }
         }
       });
@@ -205,7 +185,7 @@ export const useAuthForms = () => {
       }
 
       if (data.user) {
-        // Asegurarnos de que el usuario también se registre en user_accounts
+        // Registramos el usuario en user_accounts
         const { error: insertError } = await supabase
           .from('user_accounts')
           .insert({
