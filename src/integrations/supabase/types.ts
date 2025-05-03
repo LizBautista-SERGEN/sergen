@@ -859,6 +859,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: string
       }
+      is_superuser: {
+        Args: { check_id: string }
+        Returns: boolean
+      }
       load_monthly_forecast: {
         Args: {
           p_fecha: string

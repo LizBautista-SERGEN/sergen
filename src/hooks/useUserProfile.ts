@@ -39,6 +39,7 @@ export const useUserProfile = () => {
       if (sessionError) {
         console.error('Session error:', sessionError);
         setError(sessionError.message);
+        setIsLoading(false);
         return;
       }
       
@@ -57,6 +58,7 @@ export const useUserProfile = () => {
       if (profileError) {
         console.error('Error fetching profile:', profileError);
         setError(profileError.message);
+        setIsLoading(false);
         return;
       }
       

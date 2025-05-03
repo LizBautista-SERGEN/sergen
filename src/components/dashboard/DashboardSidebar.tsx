@@ -6,7 +6,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 export const DashboardSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isSuperUser } = useUserProfile();
+  const { isSuperUser, isLoading } = useUserProfile();
   
   // Base links that all users can see
   const baseLinks = [
@@ -44,6 +44,16 @@ export const DashboardSidebar = () => {
       </button>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-full min-w-[280px] flex-shrink-0 bg-white border-r border-gray-200 fixed top-16 left-0 z-40">
+        <div className="flex justify-center items-center h-full">
+          <div className="w-8 h-8 border-4 border-t-sergen-500 border-gray-200 rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full min-w-[280px] flex-shrink-0 bg-white border-r border-gray-200 fixed top-16 left-0 z-40">
