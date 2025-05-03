@@ -86,6 +86,27 @@ export const useUserManagement = () => {
     }
   };
 
+  // Función para eliminar un usuario
+  const deleteUser = async (userId: string) => {
+    try {
+      // Delete from user_accounts table
+      const { error } = await supabase
+        .from('user_accounts')
+        .delete()
+        .eq('id', userId);
+        
+      if (error) {
+        console.error('Error deleting user:', error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -94,6 +115,7 @@ export const useUserManagement = () => {
     users,
     loading,
     fetchUsers,
-    addUserManually
+    addUserManually,
+    deleteUser
   };
 };
