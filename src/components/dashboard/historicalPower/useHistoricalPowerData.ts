@@ -18,8 +18,17 @@ export const useHistoricalPowerData = () => {
         // Fetch the power data
         const powerData = await fetchPowerData();
         
+        console.log("Power data fetched:", powerData.length, "records");
+        
+        // Display sample data for debugging
+        if (powerData.length > 0) {
+          console.log("Sample power data:", powerData.slice(0, 3));
+        }
+        
         // Process the data to get daily maximums
         const processedData = processMaximumData(powerData);
+        
+        console.log("Processed data for chart:", processedData.length, "records");
         
         setChartData(processedData);
       } catch (err: any) {
