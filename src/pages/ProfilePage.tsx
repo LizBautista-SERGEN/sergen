@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -99,13 +98,13 @@ const ProfilePage = () => {
               <Tabs defaultValue="informacion" className="w-full">
                 <TabsList className="w-full justify-start border-b mb-8">
                   <TabsTrigger value="informacion" className="text-lg data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
-                    Datos de usuario
+                    Información
                   </TabsTrigger>
                   <TabsTrigger value="contacto" className="text-lg data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
-                    Datos de contacto
+                    Contacto
                   </TabsTrigger>
                   <TabsTrigger value="archivos" className="text-lg data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
-                    Subir archivos
+                    Archivos
                   </TabsTrigger>
                   <TabsTrigger value="configuracion" className="text-lg data-[state=active]:border-b-2 data-[state=active]:border-sergen-500 rounded-none">
                     Configuración

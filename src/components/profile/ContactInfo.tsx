@@ -41,7 +41,7 @@ export const ContactInfo = ({ profile, onProfileUpdate, readOnly = false }: Cont
         return;
       }
 
-      // Actualizar la tabla user_accounts
+      // Actualizar la tabla user_accounts en lugar de profiles
       const { error } = await supabase
         .from('user_accounts')
         .update(formData)

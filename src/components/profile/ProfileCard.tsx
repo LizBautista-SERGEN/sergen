@@ -71,7 +71,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
 
       setUploadingAvatar(true);
 
-      // Actualizar en la tabla user_accounts
+      // Actualizar en la tabla user_accounts en lugar de profiles
       const { error } = await supabase
         .from('user_accounts')
         .update({ profile_image: null })
