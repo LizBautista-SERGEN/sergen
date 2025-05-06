@@ -33,10 +33,15 @@ export const useHistoricalPowerData = () => {
           throw new Error("No active session found. Please log in.");
         }
         
+        console.log("Session found, auth token available:", !!session.access_token);
+        
         // Call our edge function to get the historical power data with auth header
         const response = await supabase.functions.invoke(
           "get-historical-power-data", 
           {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
             body: {
               start_date: oneHundredTwentyDaysAgo.toISOString(),
               end_date: today.toISOString(),

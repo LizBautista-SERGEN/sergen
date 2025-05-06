@@ -17,20 +17,26 @@ serve(async (req) => {
     // First, verify authentication
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.log("Missing authorization header");
       return new Response(
         JSON.stringify({ code: 401, message: 'Missing authorization header' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
 
+    console.log("Authorization header present:", !!authHeader);
+    
     const { start_date, end_date, limit = 50000 } = await req.json()
     
     if (!start_date || !end_date) {
+      console.log("Missing required date parameters");
       return new Response(
         JSON.stringify({ error: 'Missing required date parameters' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
+
+    console.log(`Fetching historical power data from ${start_date} to ${end_date} with limit ${limit}`);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -40,8 +46,6 @@ serve(async (req) => {
       }
     )
 
-    console.log(`Fetching historical power data from ${start_date} to ${end_date} with limit ${limit}`)
-    
     // Use pagination to fetch all records
     let allData = [];
     let page = 0;
@@ -75,6 +79,29 @@ serve(async (req) => {
     }
 
     console.log(`Retrieved a total of ${allData.length} records from database`);
+    
+    // Log some sample data to verify data structure
+    if (allData.length > 0) {
+      console.log("Sample data structure:", allData.slice(0, 2));
+      
+      // Check for records in the 18:00-23:00 range
+      const filtered = allData.filter(item => {
+        try {
+          const date = new Date(item.fecha);
+          const hour = date.getUTCHours();
+          return hour >= 18 && hour <= 23;
+        } catch (e) {
+          console.error("Error filtering date:", e);
+          return false;
+        }
+      });
+      
+      console.log(`Found ${filtered.length} records in the 18:00-23:00 UTC range`);
+      
+      if (filtered.length > 0) {
+        console.log("Sample filtered data:", filtered.slice(0, 3));
+      }
+    }
 
     return new Response(
       JSON.stringify(allData),
