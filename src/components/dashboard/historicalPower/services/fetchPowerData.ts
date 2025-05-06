@@ -15,46 +15,44 @@ export const fetchPowerData = async () => {
     const formattedThirtyDaysAgo = format(thirtyDaysAgo, 'yyyy-MM-dd');
     
     console.log("Fetching historical power data...");
-    console.log("Date range:", {
-      start: formattedThirtyDaysAgo,
-      end: formattedToday
-    });
     
-    // First get the current session to include auth token
+    // First, try to directly access coes_historical data
+    const { data: directData, error: directError } = await supabase
+      .from('coes_historical')
+      .select('fecha, ejecutado')
+      .order('fecha', { ascending: true })
+      .limit(100);
+      
+    if (directError) {
+      console.error('Error accessing table directly:', directError);
+      throw new Error(`Error accessing data directly: ${directError.message}`);
+    }
+
+    if (directData && directData.length > 0) {
+      console.log('Direct data access successful, found records:', directData.length);
+      console.log('Sample records from direct query:');
+      directData.slice(0, 5).forEach((record, i) => {
+        console.log(`Record ${i+1}:`, record);
+      });
+      
+      // If direct access works, return this data
+      return directData.map(item => ({ 
+        fecha: item.fecha,
+        ejecutado: item.ejecutado 
+      }));
+    }
+    
+    // If no data from direct access, try the edge function
+    console.log("No data from direct query. Trying edge function...");
+    
+    // Get session for auth
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
       throw new Error("No active session found. Please log in.");
     }
     
-    console.log("Session found, auth token available:", !!session.access_token);
-    
-    // First, let's try to directly access some data to verify permissions
-    console.log("Attempting to directly query coes_historical to verify access...");
-    const { data: directData, error: directError, count } = await supabase
-      .from('coes_historical')
-      .select('*', { count: 'exact' })
-      .limit(5);
-      
-    if (directError) {
-      console.error('Error accessing table directly:', directError);
-    } else {
-      console.log('Direct table access successful, found records:', directData?.length);
-      if (directData && directData.length > 0) {
-        console.log('Sample records from direct query:');
-        directData.forEach((record, i) => {
-          console.log(`Record ${i+1}:`, record);
-        });
-      } else {
-        console.log('No records found in direct query.');
-        if (count !== null && count !== undefined) {
-          console.log(`Total count reported by database: ${count}`);
-        }
-      }
-    }
-    
-    // Call our edge function to get the historical power data with auth header
-    console.log("Calling edge function get-historical-power-data...");
+    // Call edge function as fallback
     const response = await supabase.functions.invoke(
       "get-historical-power-data", 
       {
@@ -64,37 +62,23 @@ export const fetchPowerData = async () => {
         body: {
           start_date: formattedThirtyDaysAgo,
           end_date: formattedToday,
-          limit: 10000, // Limit to prevent excessive data
+          limit: 10000,
         }
       }
     );
     
     if (response.error) {
-      console.error('Edge function error:', response.error);
       throw new Error(`Error from edge function: ${response.error.message}`);
     }
 
     const data: PowerData[] = response.data;
 
     if (!data || data.length === 0) {
-      console.log("No data found in the specified date range from edge function");
-      
-      // If we couldn't get data through the edge function but have direct data,
-      // use the direct data as fallback
-      if (directData && directData.length > 0) {
-        console.log("Using direct data as fallback");
-        return directData.map(item => ({ 
-          fecha: item.fecha,
-          ejecutado: item.ejecutado 
-        }));
-      }
-      
+      console.log("No data found from edge function either");
       return [];
     }
 
     console.log(`Retrieved ${data.length} records from edge function`);
-    console.log("Sample data from edge function:", data.slice(0, 3));
-    
     return data;
   } catch (err: any) {
     console.error('Error fetching power data:', err);

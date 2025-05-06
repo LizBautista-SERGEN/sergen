@@ -35,12 +35,14 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
 
       setUploadingAvatar(true);
 
+      // Create form data for the upload
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', 'profile');
       formData.append('userId', session.user.id);
 
-      const { error } = await supabase.functions.invoke('upload-file', {
+      // Call the upload-file edge function
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         body: formData,
       });
 
@@ -48,15 +50,16 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
 
       toast({
         title: "Éxito",
-        description: "Archivo subido correctamente",
+        description: "Foto de perfil actualizada correctamente",
       });
-
+      
+      // Refresh profile to see the changes
       onProfileUpdate();
     } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
         title: "Error",
-        description: "No se pudo subir el archivo",
+        description: "No se pudo subir la imagen",
         variant: "destructive",
       });
     } finally {
@@ -71,7 +74,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
 
       setUploadingAvatar(true);
 
-      // Actualizar en la tabla user_accounts en lugar de profiles
+      // Update user profile to remove avatar
       const { error } = await supabase
         .from('user_accounts')
         .update({ profile_image: null })
@@ -81,7 +84,7 @@ export const ProfileCard = ({ profile, onProfileUpdate }: ProfileCardProps) => {
 
       toast({
         title: "Éxito",
-        description: "Foto de perfil eliminada",
+        description: "Foto de perfil eliminada correctamente",
       });
 
       onProfileUpdate();

@@ -13,10 +13,13 @@ serve(async (req) => {
   }
 
   try {
+    // Parse the form data
     const formData = await req.formData()
     const file = formData.get('file')
-    const type = formData.get('type') // 'profile', 'contract', or 'invoice'
+    const type = formData.get('type')
     const userId = formData.get('userId')
+
+    console.log('Upload request received:', { type, userId, fileName: file?.name })
 
     if (!file || !type || !userId) {
       return new Response(
@@ -25,63 +28,73 @@ serve(async (req) => {
       )
     }
 
+    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Create bucket if it doesn't exist
+    const bucketName = type === 'profile' ? 'profile_images' : 
+                      type === 'contract' ? 'contracts' : 'invoices'
+
+    // Create unique file name
     const fileExt = file.name.split('.').pop()
     const fileName = `${crypto.randomUUID()}.${fileExt}`
-    let bucketName = ''
+    const filePath = `${userId}/${fileName}`
     
-    switch(type) {
-      case 'profile':
-        bucketName = 'profile_images'
-        break
-      case 'contract':
-        bucketName = 'contracts'
-        break
-      case 'invoice':
-        bucketName = 'invoices'
-        break
-      default:
-        throw new Error('Invalid file type')
-    }
+    console.log(`Uploading to bucket: ${bucketName}, path: ${filePath}`)
 
+    // Upload the file
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(bucketName)
-      .upload(`${userId}/${fileName}`, file, {
+      .upload(filePath, file, {
         contentType: file.type,
         upsert: true
       })
 
     if (uploadError) {
+      console.error('Upload error:', uploadError)
       throw uploadError
     }
 
+    console.log('File uploaded successfully')
+
+    // Get the public URL
     const { data: { publicUrl } } = supabase.storage
       .from(bucketName)
-      .getPublicUrl(`${userId}/${fileName}`)
+      .getPublicUrl(filePath)
 
+    console.log('Generated public URL:', publicUrl)
+
+    // Update user profile if profile image
     if (type === 'profile') {
-      // Actualizar la tabla user_accounts en lugar de profiles
+      console.log('Updating user profile with new image URL')
       const { error: updateError } = await supabase
         .from('user_accounts')
         .update({ profile_image: publicUrl })
         .eq('id', userId)
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('Profile update error:', updateError)
+        throw updateError
+      }
     } else {
+      // Add document entry if contract or invoice
+      console.log('Adding document record')
       const { error: insertError } = await supabase
         .from('documents')
         .insert({
           user_id: userId,
           filename: file.name,
-          file_path: `${userId}/${fileName}`,
-          document_type: type === 'contract' ? 'contract' : 'invoice'
+          file_path: filePath,
+          document_type: type
         })
 
-      if (insertError) throw insertError
+      if (insertError) {
+        console.error('Document insert error:', insertError)
+        throw insertError
+      }
     }
 
     return new Response(
@@ -92,6 +105,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
+    console.error('Function error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
