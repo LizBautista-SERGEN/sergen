@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileCard } from "@/components/profile/ProfileCard";
+import { DocumentsTab } from "@/components/profile/DocumentsTab";
 
 const ProfilePage = () => {
   const { toast } = useToast();
@@ -152,7 +153,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 pt-8">
+    <div className="flex min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-4">
         <h1 className="text-2xl font-bold mb-6">Perfil</h1>
 
@@ -168,6 +169,7 @@ const ProfilePage = () => {
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="datos-usuario">Datos de usuario</TabsTrigger>
                 <TabsTrigger value="datos-contacto">Datos de contacto</TabsTrigger>
+                <TabsTrigger value="facturas">Facturas</TabsTrigger>
               </TabsList>
 
               <TabsContent value="datos-usuario" className="mt-6">
@@ -263,6 +265,10 @@ const ProfilePage = () => {
                     {isUpdating ? "Actualizando..." : "Actualizar contacto"}
                   </Button>
                 </form>
+              </TabsContent>
+
+              <TabsContent value="facturas" className="mt-6">
+                <DocumentsTab />
               </TabsContent>
             </Tabs>
           </div>
