@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -22,15 +21,20 @@ const ProfilePage = () => {
     setIsUpdating(true);
     
     const form = e.target as HTMLFormElement;
-    const formData = {
+    const formData: Record<string, any> = {
       business_name: form.business_name.value,
       ruc: form.ruc.value,
       activity: form.activity.value,
       electricity_provider: form.electricity_provider.value,
       contracted_power: form.contracted_power.value,
-      contract_expiration: form.contract_expiration.value,
       notice_period: form.notice_period.value,
     };
+    
+    // Handle contract_expiration separately to avoid date format issues
+    const contractExpValue = form.contract_expiration.value;
+    if (contractExpValue && contractExpValue.trim() !== '') {
+      formData.contract_expiration = contractExpValue;
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();

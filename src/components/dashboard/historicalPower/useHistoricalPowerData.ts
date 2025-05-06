@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { format, subDays, parseISO } from "date-fns";
+import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PowerData, ChartData } from "./types";

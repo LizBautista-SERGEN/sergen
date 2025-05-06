@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
@@ -53,6 +52,7 @@ serve(async (req) => {
     const pageSize = 1000; // Supabase may have a default limit of 1000
     
     while (hasMore) {
+      console.log(`Fetching page ${page + 1}...`);
       const { data, error } = await supabase
         .from('coes_historical')
         .select('fecha, ejecutado')
@@ -80,39 +80,37 @@ serve(async (req) => {
 
     console.log(`Retrieved a total of ${allData.length} records from database`);
     
-    // Log some sample data to verify data structure and filtering
-    if (allData.length > 0) {
-      console.log("Sample data structure:", allData.slice(0, 2));
-      
-      // Filter for records in the 18:00-23:00 range and verify they exist
-      const filtered = allData.filter(item => {
-        try {
-          const date = new Date(item.fecha);
-          const hour = date.getUTCHours();
-          return hour >= 18 && hour <= 23;
-        } catch (e) {
-          console.error("Error filtering date:", e);
-          return false;
-        }
-      });
-      
-      console.log(`Found ${filtered.length} records in the 18:00-23:00 UTC range`);
-      
-      if (filtered.length > 0) {
-        console.log("Sample filtered data:", filtered.slice(0, 3));
-        filtered.slice(0, 5).forEach(item => {
-          const date = new Date(item.fecha);
-          console.log(`Time (UTC): ${date.toISOString()}, Hour: ${date.getUTCHours()}, Value: ${item.ejecutado}`);
-        });
-      } else {
-        console.log("WARNING: No records found in the 18:00-23:00 UTC range!");
+    // Filter records to keep only those in the 18:00-23:00 UTC range
+    const filteredData = allData.filter(item => {
+      if (!item.fecha || item.ejecutado == null) {
+        console.log("Skipping invalid item:", item);
+        return false;
       }
+      
+      try {
+        const date = new Date(item.fecha);
+        const hour = date.getUTCHours();
+        return hour >= 18 && hour <= 23;
+      } catch (e) {
+        console.error("Error filtering date:", e);
+        return false;
+      }
+    });
+    
+    console.log(`Found ${filteredData.length} records in the 18:00-23:00 UTC range`);
+    
+    if (filteredData.length > 0) {
+      console.log("Sample filtered data:", filteredData.slice(0, 3));
+      filteredData.slice(0, 5).forEach(item => {
+        const date = new Date(item.fecha);
+        console.log(`Time (UTC): ${date.toISOString()}, Hour: ${date.getUTCHours()}, Value: ${item.ejecutado}`);
+      });
     } else {
-      console.log("WARNING: No records returned from the database query!");
+      console.log("WARNING: No records found in the 18:00-23:00 UTC range!");
     }
 
     return new Response(
-      JSON.stringify(allData),
+      JSON.stringify(filteredData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
