@@ -97,15 +97,15 @@ export const useAuthForms = () => {
           }
         }
         
-        // Actualizar last_login directamente en user_accounts
+        // Actualizar updated_at directamente en user_accounts en lugar de last_login
         setTimeout(() => {
           supabase
             .from('user_accounts')
-            .update({ last_login: new Date().toISOString() })
+            .update({ updated_at: new Date().toISOString() })
             .eq('id', data.user.id)
             .then(({ error }) => {
               if (error) {
-                console.error('Error updating last login:', error);
+                console.error('Error updating timestamp:', error);
               }
             });
         }, 0);

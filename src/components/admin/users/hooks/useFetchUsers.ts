@@ -62,7 +62,7 @@ export const useFetchUsers = () => {
         return {
           id: account.id,
           email: account.email,
-          last_login: account.last_login || null,
+          last_login: null, // Set a default value since it might not exist in the database
           created_at: account.created_at,
           role: account.role || 'user',
           business_name: account.business_name || null,

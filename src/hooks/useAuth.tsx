@@ -96,13 +96,14 @@ export const useAuth = () => {
               // Actualizamos el último login directamente en user_accounts
               setTimeout(() => {
                 try {
+                  // Using an update object without 'last_login'
                   supabase
                     .from('user_accounts')
-                    .update({ last_login: new Date().toISOString() })
+                    .update({ updated_at: new Date().toISOString() })
                     .eq('id', session.user.id)
                     .then(({ error }) => {
                       if (error) {
-                        console.error('Error updating last login:', error);
+                        console.error('Error updating timestamp:', error);
                       }
                     });
                 } catch (err) {

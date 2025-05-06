@@ -20,7 +20,7 @@ export type ProfileType = {
   contracted_power: string | null;
   contract_expiration: string | null;
   notice_period: string | null;
-  last_login: string | null;
+  last_login?: string | null; // Make last_login optional
 };
 
 export const useUserProfile = () => {
@@ -64,7 +64,12 @@ export const useUserProfile = () => {
       }
       
       if (data) {
-        const userProfile = data as ProfileType;
+        // Cast to unknown first to avoid TypeScript conversion error
+        const userProfile = {
+          ...data,
+          last_login: data.last_login || null, // Add last_login, set to null if it doesn't exist
+        } as ProfileType;
+
         console.log('Profile loaded successfully:', userProfile);
         setProfile(userProfile);
         setIsSuperUser(userProfile.role === 'superuser');
