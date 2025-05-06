@@ -17,15 +17,15 @@ export const useHistoricalPowerData = () => {
       try {
         // Get current date
         const today = new Date();
-        // Get date from 120 days ago to ensure we get all data from previous months
-        const oneHundredTwentyDaysAgo = subDays(today, 120);
+        // Get date from 30 days ago for a smaller range to ensure we get recent data
+        const thirtyDaysAgo = subDays(today, 30);
         
         const formattedToday = format(today, 'yyyy-MM-dd');
-        const formatted120DaysAgo = format(oneHundredTwentyDaysAgo, 'yyyy-MM-dd');
+        const formattedThirtyDaysAgo = format(thirtyDaysAgo, 'yyyy-MM-dd');
         
         console.log("Fetching historical power data...");
         console.log("Date range:", {
-          start: formatted120DaysAgo,
+          start: formattedThirtyDaysAgo,
           end: formattedToday
         });
         
@@ -38,10 +38,11 @@ export const useHistoricalPowerData = () => {
         
         console.log("Session found, auth token available:", !!session.access_token);
         
-        // Check if we can directly query some data to verify access
-        const { data: directData, error: directError } = await supabase
+        // First, let's try to directly access some data to verify permissions
+        console.log("Attempting to directly query coes_historical to verify access...");
+        const { data: directData, error: directError, count } = await supabase
           .from('coes_historical')
-          .select('*')
+          .select('*', { count: 'exact' })
           .limit(5);
           
         if (directError) {
@@ -49,11 +50,20 @@ export const useHistoricalPowerData = () => {
         } else {
           console.log('Direct table access successful, found records:', directData?.length);
           if (directData && directData.length > 0) {
-            console.log('Sample record from direct query:', directData[0]);
+            console.log('Sample records from direct query:');
+            directData.forEach((record, i) => {
+              console.log(`Record ${i+1}:`, record);
+            });
+          } else {
+            console.log('No records found in direct query.');
+            if (count !== null && count !== undefined) {
+              console.log(`Total count reported by database: ${count}`);
+            }
           }
         }
         
         // Call our edge function to get the historical power data with auth header
+        console.log("Calling edge function get-historical-power-data...");
         const response = await supabase.functions.invoke(
           "get-historical-power-data", 
           {
@@ -61,9 +71,9 @@ export const useHistoricalPowerData = () => {
               Authorization: `Bearer ${session.access_token}`,
             },
             body: {
-              start_date: formatted120DaysAgo,
+              start_date: formattedThirtyDaysAgo,
               end_date: formattedToday,
-              limit: 100000, // Very high limit to ensure we get all records
+              limit: 10000, // Limit to prevent excessive data
             }
           }
         );
@@ -76,14 +86,26 @@ export const useHistoricalPowerData = () => {
         const data: PowerData[] = response.data;
 
         if (!data || data.length === 0) {
-          console.log("No data found in the specified date range");
+          console.log("No data found in the specified date range from edge function");
+          
+          // If we couldn't get data through the edge function but have direct data,
+          // let's try to process that instead
+          if (directData && directData.length > 0) {
+            console.log("Using direct data as fallback");
+            processData(directData.map(item => ({ 
+              fecha: item.fecha,
+              ejecutado: item.ejecutado 
+            })));
+            return;
+          }
+          
           setChartData([]);
           setIsLoading(false);
           return;
         }
 
         console.log(`Retrieved ${data.length} records from edge function`);
-        console.log("Sample data:", data.slice(0, 3));
+        console.log("Sample data from edge function:", data.slice(0, 3));
         
         // Process the data to find daily maximums between 18:00 and 23:00 UTC
         processData(data);
@@ -145,23 +167,20 @@ export const useHistoricalPowerData = () => {
         console.log(`Found ${count18to23} records in the 18:00-23:00 range`);
         console.log('Daily maximums processed:', Object.keys(dailyMaximums).length);
         
-        if (Object.keys(dailyMaximums).length > 0) {
-          // Get the maximum value found and log it
-          const maxValues = Object.values(dailyMaximums).sort((a, b) => b.max_power - a.max_power);
-          const highestValue = maxValues[0];
-          const secondHighestValue = maxValues.length > 1 ? maxValues[1] : null;
-          
-          console.log(`Highest value: ${highestValue.max_power} at ${new Date(highestValue.fecha).toISOString()}`);
-          if (secondHighestValue) {
-            console.log(`Second highest value: ${secondHighestValue.max_power} at ${new Date(secondHighestValue.fecha).toISOString()}`);
-          }
-          
-          // Log the daily maximum for each day
-          Object.entries(dailyMaximums).forEach(([dateKey, item]) => {
-            console.log(`Daily maximum for ${dateKey}: ${item.max_power} at ${new Date(item.fecha).toISOString()}`);
-          });
-        } else {
+        if (Object.keys(dailyMaximums).length === 0) {
           console.log("No maximum values found in the 18:00-23:00 time range");
+          setChartData([]);
+          return;
+        }
+        
+        // Get the maximum value found and log it
+        const maxValues = Object.values(dailyMaximums).sort((a, b) => b.max_power - a.max_power);
+        const highestValue = maxValues[0];
+        const secondHighestValue = maxValues.length > 1 ? maxValues[1] : null;
+        
+        console.log(`Highest value: ${highestValue.max_power} at ${new Date(highestValue.fecha).toISOString()}`);
+        if (secondHighestValue) {
+          console.log(`Second highest value: ${secondHighestValue.max_power} at ${new Date(secondHighestValue.fecha).toISOString()}`);
         }
         
         // Convert to chart data format
@@ -198,16 +217,13 @@ export const useHistoricalPowerData = () => {
               item.color = '#156082'; // Default blue for the rest
             }
           });
-          
-          console.log('Color assignment completed:', {
-            highest: sortedByValue[0]?.value,
-            secondHighest: sortedByValue[1]?.value,
-            totalPoints: formattedData.length
-          });
         }
         
         setChartData(formattedData);
         console.log('Power maximum data ready for chart, count:', formattedData.length);
+        
+        // Display full formatted data for debugging
+        console.log("Final chart data:", formattedData);
       } catch (err: any) {
         console.error('Error in processData:', err);
         setError(`Error processing data: ${err.message}`);

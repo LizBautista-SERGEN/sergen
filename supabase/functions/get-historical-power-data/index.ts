@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
@@ -46,7 +47,7 @@ serve(async (req) => {
       }
     )
 
-    // First, get the first 5 records to verify access and data format
+    // First, let's get the first 5 records to verify access and data format regardless of date filters
     const { data: sampleData, error: sampleError } = await supabase
       .from('coes_historical')
       .select('*')
@@ -60,19 +61,29 @@ serve(async (req) => {
     if (!sampleData || sampleData.length === 0) {
       console.log("WARNING: No records found in the coes_historical table at all!");
     } else {
-      console.log(`Successfully accessed coes_historical table. Sample records:`);
+      console.log(`Successfully accessed coes_historical table. Found ${sampleData.length} sample records:`);
       sampleData.forEach((record, index) => {
         console.log(`Record ${index + 1}:`, JSON.stringify(record));
       });
     }
 
-    // Check if there's any data in the table with the date range
-    const { data: rangeData, error: rangeError } = await supabase
+    // Let's try a simpler query to just count all records
+    const { count: totalCount, error: countError } = await supabase
       .from('coes_historical')
-      .select('fecha', { count: 'exact' })
+      .select('*', { count: 'exact', head: true });
+    
+    if (countError) {
+      console.error("Error counting records:", countError);
+    } else {
+      console.log(`Total records in coes_historical table: ${totalCount}`);
+    }
+
+    // Now try to get records within the date range
+    const { data: rangeData, error: rangeError, count: rangeCount } = await supabase
+      .from('coes_historical')
+      .select('fecha, ejecutado', { count: 'exact' })
       .gte('fecha', start_date)
-      .lte('fecha', end_date)
-      .limit(1);
+      .lte('fecha', end_date);
       
     if (rangeError) {
       console.error("Error checking data in date range:", rangeError);
@@ -81,12 +92,38 @@ serve(async (req) => {
     
     if (!rangeData || rangeData.length === 0) {
       console.log(`WARNING: No records found between ${start_date} and ${end_date}`);
+      
+      // If no data in range, let's try getting some data without date filters
+      // to help diagnose the issue
+      const { data: anyData, error: anyError } = await supabase
+        .from('coes_historical')
+        .select('fecha, ejecutado')
+        .limit(10);
+        
+      if (anyError) {
+        console.error("Error fetching any data:", anyError);
+      } else if (anyData && anyData.length > 0) {
+        console.log("Found some data without date filters. Sample records:");
+        anyData.forEach((record, index) => {
+          console.log(`Any data record ${index + 1}:`, JSON.stringify(record));
+        });
+        
+        // Let's check the date format in the database
+        const sampleDates = anyData.map(item => item.fecha);
+        console.log("Sample date formats in database:", sampleDates);
+      } else {
+        console.log("No data found at all in the table with simple query.");
+      }
+      
       return new Response(
         JSON.stringify([]),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     } else {
-      console.log(`Found records in the specified date range. Proceeding with query.`);
+      console.log(`Found ${rangeData.length} records in the specified date range. Sample records:`);
+      rangeData.slice(0, 5).forEach((record, index) => {
+        console.log(`Range data record ${index + 1}:`, JSON.stringify(record));
+      });
     }
     
     // Use pagination to fetch all records within the date range
@@ -144,13 +181,7 @@ serve(async (req) => {
       try {
         const date = new Date(item.fecha);
         const hour = date.getUTCHours();
-        const isInRange = hour >= 18 && hour <= 23;
-        
-        if (isInRange) {
-          console.log(`Including record: ${date.toISOString()}, Hour: ${hour}, Value: ${item.ejecutado}`);
-        }
-        
-        return isInRange;
+        return hour >= 18 && hour <= 23;
       } catch (e) {
         console.error("Error filtering date:", e);
         return false;
