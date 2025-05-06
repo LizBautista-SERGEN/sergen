@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileText, Upload, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,11 +11,6 @@ export const DocumentsTab = () => {
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch documents on component mount
-  useState(() => {
-    fetchDocuments();
-  }, []);
 
   const fetchDocuments = async () => {
     try {
@@ -48,6 +43,11 @@ export const DocumentsTab = () => {
       setIsLoading(false);
     }
   };
+
+  // Use useEffect instead of useState to call fetchDocuments on component mount
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
 
   const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
