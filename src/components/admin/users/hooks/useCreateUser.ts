@@ -29,6 +29,62 @@ export const useCreateUser = (onUserCreated: () => void) => {
     setNewUser(prev => ({ ...prev, role: value }));
   };
 
+  // Función para obtener el ID de un usuario ya existente en auth
+  const getExistingUserId = async (email: string): Promise<string | null> => {
+    try {
+      // Intentamos usar la API de admin para buscar el usuario por email
+      // Nota: Esto requiere tokens especiales y probablemente fallará
+      // pero aquí lo dejamos por si se implementa después
+      console.log("Intentando obtener ID del usuario existente por email:", email);
+      
+      // Como alternativa, podemos intentar iniciar sesión con el usuario
+      // pero esto tampoco funciona sin la contraseña correcta
+      
+      return null; // Por ahora devolvemos null si no podemos obtener el ID
+    } catch (error) {
+      console.error("Error obteniendo ID del usuario:", error);
+      return null;
+    }
+  };
+
+  // Función para sincronizar un usuario de auth con user_accounts
+  const syncUserToAccounts = async (email: string, role: string, business_name: string) => {
+    try {
+      // 1. Obtener el ID del usuario existente (esto es complicado sin permisos admin)
+      const userId = await getExistingUserId(email);
+      
+      if (!userId) {
+        console.log("No se pudo obtener el ID del usuario. Solicitando al administrador que complete manualmente.");
+        toast.info("El usuario existe en Auth pero necesita ser vinculado manualmente a user_accounts por un administrador");
+        return false;
+      }
+      
+      // 2. Si tenemos el ID, insertar en user_accounts
+      const { error: accountError } = await supabase
+        .from('user_accounts')
+        .insert({
+          id: userId,
+          email: email.toLowerCase(),
+          role: role,
+          business_name: business_name,
+          has_access: true,
+          created_at: new Date().toISOString()
+        });
+
+      if (accountError) {
+        console.error("Error al sincronizar usuario a user_accounts:", accountError);
+        toast.error("Error al sincronizar usuario a user_accounts");
+        return false;
+      }
+      
+      return true;
+    } catch (error: any) {
+      console.error("Error en sincronización:", error);
+      toast.error("Error en sincronización de cuenta");
+      return false;
+    }
+  };
+
   const handleCreateUser = async () => {
     // Validación básica
     if (!newUser.email || !newUser.password) {
@@ -85,6 +141,7 @@ export const useCreateUser = (onUserCreated: () => void) => {
         }
       });
 
+      // Si hay error en la autenticación
       if (authError) {
         console.error("Error detallado de Auth:", {
           message: authError.message,
@@ -93,22 +150,21 @@ export const useCreateUser = (onUserCreated: () => void) => {
           details: authError
         });
         
-        if (authError.message.includes("already")) {
-          toast.error("Este correo ya está registrado en auth.users");
+        // Si el usuario ya existe en Auth pero no en user_accounts
+        if (authError.message.includes("already") || (authError as any).code === "user_already_exists") {
+          console.log("Usuario detectado en auth.users pero no en user_accounts. Intentando sincronizar...");
+          toast.info("El usuario ya existe en Auth. Intentando sincronizar con user_accounts...");
           
-          // Intenta obtener más información sobre el usuario existente
-          try {
-            // Nota: Esto no funcionará directamente con permisos normales,
-            // pero añadimos el log para depuración
-            console.log("Verificando si el usuario existe en auth usando admin API (esto fallará si no tienes permisos)");
-          } catch (e) {
-            console.error("No se pudo verificar el usuario existente:", e);
-          }
+          // Mostrar mensaje específico para guiar al administrador
+          toast.warning("Para completar este proceso: 1) Ve a la consola de Supabase. 2) En Authentication > Users, busca el usuario. 3) Copia su UUID. 4) Crea manualmente un registro en user_accounts con ese UUID");
+          
+          setIsSubmitting(false);
+          return;
         } else {
           toast.error(`Error al crear usuario: ${authError.message}`);
+          setIsSubmitting(false);
+          return;
         }
-        setIsSubmitting(false);
-        return;
       }
 
       // 3. Verificar que se creó el usuario
