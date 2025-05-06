@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,13 +21,12 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
         
         console.log('Using formatted date for query:', formattedDate);
         
-        // Query to get the maximum reprogramado value in the 18:00-23:00 range for the selected date
+        // Query to get all values for the selected date
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, reprogramado')
-          .like('fecha', `${formattedDate}%`) // Use the date part only
-          .not('reprogramado', 'is', null) // Filter out null values
-          .order('reprogramado', { ascending: false }); // Order by reprogramado DESC to get highest first
+          .eq('fecha::date', formattedDate) // Use proper type casting
+          .not('reprogramado', 'is', null);
           
         if (error) {
           console.error('Error fetching max power:', error);
@@ -44,7 +44,7 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
           return;
         }
         
-        // Filter to only include times between 18:00 and 23:00 (without timezone conversion)
+        // Filter to only include times between 18:00 and 23:00
         const filteredByTime = data.filter(item => {
           const itemDate = new Date(item.fecha);
           const hours = itemDate.getHours();
@@ -70,15 +70,16 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
           console.log(`Time: ${itemDate.getHours()}:${itemDate.getMinutes().toString().padStart(2, '0')}, Value: ${item.reprogramado}`);
         });
         
-        // Find the highest value in the filtered data
-        const maxRecord = filteredByTime.reduce((max, current) => {
-          return (current.reprogramado > max.reprogramado) ? current : max;
-        }, filteredByTime[0]);
+        // Sort values in descending order to find the maximum
+        const sortedValues = [...filteredByTime].sort((a, b) => b.reprogramado - a.reprogramado);
         
-        console.log(`SELECTED MAXIMUM VALUE: ${maxRecord.reprogramado} at ${new Date(maxRecord.fecha).toLocaleTimeString()}`);
+        // Get the highest value
+        const maxValue = sortedValues[0];
+        
+        console.log(`SELECTED MAXIMUM VALUE: ${maxValue.reprogramado} at ${new Date(maxValue.fecha).toLocaleTimeString()}`);
         
         // Set the max power state with the highest value found
-        setMaxPower(Number(maxRecord.reprogramado));
+        setMaxPower(Number(maxValue.reprogramado));
         
         console.log('========================== MAX POWER CALCULATION END ==========================');
       } catch (error) {
