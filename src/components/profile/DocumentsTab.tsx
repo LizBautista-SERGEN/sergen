@@ -11,13 +11,17 @@ export const DocumentsTab = () => {
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
+      setErrorMessage(null);
+      
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
+        console.log('No active session found');
         return;
       }
 
@@ -33,6 +37,7 @@ export const DocumentsTab = () => {
 
       if (error) {
         console.error('Error fetching documents:', error);
+        setErrorMessage(`Error al cargar facturas: ${error.message}`);
         throw error;
       }
 
@@ -50,7 +55,7 @@ export const DocumentsTab = () => {
     }
   };
 
-  // Use useEffect instead of useState to call fetchDocuments on component mount
+  // Use useEffect to call fetchDocuments on component mount
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -75,6 +80,7 @@ export const DocumentsTab = () => {
       if (!session) throw new Error("No session");
 
       setUploadingInvoice(true);
+      setErrorMessage(null);
 
       const formData = new FormData();
       formData.append('file', file);
@@ -121,6 +127,12 @@ export const DocumentsTab = () => {
     <div className="space-y-6">
       <h3 className="font-semibold mb-4">FACTURAS DE SUMINISTRO ELÉCTRICO:</h3>
       
+      {errorMessage && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-md mb-4">
+          {errorMessage}
+        </div>
+      )}
+      
       {isLoading ? (
         <div className="text-center py-10">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
@@ -145,6 +157,7 @@ export const DocumentsTab = () => {
                   </div>
                   <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
                     {doc.filename}
+                    {doc.deleted && <span className="block text-xs text-red-500">(Eliminado)</span>}
                   </div>
                 </div>
               </a>
