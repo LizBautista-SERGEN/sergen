@@ -16,7 +16,7 @@ import { useUserManagement } from "./users/useUserManagement";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const UserManagementTab = () => {
-  const { users, loading, fetchUsers, resetPassword } = useUserManagement();
+  const { users, loading, fetchUsers } = useUserManagement();
 
   return (
     <Card>
@@ -67,8 +67,7 @@ export const UserManagementTab = () => {
         <UsersTable 
           users={users} 
           loading={loading} 
-          refreshUsers={fetchUsers} 
-          resetPassword={resetPassword}
+          refreshUsers={fetchUsers}
         />
       </CardContent>
     </Card>

@@ -34,7 +34,7 @@ interface UsersTableProps {
   resetPassword: (userId: string, userEmail: string) => Promise<boolean>;
 }
 
-export const UsersTable = ({ users, loading, refreshUsers, resetPassword }: UsersTableProps) => {
+export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const handleToggleAccess = async (userId: string, currentAccess: boolean) => {
@@ -57,10 +57,6 @@ export const UsersTable = ({ users, loading, refreshUsers, resetPassword }: User
       console.error('Error:', error);
       toast.error('Error al actualizar acceso: ' + error.message);
     }
-  };
-
-  const handleResetPassword = async (userId: string, email: string) => {
-    await resetPassword(userId, email);
   };
 
   const handleDeleteUser = async () => {
@@ -149,13 +145,6 @@ export const UsersTable = ({ users, loading, refreshUsers, resetPassword }: User
                   className={user.has_access ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}
                 >
                   {user.has_access ? 'Suspender' : 'Activar'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleResetPassword(user.id, user.email)}
-                >
-                  Resetear Contraseña
                 </Button>
                 {user.role !== 'superuser' && (
                   <AlertDialog>
