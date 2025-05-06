@@ -62,7 +62,7 @@ serve(async (req) => {
     }
 
     // Obtener userId del cuerpo de la solicitud
-    const { userId } = await req.json();
+    const { userId, email } = await req.json();
     
     if (!userId) {
       return new Response(
