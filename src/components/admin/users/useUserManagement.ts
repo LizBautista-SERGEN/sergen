@@ -32,7 +32,8 @@ export const useUserManagement = () => {
         return;
       }
 
-      // Obtener usuarios de la tabla users_auth primero
+      // Obtener usuarios de la tabla auth.users primero
+      // Usamos users_auth que es una vista de auth.users
       const { data: authUsers, error: authError } = await supabase
         .from('users_auth')
         .select('*')
@@ -66,6 +67,12 @@ export const useUserManagement = () => {
       if (authUsers && authUsers.length > 0) {
         const combinedUsers = authUsers.map(user => {
           const accountInfo = accountsMap.get(user.id);
+          
+          // Crear entrada en user_accounts si no existe para este usuario
+          if (!accountInfo && user.id) {
+            addUserManually(user.id, user.email || '', 'user');
+          }
+          
           return {
             id: user.id,
             email: user.email,
@@ -135,6 +142,8 @@ export const useUserManagement = () => {
   // Función para añadir un usuario manualmente a user_accounts sin usar RPC
   const addUserManually = async (userId: string, userEmail: string, role: string = 'user', businessName?: string) => {
     try {
+      console.log('Adding user to user_accounts:', userId, userEmail, role);
+      
       // Insert directly into user_accounts table 
       const { error } = await supabase
         .from('user_accounts')

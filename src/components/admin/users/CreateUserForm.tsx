@@ -1,57 +1,128 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { useCreateUser } from "./hooks/useCreateUser";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { RoleSelector } from "./RoleSelector";
 import { EmailInput } from "./EmailInput";
 import { PasswordInput } from "./PasswordInput";
 import { BusinessNameInput } from "./BusinessNameInput";
-import { RoleSelector } from "./RoleSelector";
-import { useCreateUser } from "./hooks/useCreateUser";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+// Schema for form validation
+const formSchema = z.object({
+  email: z.string().email({ message: "Email inválido" }),
+  password: z.string().min(6, { message: "Contraseña debe tener al menos 6 caracteres" }),
+  role: z.string(),
+  businessName: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface CreateUserFormProps {
   onUserCreated: () => void;
 }
 
 export const CreateUserForm = ({ onUserCreated }: CreateUserFormProps) => {
-  const {
-    newUser,
-    isSubmitting,
-    handleCreateUser,
-    handleInputChange,
-    handleRoleChange
-  } = useCreateUser(onUserCreated);
+  const [loading, setLoading] = useState(false);
+  const { createUser } = useCreateUser();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      role: "user",
+      businessName: "",
+    },
+  });
+
+  const onSubmit = async (values: FormValues) => {
+    setLoading(true);
+    try {
+      // 1. Registro en auth
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: {
+            role: values.role,
+            business_name: values.businessName || null,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // 2. Agregar a user_accounts
+        const { error: accountError } = await supabase
+          .from('user_accounts')
+          .insert({
+            id: data.user.id,
+            email: values.email.toLowerCase(),
+            role: values.role,
+            business_name: values.businessName || null,
+            has_access: true
+          });
+
+        if (accountError) {
+          console.error('Error adding to user_accounts:', accountError);
+          toast.error(`Usuario creado pero con errores: ${accountError.message}`);
+        } else {
+          toast.success("Usuario creado exitosamente");
+          form.reset();
+          onUserCreated();
+        }
+      }
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast.error(`Error: ${error.message || 'Ha ocurrido un error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <>
-      <div className="grid gap-4 py-4">
-        <EmailInput 
-          value={newUser.email}
-          onChange={handleInputChange}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => <EmailInput field={field} />}
         />
-        
-        <PasswordInput 
-          value={newUser.password}
-          onChange={handleInputChange}
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => <PasswordInput field={field} />}
         />
-        
-        <BusinessNameInput 
-          value={newUser.business_name}
-          onChange={handleInputChange}
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Rol</FormLabel>
+              <FormControl>
+                <RoleSelector value={field.value} onValueChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        
-        <RoleSelector 
-          value={newUser.role}
-          onValueChange={handleRoleChange}
+        <FormField
+          control={form.control}
+          name="businessName"
+          render={({ field }) => <BusinessNameInput field={field} />}
         />
-      </div>
-      
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline">Cancelar</Button>
-        </DialogClose>
-        <Button onClick={handleCreateUser} disabled={isSubmitting}>
-          {isSubmitting ? 'Creando...' : 'Crear Usuario'}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Creando..." : "Crear Usuario"}
         </Button>
-      </DialogFooter>
-    </>
+      </form>
+    </Form>
   );
 };

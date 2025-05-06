@@ -11,6 +11,42 @@ export const useAuth = () => {
   const [isSuperUser, setIsSuperUser] = useState(false);
   const navigate = useNavigate();
 
+  // Function to ensure user exists in user_accounts
+  const ensureUserAccount = async (userId: string, email: string, metadata: any) => {
+    try {
+      // First check if user already exists in user_accounts
+      const { data: existingAccount, error: checkError } = await supabase
+        .from('user_accounts')
+        .select('id')
+        .eq('id', userId)
+        .single();
+        
+      if (checkError && !checkError.message.includes('JSON object requested')) {
+        console.error('Error checking user account:', checkError);
+      }
+        
+      // If user doesn't exist in user_accounts, create entry
+      if (!existingAccount) {
+        console.log('Creating new user_account for:', userId, email);
+        const { error: insertError } = await supabase
+          .from('user_accounts')
+          .insert({
+            id: userId,
+            email: email.toLowerCase(),
+            role: metadata?.role || 'user',
+            business_name: metadata?.business_name || null,
+            has_access: true
+          });
+            
+        if (insertError) {
+          console.error('Error creating user account:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Error in ensureUserAccount:', error);
+    }
+  };
+
   const checkUserRole = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -21,6 +57,39 @@ export const useAuth = () => {
       
       if (error) {
         console.error('Error fetching user role:', error);
+        
+        // If the error is because the user doesn't exist in user_accounts
+        // We can try to create the record based on the session data
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await ensureUserAccount(
+            session.user.id, 
+            session.user.email || '', 
+            session.user.user_metadata
+          );
+          
+          // Try fetching again after creating
+          const { data: retryData, error: retryError } = await supabase
+            .from('user_accounts')
+            .select('role, has_access')
+            .eq('id', userId)
+            .single();
+            
+          if (retryError) {
+            console.error('Error on retry fetching user role:', retryError);
+            return false;
+          }
+          
+          // Si el usuario no tiene acceso, cerrar sesión
+          if (!retryData?.has_access) {
+            toast.error('Su cuenta está suspendida. Contacte al administrador.');
+            await supabase.auth.signOut();
+            return false;
+          }
+          
+          return retryData?.role === 'superuser';
+        }
+        
         return false;
       }
       
@@ -56,6 +125,13 @@ export const useAuth = () => {
           
           // Verificar si es superuser
           if (data.session?.user) {
+            // Ensure user exists in user_accounts table
+            await ensureUserAccount(
+              data.session.user.id,
+              data.session.user.email || '',
+              data.session.user.user_metadata
+            );
+            
             const isSuperUserResult = await checkUserRole(data.session.user.id);
             setIsSuperUser(isSuperUserResult);
           }
@@ -85,6 +161,13 @@ export const useAuth = () => {
             navigate('/login');
           } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
             if (session?.user) {
+              // Ensure user exists in user_accounts
+              await ensureUserAccount(
+                session.user.id,
+                session.user.email || '',
+                session.user.user_metadata
+              );
+              
               // Verificar si es superuser
               const isSuperUserResult = await checkUserRole(session.user.id);
               setIsSuperUser(isSuperUserResult);
