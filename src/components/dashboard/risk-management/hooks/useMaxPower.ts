@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,19 +12,17 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
       if (!date) return;
       
       try {
-        const startOfDay = new Date(date);
-        startOfDay.setHours(18, 0, 0, 0);
+        // Create date objects for the range we want to query
+        // Keep the date in UTC without timezone conversion
+        const formattedDate = format(date, 'yyyy-MM-dd');
+        console.log('Formatted date for query:', formattedDate);
         
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
-        
-        console.log('Fetching max power for range:', startOfDay.toISOString(), 'to', endOfDay.toISOString());
-        
+        // Query the data using .eq() to match the date part only
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, reprogramado')
-          .gte('fecha', startOfDay.toISOString())
-          .lte('fecha', endOfDay.toISOString());
+          .filter('fecha', 'gte', `${formattedDate}T18:00:00`)
+          .filter('fecha', 'lt', `${formattedDate}T24:00:00`);
           
         if (error) {
           console.error('Error fetching max power:', error);
@@ -34,10 +31,13 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
         }
         
         if (data && data.length > 0) {
+          console.log(`Found ${data.length} records in the 18:00-24:00 range`);
+          
           // Log all values to help with debugging
           data.forEach(item => {
-            const time = new Date(item.fecha).toLocaleTimeString();
-            console.log(`Time: ${time}, Value: ${item.reprogramado}`);
+            const itemDate = new Date(item.fecha);
+            const time = itemDate.toISOString().substring(11, 19); // Extract time part in HH:MM:SS format
+            console.log(`Time (UTC): ${time}, Value: ${item.reprogramado}`);
           });
           
           // Find the maximum reprogramado value in the dataset
@@ -47,19 +47,20 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
           data.forEach(record => {
             if (record.reprogramado && record.reprogramado > maxValue) {
               maxValue = record.reprogramado;
-              maxTime = new Date(record.fecha).toLocaleTimeString();
+              const recordDate = new Date(record.fecha);
+              maxTime = recordDate.toISOString().substring(11, 19); // Extract time part in HH:MM:SS format
             }
           });
           
           if (maxValue > 0) {
-            console.log(`Selected max value: ${maxValue} at ${maxTime}`);
+            console.log(`Selected max value: ${maxValue} at ${maxTime} UTC`);
             setMaxPower(Number(maxValue.toFixed(2)));
             return;
           } else {
             console.log('No valid reprogramado values found in range');
           }
         } else {
-          console.log('No data found for the selected date');
+          console.log('No data found for the selected date in the 18:00-24:00 range');
         }
         
         // Fallback to simulated data if real data not available
