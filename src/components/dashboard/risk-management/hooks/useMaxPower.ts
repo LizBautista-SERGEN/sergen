@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,21 +15,17 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
         console.log('========================== MAX POWER CALCULATION START ==========================');
         console.log('Current date selected:', date.toISOString());
         
-        // Set up date range for 18:00-23:00
-        const startDate = new Date(date);
-        startDate.setHours(18, 0, 0, 0);
+        // Format the date to use with SQL query
+        const formattedDate = format(date, 'yyyy-MM-dd');
         
-        const endDate = new Date(date);
-        endDate.setHours(23, 59, 59, 999);
+        console.log('Using formatted date for query:', formattedDate);
         
-        console.log('Fetching max power for range:', startDate.toISOString(), 'to', endDate.toISOString());
-        
-        // Get all data within the time range from the coes_forecast table
+        // Query to get the maximum reprogramado value in the 18:00-23:00 range for the selected date
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, reprogramado')
-          .gte('fecha', startDate.toISOString())
-          .lte('fecha', endDate.toISOString())
+          .like('fecha', `${formattedDate}%`) // Use the date part only
+          .not('reprogramado', 'is', null) // Filter out null values
           .order('reprogramado', { ascending: false }); // Order by reprogramado DESC to get highest first
           
         if (error) {
@@ -39,53 +34,51 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
           calculateMaxPower();
           return;
         }
-        
+
         // Log the raw data returned from the query
-        console.log('Raw data from query:', data);
+        console.log('Raw data from query (before time filtering):', data);
         
         if (!data || data.length === 0) {
-          console.log('No data found in the specified time range, using fallback calculation');
+          console.log('No data found for the specified date, using fallback calculation');
           calculateMaxPower();
           return;
         }
         
-        // Filter out null values
-        const validRecords = data.filter(record => record.reprogramado !== null);
-        console.log(`Found ${validRecords.length} valid records after filtering nulls from ${data.length} total records`);
-        
-        if (validRecords.length === 0) {
-          console.log('All reprogramado values are null, using fallback calculation');
-          calculateMaxPower();
-          return;
-        }
-
-        // Print all values found in the range for verification
-        console.log('All valid values in range:');
-        validRecords.forEach(item => {
-          const time = new Date(item.fecha).toLocaleTimeString();
-          console.log(`Time: ${time}, Value: ${item.reprogramado}`);
+        // Filter to only include times between 18:00 and 23:00 (without timezone conversion)
+        const filteredByTime = data.filter(item => {
+          const itemDate = new Date(item.fecha);
+          const hours = itemDate.getHours();
+          
+          console.log(`Checking record: ${item.fecha}, Hour: ${hours}, Value: ${item.reprogramado}`);
+          
+          // Keep records where the hour is between 18 and 23 inclusive
+          return hours >= 18 && hours <= 23;
         });
         
-        // Sort the records by reprogramado value in descending order to find max
-        const sortedRecords = [...validRecords].sort((a, b) => 
-          (b.reprogramado as number) - (a.reprogramado as number)
-        );
+        console.log(`After time filtering: found ${filteredByTime.length} records in 18:00-23:00 range out of ${data.length} total`);
         
-        // Get the highest value (first item after sorting)
-        const maxRecord = sortedRecords[0];
-        
-        console.log('Top 3 highest values:');
-        for (let i = 0; i < Math.min(3, sortedRecords.length); i++) {
-          const record = sortedRecords[i];
-          const time = new Date(record.fecha).toLocaleTimeString();
-          console.log(`${i+1}. Time: ${time}, Value: ${record.reprogramado}`);
+        if (filteredByTime.length === 0) {
+          console.log('No data found in the 18:00-23:00 time range, using fallback calculation');
+          calculateMaxPower();
+          return;
         }
+        
+        // Print all values found in the range for verification
+        console.log('All valid values in 18:00-23:00 range:');
+        filteredByTime.forEach(item => {
+          const itemDate = new Date(item.fecha);
+          console.log(`Time: ${itemDate.getHours()}:${itemDate.getMinutes().toString().padStart(2, '0')}, Value: ${item.reprogramado}`);
+        });
+        
+        // Find the highest value in the filtered data
+        const maxRecord = filteredByTime.reduce((max, current) => {
+          return (current.reprogramado > max.reprogramado) ? current : max;
+        }, filteredByTime[0]);
         
         console.log(`SELECTED MAXIMUM VALUE: ${maxRecord.reprogramado} at ${new Date(maxRecord.fecha).toLocaleTimeString()}`);
         
         // Set the max power state with the highest value found
-        const powerValue = Number(maxRecord.reprogramado);
-        setMaxPower(Number(powerValue.toFixed(2)));
+        setMaxPower(Number(maxRecord.reprogramado));
         
         console.log('========================== MAX POWER CALCULATION END ==========================');
       } catch (error) {
