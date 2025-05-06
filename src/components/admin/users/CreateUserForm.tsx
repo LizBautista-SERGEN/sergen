@@ -72,9 +72,7 @@ export const CreateUserForm = ({ onUserCreated }: CreateUserFormProps) => {
           .insert({
             id: data.user.id,
             email: values.email.toLowerCase()
-          })
-          .onConflict('id')
-          .merge();
+          });
 
         if (accountError) {
           console.error('Error adding to user_accounts:', accountError);
