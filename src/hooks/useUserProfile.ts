@@ -20,7 +20,6 @@ export type ProfileType = {
   contracted_power: string | null;
   contract_expiration: string | null;
   notice_period: string | null;
-  last_login?: string | null; // Make last_login optional
 };
 
 export const useUserProfile = () => {
@@ -45,14 +44,21 @@ export const useUserProfile = () => {
       }
       
       if (!session) {
+        console.log('No session available');
         setIsLoading(false);
         return;
       }
 
-      // Usar la tabla user_accounts directamente
+      console.log('Fetching profile for user ID:', session.user.id);
+
+      // Use direct select with minimal columns to avoid recursion
       const { data, error: profileError } = await supabase
         .from('user_accounts')
-        .select('*')
+        .select(`
+          id, email, business_name, contact_name, position, profile_image, 
+          corporate_email, phone, role, has_access, ruc, activity, 
+          electricity_provider, contracted_power, contract_expiration, notice_period
+        `)
         .eq('id', session.user.id)
         .single();
 
@@ -64,16 +70,9 @@ export const useUserProfile = () => {
       }
       
       if (data) {
-        // Create the user profile object with all properties from data
-        // and explicitly set last_login to null
-        const userProfile: ProfileType = {
-          ...data,
-          last_login: null, // Explicitly set last_login to null since it doesn't exist in the table
-        };
-
-        console.log('Profile loaded successfully:', userProfile);
-        setProfile(userProfile);
-        setIsSuperUser(userProfile.role === 'superuser');
+        console.log('Profile loaded successfully:', data);
+        setProfile(data as ProfileType);
+        setIsSuperUser(data.role === 'superuser');
       } else {
         console.log('No profile found for user');
         setProfile(null);

@@ -7,7 +7,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 
 export const DocumentsTab = () => {
   const { toast } = useToast();
-  const { profile, refetchProfile } = useUserProfile();
+  const { profile } = useUserProfile();
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,15 +22,17 @@ export const DocumentsTab = () => {
       
       if (!session) {
         console.log('No active session found');
+        setDocuments([]);
         return;
       }
 
       console.log('Fetching documents for user:', session.user.id);
 
       // Fetch only invoice documents that are not deleted
+      // Use simpler direct query to avoid RLS recursion issues
       const { data, error } = await supabase
         .from('documents')
-        .select('*')
+        .select('id, filename, file_path, document_type, created_at, deleted')
         .eq('user_id', session.user.id)
         .eq('document_type', 'invoice')
         .eq('deleted', false);
@@ -43,7 +45,7 @@ export const DocumentsTab = () => {
 
       console.log('Documents fetched:', data);
       setDocuments(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching documents:', error);
       toast({
         title: "Error",
@@ -55,9 +57,24 @@ export const DocumentsTab = () => {
     }
   };
 
-  // Use useEffect to call fetchDocuments on component mount
+  // Call check-storage-buckets function to ensure buckets exist
+  const checkStorageBuckets = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-storage-buckets');
+      if (error) {
+        console.error('Error checking storage buckets:', error);
+      } else {
+        console.log('Storage buckets check:', data);
+      }
+    } catch (err) {
+      console.error('Failed to check storage buckets:', err);
+    }
+  };
+
+  // Use useEffect to call fetchDocuments and checkStorageBuckets on component mount
   useEffect(() => {
     fetchDocuments();
+    checkStorageBuckets();
   }, []);
 
   const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +110,10 @@ export const DocumentsTab = () => {
         fileType: file.type
       });
 
+      // First check if buckets exist
+      await checkStorageBuckets();
+      
+      // Then upload the file
       const response = await supabase.functions.invoke('upload-file', {
         body: formData,
       });
@@ -111,11 +132,11 @@ export const DocumentsTab = () => {
 
       // Refresh documents list
       fetchDocuments();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading invoice:', error);
       toast({
         title: "Error",
-        description: "No se pudo subir la factura",
+        description: `No se pudo subir la factura: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
     } finally {
