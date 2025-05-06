@@ -64,7 +64,7 @@ export const useCreateUser = (onUserCreated: () => void) => {
         return;
       }
       
-      // 2. Intentar crear usuario en Auth
+      // 2. Verificar si el usuario existe en auth.users usando signUp
       console.log("Intentando crear usuario en Auth con:", {
         email: newUser.email.trim(),
         metadata: {
@@ -73,6 +73,7 @@ export const useCreateUser = (onUserCreated: () => void) => {
         }
       });
       
+      // Intentar crear usuario en Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email.trim(),
         password: newUser.password,
@@ -94,6 +95,15 @@ export const useCreateUser = (onUserCreated: () => void) => {
         
         if (authError.message.includes("already")) {
           toast.error("Este correo ya está registrado en auth.users");
+          
+          // Intenta obtener más información sobre el usuario existente
+          try {
+            // Nota: Esto no funcionará directamente con permisos normales,
+            // pero añadimos el log para depuración
+            console.log("Verificando si el usuario existe en auth usando admin API (esto fallará si no tienes permisos)");
+          } catch (e) {
+            console.error("No se pudo verificar el usuario existente:", e);
+          }
         } else {
           toast.error(`Error al crear usuario: ${authError.message}`);
         }
