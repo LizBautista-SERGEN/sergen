@@ -64,11 +64,12 @@ export const useUserProfile = () => {
       }
       
       if (data) {
-        // Cast to unknown first to avoid TypeScript conversion error
-        const userProfile = {
+        // Create the user profile object with all properties from data
+        // and explicitly set last_login to null
+        const userProfile: ProfileType = {
           ...data,
-          last_login: data.last_login || null, // Add last_login, set to null if it doesn't exist
-        } as ProfileType;
+          last_login: null, // Explicitly set last_login to null since it doesn't exist in the table
+        };
 
         console.log('Profile loaded successfully:', userProfile);
         setProfile(userProfile);
