@@ -56,6 +56,7 @@ const App = () => {
                   
                   {/* Rutas con layout de dashboard */}
                   <Route element={<DashboardLayout />}>
+                    <Route path="/perfil" element={<ProfilePage />} />
                     <Route path="/servicios/control" element={<ServiceControl />} />
                     <Route path="/configuracion" element={<ConfiguracionPage />} />
                   </Route>
