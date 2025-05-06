@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { Upload, Trash2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
@@ -14,7 +14,6 @@ const ProfilePage = () => {
   const { toast } = useToast();
   const { profile, isLoading, error, refetchProfile } = useUserProfile();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,103 +127,6 @@ const ProfilePage = () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Error",
-        description: "Por favor sube una imagen",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No session");
-
-      setUploadingAvatar(true);
-
-      // Generate a unique file name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `profile_images/${session.user.id}/${fileName}`;
-
-      // Upload the file to Supabase Storage
-      const { error: uploadError } = await supabase
-        .storage
-        .from('profiles')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase
-        .storage
-        .from('profiles')
-        .getPublicUrl(filePath);
-
-      // Update the user's profile with the new image URL
-      const { error: updateError } = await supabase
-        .from('user_accounts')
-        .update({ profile_image: publicUrl })
-        .eq('id', session.user.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: "Éxito",
-        description: "Imagen de perfil actualizada correctamente",
-      });
-
-      refetchProfile();
-    } catch (error: any) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo subir la imagen",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
-
-  const handleDeleteAvatar = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No session");
-
-      setUploadingAvatar(true);
-
-      // Update the user's profile to remove the image URL
-      const { error } = await supabase
-        .from('user_accounts')
-        .update({ profile_image: null })
-        .eq('id', session.user.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: "Imagen de perfil eliminada correctamente",
-      });
-
-      refetchProfile();
-    } catch (error: any) {
-      console.error('Error deleting avatar:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la imagen de perfil",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-gray-50 pt-16">
@@ -267,34 +169,6 @@ const ProfilePage = () => {
                   <AvatarImage src={profile?.profile_image || ""} className="object-cover w-full h-full" />
                   <AvatarFallback className="text-4xl w-full h-full">{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
                 </Avatar>
-                <input
-                  type="file"
-                  id="avatar-upload"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                />
-                <div className="absolute bottom-4 right-4 flex gap-2">
-                  <label 
-                    htmlFor="avatar-upload" 
-                    className="bg-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-gray-50"
-                  >
-                    {uploadingAvatar ? (
-                      <Loader2 className="w-4 h-4 text-gray-600 animate-spin" />
-                    ) : (
-                      <Upload className="w-4 h-4 text-gray-600" />
-                    )}
-                  </label>
-                  {profile?.profile_image && (
-                    <button
-                      onClick={handleDeleteAvatar}
-                      className="bg-white rounded-full p-2 shadow-lg hover:bg-gray-50"
-                      disabled={uploadingAvatar}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
-                  )}
-                </div>
               </div>
             </Card>
             <h2 className="text-xl font-semibold mt-4 text-center">{profile?.business_name || "Empresa"}</h2>
@@ -409,18 +283,14 @@ const ProfilePage = () => {
                   <div>
                     <h3 className="font-semibold mb-4">CONTRATOS Y ADENDAS:</h3>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-600">Arrastra o dale clic para subir un contrato (PDF)</p>
-                      <input type="file" accept=".pdf" className="hidden" />
+                      <p className="text-gray-600">Función temporalmente no disponible</p>
                     </div>
                   </div>
                   
                   <div>
                     <h3 className="font-semibold mb-4">FACTURA DE SUMINISTRO ELÉCTRICO:</h3>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-600">Arrastra o dale clic para subir una factura (PDF o Excel)</p>
-                      <input type="file" accept=".pdf,.xls,.xlsx" className="hidden" />
+                      <p className="text-gray-600">Función temporalmente no disponible</p>
                     </div>
                   </div>
                 </div>
