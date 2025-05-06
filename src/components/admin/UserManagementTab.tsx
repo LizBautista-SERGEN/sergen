@@ -14,7 +14,7 @@ import { CreateUserForm } from "./users/CreateUserForm";
 import { useUserManagement } from "./users/useUserManagement";
 
 export const UserManagementTab = () => {
-  const { users, loading, fetchUsers } = useUserManagement();
+  const { users, loading, fetchUsers, resetPassword } = useUserManagement();
 
   return (
     <Card>
@@ -39,6 +39,7 @@ export const UserManagementTab = () => {
           users={users} 
           loading={loading} 
           refreshUsers={fetchUsers} 
+          resetPassword={resetPassword}
         />
       </CardContent>
     </Card>

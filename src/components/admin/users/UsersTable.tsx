@@ -24,15 +24,17 @@ export interface User {
   created_at: string;
   has_access: boolean;
   business_name: string | null;
+  last_login?: string | null;
 }
 
 interface UsersTableProps {
   users: User[];
   loading: boolean;
   refreshUsers: () => void;
+  resetPassword: (userId: string, userEmail: string) => Promise<boolean>;
 }
 
-export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) => {
+export const UsersTable = ({ users, loading, refreshUsers, resetPassword }: UsersTableProps) => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const handleToggleAccess = async (userId: string, currentAccess: boolean) => {
@@ -57,15 +59,8 @@ export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) =>
     }
   };
 
-  const handleResetPassword = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-      toast.success('Correo de restablecimiento enviado');
-    } catch (error) {
-      console.error('Error resetting password:', error);
-      toast.error('Error al enviar correo de restablecimiento');
-    }
+  const handleResetPassword = async (userId: string, email: string) => {
+    await resetPassword(userId, email);
   };
 
   const handleDeleteUser = async () => {
@@ -110,6 +105,7 @@ export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) =>
             <TableHead>Empresa</TableHead>
             <TableHead>Rol</TableHead>
             <TableHead>Fecha de Creación</TableHead>
+            <TableHead>Último Login</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Acciones</TableHead>
           </TableRow>
@@ -123,6 +119,7 @@ export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) =>
                 {user.role === 'superuser' ? 'Superusuario' : 'Usuario'}
               </TableCell>
               <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+              <TableCell>{user.last_login ? new Date(user.last_login).toLocaleDateString() : "Nunca"}</TableCell>
               <TableCell>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${user.has_access ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                   {user.has_access ? 'Activo' : 'Suspendido'}
@@ -140,7 +137,7 @@ export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) =>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleResetPassword(user.email)}
+                  onClick={() => handleResetPassword(user.id, user.email)}
                 >
                   Resetear Contraseña
                 </Button>
