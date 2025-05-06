@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { ChartData } from "./types";
+import { ChartData, PowerData } from "./types";
 import { fetchPowerData } from "./services/fetchPowerData";
 import { processMaximumData } from "./utils/processMaximumData";
 

@@ -3,11 +3,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PowerData } from "../types";
 
-export const fetchPowerData = async () => {
+export const fetchPowerData = async (): Promise<PowerData[]> => {
   try {
     // Get current date
     const today = new Date();
-    // Get date from 30 days ago for a smaller range to ensure we get recent data
+    // Get date from 30 days ago
     const thirtyDaysAgo = subDays(today, 30);
     
     const formattedToday = format(today, 'yyyy-MM-dd');
@@ -16,7 +16,7 @@ export const fetchPowerData = async () => {
     console.log("Fetching historical power data...");
     console.log("Date range:", { start: formattedThirtyDaysAgo, end: formattedToday });
     
-    // First, try to directly access coes_historical data without date filters to verify table access
+    // First, try to directly access coes_historical data to verify table access
     const { data: checkData, error: checkError } = await supabase
       .from('coes_historical')
       .select('fecha, ejecutado')
@@ -28,28 +28,32 @@ export const fetchPowerData = async () => {
       throw new Error(`Error accessing data table: ${checkError.message}`);
     }
 
-    console.log("Attempting to directly query coes_historical to verify access...");
+    console.log("Table access check successful, found sample records:", checkData?.length || 0);
     if (checkData && checkData.length > 0) {
-      console.log('Table access successful, found sample records:', checkData.length);
       console.log('Sample records:');
       checkData.forEach((record, i) => {
         console.log(`Record ${i+1}:`, record);
       });
-    } else {
-      console.log('No sample records found in direct table access check');
     }
     
-    // Now try to get data within the 18-24h UTC range to find power peaks
-    const { data: peakData } = await supabase
+    // Now get actual data within the date range
+    const { data: rangeData, error: rangeError } = await supabase
       .from('coes_historical')
       .select('fecha, ejecutado')
       .gte('fecha', formattedThirtyDaysAgo)
       .lte('fecha', formattedToday)
       .order('fecha', { ascending: true });
-    
-    if (peakData && peakData.length > 0) {
+      
+    if (rangeError) {
+      console.error('Error fetching data in date range:', rangeError);
+      throw new Error(`Error fetching data: ${rangeError.message}`);
+    }
+
+    if (rangeData && rangeData.length > 0) {
+      console.log(`Found ${rangeData.length} records in date range`);
+      
       // Filter to keep only records between 18:00 and 24:00 UTC (peak hours)
-      const filteredData = peakData.filter(item => {
+      const filteredData = rangeData.filter(item => {
         if (!item.fecha) return false;
         const date = new Date(item.fecha);
         const hour = date.getUTCHours();
@@ -65,7 +69,7 @@ export const fetchPowerData = async () => {
       });
       
       // Find the maximum value for each day
-      const dailyMaximums = filteredData.reduce((acc, curr) => {
+      const dailyMaximums = filteredData.reduce<Record<string, PowerData>>((acc, curr) => {
         const date = new Date(curr.fecha);
         const dateString = format(date, 'yyyy-MM-dd');
         
@@ -83,16 +87,18 @@ export const fetchPowerData = async () => {
       const result = Object.values(dailyMaximums);
       
       if (result.length > 0) {
-        // Find the maximum value overall for reporting
-        const maxValue = result.reduce((max, curr) => curr.ejecutado > max.ejecutado ? curr : max, result[0]);
+        const maxValue = result.reduce((max, curr) => 
+          curr.ejecutado > max.ejecutado ? curr : max, result[0]);
         console.log(`Selected max value: ${maxValue.ejecutado} at ${format(new Date(maxValue.fecha), 'HH:mm:ss')} UTC`);
       }
       
       return result;
+    } else {
+      console.log("No data found in the specified date range from direct query");
     }
     
     // If no direct data access or no data within the period, try the edge function
-    console.log("No direct data found in the specified range. Calling edge function get-historical-power-data...");
+    console.log("No data found in direct query. Calling edge function get-historical-power-data...");
     
     // Get session for auth
     const { data: { session } } = await supabase.auth.getSession();
@@ -122,15 +128,15 @@ export const fetchPowerData = async () => {
       throw new Error(`Error from edge function: ${response.error.message}`);
     }
 
-    const data: PowerData[] = response.data;
+    const edgeFunctionData = response.data as PowerData[];
 
-    if (!data || data.length === 0) {
+    if (!edgeFunctionData || edgeFunctionData.length === 0) {
       console.log("No data found in the specified date range from edge function");
       return [];
     }
 
-    console.log(`Retrieved ${data.length} records from edge function`);
-    return data;
+    console.log(`Retrieved ${edgeFunctionData.length} records from edge function`);
+    return edgeFunctionData;
   } catch (err: any) {
     console.error('Error fetching power data:', err);
     toast.error("Error al cargar datos históricos de potencia");
