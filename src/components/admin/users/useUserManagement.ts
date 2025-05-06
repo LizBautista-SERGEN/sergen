@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User } from "./UsersTable";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,69 +34,61 @@ export const useUserManagement = () => {
         return;
       }
 
-      // Obtener usuarios de la tabla users_auth primero
-      const { data: authUsers, error: authError } = await supabase
-        .from('users_auth')
+      // Intentar obtener los usuarios directamente de user_accounts
+      // Esta tabla debería tener todas las cuentas de usuario y menos restricciones de acceso
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('user_accounts')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-        toast.error('Error al cargar usuarios');
-        setLoading(false);
-        return;
-      }
-
-      console.log("Usuarios de auth obtenidos:", authUsers?.length || 0);
-      
-      if (!authUsers || authUsers.length === 0) {
-        console.log("No se encontraron usuarios en users_auth");
-        setUsers([]);
-        setLoading(false);
-        return;
-      }
-
-      // Obtener información adicional de user_accounts
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('user_accounts')
-        .select('*');
-
       if (accountsError) {
         console.error('Error fetching user accounts:', accountsError);
+        toast.error('Error al cargar cuentas de usuario');
       }
 
       console.log("Cuentas de usuario obtenidas:", accountsData?.length || 0);
-
-      // Crear un mapa de cuentas de usuario para búsqueda rápida
-      const accountsMap = new Map();
-      if (accountsData && accountsData.length > 0) {
-        accountsData.forEach(account => {
-          accountsMap.set(account.id, account);
-        });
-      }
-
-      // Combinar datos de users_auth con user_accounts
-      if (authUsers && authUsers.length > 0) {
-        const combinedUsers = authUsers.map(user => {
-          const accountInfo = accountsMap.get(user.id);
-          return {
-            id: user.id,
-            email: user.email,
-            last_login: user.last_login,
-            created_at: user.created_at,
-            // Usar datos de user_accounts si existen, de lo contrario valores predeterminados
-            role: accountInfo?.role || 'user',
-            business_name: accountInfo?.business_name || null,
-            has_access: accountInfo?.has_access !== false // Por defecto true si no existe
-          };
-        });
-        
-        console.log("Usuarios combinados a mostrar:", combinedUsers.length);
-        setUsers(combinedUsers);
-      } else {
-        console.log("No hay usuarios para mostrar después de combinar datos");
+      
+      if (!accountsData || accountsData.length === 0) {
+        console.log("No se encontraron cuentas de usuario en user_accounts");
         setUsers([]);
+        setLoading(false);
+        return;
       }
+
+      // Intentar obtener información de login desde users_auth para complementar
+      const { data: authUsers, error: authError } = await supabase
+        .from('users_auth')
+        .select('*');
+
+      console.log("Usuarios de auth obtenidos:", authUsers?.length || 0);
+      
+      // Crear un mapa de usuarios de autenticación para búsqueda rápida
+      const authMap = new Map();
+      if (authUsers && authUsers.length > 0) {
+        authUsers.forEach(user => {
+          authMap.set(user.id, user);
+        });
+      }
+
+      // Construir la lista de usuarios combinando ambas fuentes
+      // pero partiendo de user_accounts que debería ser más accesible
+      const combinedUsers = accountsData.map(account => {
+        const authInfo = authMap.get(account.id);
+        
+        return {
+          id: account.id,
+          email: account.email,
+          last_login: authInfo?.last_login || null,
+          created_at: account.created_at,
+          role: account.role || 'user',
+          business_name: account.business_name || null,
+          has_access: account.has_access !== false // Por defecto true si no existe
+        };
+      });
+      
+      console.log("Usuarios combinados a mostrar:", combinedUsers.length);
+      setUsers(combinedUsers);
+      
     } catch (error) {
       console.error('Error en fetchUsers:', error);
       toast.error('Error al cargar usuarios');
