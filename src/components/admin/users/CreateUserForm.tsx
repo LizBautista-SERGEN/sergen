@@ -4,13 +4,9 @@ import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useCreateUser } from "./hooks/useCreateUser";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RoleSelector } from "./RoleSelector";
-import { EmailInput } from "./EmailInput";
-import { PasswordInput } from "./PasswordInput";
-import { BusinessNameInput } from "./BusinessNameInput";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,7 +26,6 @@ interface CreateUserFormProps {
 
 export const CreateUserForm = ({ onUserCreated }: CreateUserFormProps) => {
   const [loading, setLoading] = useState(false);
-  const { createUser } = useCreateUser();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,14 +66,28 @@ export const CreateUserForm = ({ onUserCreated }: CreateUserFormProps) => {
             has_access: true
           });
 
+        // 3. También asegurar que esté en users_auth
+        const { error: authError } = await supabase
+          .from('users_auth')
+          .insert({
+            id: data.user.id,
+            email: values.email.toLowerCase()
+          })
+          .onConflict('id')
+          .merge();
+
         if (accountError) {
           console.error('Error adding to user_accounts:', accountError);
-          toast.error(`Usuario creado pero con errores: ${accountError.message}`);
+          toast.warning(`Usuario creado pero con advertencia: ${accountError.message}`);
+        } else if (authError) {
+          console.error('Error adding to users_auth:', authError);
+          toast.warning(`Usuario creado pero con advertencia: ${authError.message}`);
         } else {
           toast.success("Usuario creado exitosamente");
-          form.reset();
-          onUserCreated();
         }
+        
+        form.reset();
+        onUserCreated();
       }
     } catch (error: any) {
       console.error('Error creating user:', error);
