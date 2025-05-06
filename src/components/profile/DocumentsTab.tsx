@@ -21,6 +21,8 @@ export const DocumentsTab = () => {
         return;
       }
 
+      console.log('Fetching documents for user:', session.user.id);
+
       // Fetch only invoice documents that are not deleted
       const { data, error } = await supabase
         .from('documents')
@@ -29,8 +31,12 @@ export const DocumentsTab = () => {
         .eq('document_type', 'invoice')
         .eq('deleted', false);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
 
+      console.log('Documents fetched:', data);
       setDocuments(data || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
@@ -75,11 +81,22 @@ export const DocumentsTab = () => {
       formData.append('type', 'invoice');
       formData.append('userId', session.user.id);
 
+      console.log('Uploading invoice with data:', {
+        userId: session.user.id,
+        fileName: file.name,
+        fileType: file.type
+      });
+
       const response = await supabase.functions.invoke('upload-file', {
         body: formData,
       });
 
-      if (response.error) throw response.error;
+      if (response.error) {
+        console.error('Upload error:', response.error);
+        throw response.error;
+      }
+
+      console.log('Upload response:', response);
 
       toast({
         title: "Éxito",
@@ -110,25 +127,29 @@ export const DocumentsTab = () => {
           <p>Cargando facturas...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
-          {documents.map((doc) => (
-            <a 
-              key={doc.id}
-              href={`${supabase.storage.from('invoices').getPublicUrl(doc.file_path).data.publicUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="aspect-square flex items-center justify-center mb-4 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
-                  <FileText className="w-12 h-12 text-green-600" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
+          {documents.length === 0 ? (
+            <p className="col-span-full text-center text-gray-500">No hay facturas disponibles</p>
+          ) : (
+            documents.map((doc) => (
+              <a 
+                key={doc.id}
+                href={`${supabase.storage.from('invoices').getPublicUrl(doc.file_path).data.publicUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="aspect-square flex items-center justify-center mb-4 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+                    <FileText className="w-12 h-12 text-green-600" />
+                  </div>
+                  <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
+                    {doc.filename}
+                  </div>
                 </div>
-                <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
-                  {doc.filename}
-                </div>
-              </div>
-            </a>
-          ))}
+              </a>
+            ))
+          )}
         </div>
       )}
 

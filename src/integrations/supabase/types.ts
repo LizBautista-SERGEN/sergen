@@ -855,6 +855,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_user_access: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          has_access: boolean
+        }[]
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: string
