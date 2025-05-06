@@ -82,9 +82,9 @@ const ServiceControl = () => {
       <div className="min-h-screen bg-gray-50 flex w-full">
         <DashboardSidebar />
         <div className="flex-1">
-          <div className="container mx-auto px-2 pt-24 pb-8">
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">Control de Demanda</h1>
+          <div className="container mx-auto px-2 pt-12 pb-8">
+            <div className="mb-4">
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Control de Demanda</h1>
               {lastUpdated && (
                 <p className="text-sm text-gray-600">
                   Última actualización: {format(lastUpdated, 'dd/MM/yyyy HH:mm')}
@@ -99,8 +99,8 @@ const ServiceControl = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-4 space-y-6">
+              <div className="grid grid-cols-12 gap-6 mt-4">
+                <div className="col-span-4 space-y-4">
                   <RiskManagement 
                     energyData={[]} 
                     date={date} 
@@ -108,7 +108,7 @@ const ServiceControl = () => {
                   />
                 </div>
 
-                <div className="col-span-8 space-y-6">
+                <div className="col-span-8 space-y-4">
                   <PowerCharts 
                     energyData={[]}
                     date={date}

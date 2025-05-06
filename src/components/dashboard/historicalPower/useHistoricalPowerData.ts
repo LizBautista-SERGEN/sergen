@@ -18,7 +18,12 @@ export const useHistoricalPowerData = () => {
         // Fetch the power data
         const powerData = await fetchPowerData();
         
-        console.log("Power data fetched:", powerData.length, "records");
+        console.log("Power data fetched:", powerData?.length || 0, "records");
+        
+        if (!powerData || powerData.length === 0) {
+          setError("No se encontraron datos de potencia para el período seleccionado");
+          return;
+        }
         
         // Display sample data for debugging
         if (powerData.length > 0) {
@@ -28,7 +33,12 @@ export const useHistoricalPowerData = () => {
         // Process the data to get daily maximums
         const processedData = processMaximumData(powerData);
         
-        console.log("Processed data for chart:", processedData.length, "records");
+        console.log("Processed data for chart:", processedData?.length || 0, "records");
+        
+        if (processedData.length === 0) {
+          setError("No se pudieron procesar los datos de potencia máxima");
+          return;
+        }
         
         setChartData(processedData);
       } catch (err: any) {

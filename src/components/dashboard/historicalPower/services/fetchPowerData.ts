@@ -1,6 +1,5 @@
 
 import { format, subDays } from "date-fns";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PowerData } from "../types";
 
@@ -14,133 +13,114 @@ export const fetchPowerData = async (): Promise<PowerData[]> => {
     const formattedToday = format(today, 'yyyy-MM-dd');
     const formattedThirtyDaysAgo = format(thirtyDaysAgo, 'yyyy-MM-dd');
     
-    console.log("Fetching historical power data...");
-    console.log("Date range:", { start: formattedThirtyDaysAgo, end: formattedToday });
+    console.log("Fetching historical power data without filters first...");
     
-    // First try direct query with appropriate headers
-    const { data, error } = await supabase
+    // First try direct query with no filters to see if we can get any data at all
+    let { data, error } = await supabase
       .from('coes_historical')
       .select('fecha, ejecutado')
-      .gte('fecha', formattedThirtyDaysAgo)
-      .lte('fecha', formattedToday)
-      .not('ejecutado', 'is', null);
+      .limit(20);
     
     if (error) {
       console.error('Error in direct query:', error);
-      console.log("No data found in direct query. Calling edge function get-historical-power-data...");
+      throw new Error(`Database query error: ${error.message}`);
+    }
+    
+    console.log(`Retrieved ${data?.length || 0} records in initial query`);
+
+    // If we have data, now try with the date filters
+    if (data && data.length > 0) {
+      const { data: filteredData, error: filteredError } = await supabase
+        .from('coes_historical')
+        .select('fecha, ejecutado')
+        .gte('fecha', formattedThirtyDaysAgo)
+        .lte('fecha', formattedToday)
+        .order('fecha', { ascending: true });
       
-      // Get session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error('No authenticated session found');
-        return [];
+      if (filteredError) {
+        console.error('Error in filtered query:', filteredError);
+      } else if (filteredData && filteredData.length > 0) {
+        console.log(`Retrieved ${filteredData.length} records with date filters`);
+        data = filteredData;
       }
+    } else {
+      // If no data in direct query, try the edge function as a fallback
+      console.log("No data found in direct query. Calling edge function...");
       
-      console.log("Session found, auth token available:", !!session.access_token);
-      
-      // Call the edge function with proper authentication
-      const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
-        'get-historical-power-data',
-        {
-          body: {
-            start_date: formattedThirtyDaysAgo,
-            end_date: formattedToday,
-            limit: 10000
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
+      try {
+        const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
+          'get-historical-power-data',
+          {
+            body: {
+              start_date: formattedThirtyDaysAgo,
+              end_date: formattedToday,
+              limit: 10000
+            }
           }
+        );
+        
+        if (edgeFunctionError) {
+          console.error('Error in edge function:', edgeFunctionError);
+          throw new Error(`Edge function error: ${edgeFunctionError.message}`);
         }
-      );
-      
-      if (edgeFunctionError) {
-        console.error('Error in edge function:', edgeFunctionError);
-        throw new Error(`Edge function error: ${edgeFunctionError.message}`);
+        
+        if (edgeFunctionData && edgeFunctionData.length > 0) {
+          console.log(`Retrieved ${edgeFunctionData.length} records from edge function`);
+          data = edgeFunctionData;
+        } else {
+          console.log("No data found from edge function either");
+          return [];
+        }
+      } catch (err) {
+        console.error('Error calling edge function:', err);
+        throw err;
       }
-      
-      if (!edgeFunctionData || edgeFunctionData.length === 0) {
-        console.log("No data found in the specified date range from edge function");
-        return [];
-      }
-      
-      // Process the data from edge function
-      const result: PowerData[] = edgeFunctionData.map(item => ({
-        fecha: item.fecha,
-        ejecutado: item.ejecutado || 0
-      }));
-      
-      return result;
     }
     
     if (!data || data.length === 0) {
-      console.log("No data found in the specified date range from direct query");
-      console.log("No data found in direct query. Calling edge function get-historical-power-data...");
-      
-      // Get session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error('No authenticated session found');
-        return [];
-      }
-      
-      console.log("Session found, auth token available:", !!session.access_token);
-      
-      // Call the edge function with proper authentication
-      const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
-        'get-historical-power-data',
-        {
-          body: {
-            start_date: formattedThirtyDaysAgo,
-            end_date: formattedToday,
-            limit: 10000
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
-        }
-      );
-      
-      if (edgeFunctionError) {
-        console.error('Error in edge function:', edgeFunctionError);
-        throw new Error(`Edge function error: ${edgeFunctionError.message}`);
-      }
-      
-      if (!edgeFunctionData || edgeFunctionData.length === 0) {
-        console.log("No data found in the specified date range from edge function");
-        return [];
-      }
-      
-      // Process the data from edge function
-      const result: PowerData[] = edgeFunctionData.map(item => ({
-        fecha: item.fecha,
-        ejecutado: item.ejecutado || 0
-      }));
-      
-      return result;
+      console.log("No data found after all attempts");
+      return [];
     }
     
-    console.log(`Retrieved ${data.length} records directly from database`);
+    console.log(`Retrieved ${data.length} total records, processing...`);
+
+    // Create a proper typed result
+    const result: PowerData[] = data
+      .filter(item => {
+        // Make sure we have valid data
+        if (!item.fecha || item.ejecutado === null || item.ejecutado === undefined) {
+          return false;
+        }
+        
+        // Filter for peak hours (18:00-23:00 UTC) - moving this filter here instead of in the query
+        try {
+          const date = new Date(item.fecha);
+          const hour = date.getUTCHours();
+          console.log(`Record: ${item.fecha}, Hour: ${hour}, Value: ${item.ejecutado}`);
+          return hour >= 18 && hour <= 23;
+        } catch (e) {
+          console.error("Error parsing date:", e, item);
+          return false;
+        }
+      })
+      .map(item => ({
+        fecha: item.fecha,
+        ejecutado: typeof item.ejecutado === 'number' ? item.ejecutado : 0
+      }));
     
-    // Filter for peak hours (18:00-24:00 UTC)
-    const peakHoursData = data.filter(item => {
-      if (!item.fecha) return false;
-      const date = new Date(item.fecha);
-      const hour = date.getUTCHours();
-      return hour >= 18 && hour < 24;
-    });
+    console.log(`Found ${result.length} records during peak hours (18:00-23:00 UTC)`);
     
-    console.log(`Found ${peakHoursData.length} records during peak hours (18:00-24:00 UTC)`);
-    
-    // Make a proper typed result
-    const result: PowerData[] = peakHoursData.map(item => ({
-      fecha: item.fecha,
-      ejecutado: item.ejecutado || 0
-    }));
+    // Log some sample records for debugging
+    if (result.length > 0) {
+      result.slice(0, 5).forEach(item => {
+        const date = new Date(item.fecha);
+        console.log(`Sample: ${date.toISOString()}, Hour: ${date.getUTCHours()}, Value: ${item.ejecutado}`);
+      });
+    }
     
     return result;
   } catch (err: any) {
     console.error('Error in fetchPowerData:', err);
-    toast.error("Error al cargar datos históricos de potencia");
-    return [];
+    throw err;
   }
 };

@@ -10,89 +10,64 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Supabase client
-    const supabase = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
-    // List buckets to check if our required buckets exist
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets()
-    
-    if (listError) {
-      console.error('Error listing buckets:', listError)
-      throw new Error(`Error listing buckets: ${listError.message}`)
-    }
-    
     const requiredBuckets = ['invoices', 'contracts', 'profile_images'];
-    const bucketsToCreate = [];
-    const existingBuckets = [];
-    
-    for (const bucketName of requiredBuckets) {
-      const bucketExists = buckets.some(bucket => bucket.name === bucketName);
-      
-      if (!bucketExists) {
-        bucketsToCreate.push(bucketName);
-      } else {
-        existingBuckets.push(bucketName);
-      }
-    }
-    
-    // Create missing buckets
     const results = [];
-    for (const bucketName of bucketsToCreate) {
+
+    // Check and create each required bucket
+    for (const bucketName of requiredBuckets) {
       try {
-        console.log(`Creating bucket ${bucketName}...`);
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true,
-          fileSizeLimit: 10485760, // 10MB
-        });
-        
-        if (createError) {
-          results.push({
-            bucket: bucketName,
-            status: 'error',
-            message: createError.message
-          });
-        } else {
-          results.push({
-            bucket: bucketName,
-            status: 'created'
-          });
+        // Check if bucket exists
+        const { data: existingBucket, error: checkError } = await supabaseAdmin
+          .storage
+          .getBucket(bucketName);
+
+        if (checkError) {
+          console.log(`Bucket ${bucketName} not found. Creating...`);
           
-          // Set public bucket policy
-          const { error: policyError } = await supabase.storage.from(bucketName).createSignedUrl('test.txt', 60);
-          if (policyError) {
-            console.error(`Error setting public policy for ${bucketName}:`, policyError);
+          // Create the bucket
+          const { data: newBucket, error: createError } = await supabaseAdmin
+            .storage
+            .createBucket(bucketName, {
+              public: true,
+              fileSizeLimit: 10485760, // 10MB
+            });
+
+          if (createError) {
+            results.push({ bucket: bucketName, status: 'error', message: createError.message });
+          } else {
+            results.push({ bucket: bucketName, status: 'created' });
+            
+            // Create public policies for the bucket
+            await supabaseAdmin.rpc('create_storage_policy', { 
+              bucket_name: bucketName,
+              definition: 'true'
+            });
           }
+        } else {
+          results.push({ bucket: bucketName, status: 'exists' });
         }
-      } catch (e) {
-        results.push({
-          bucket: bucketName,
-          status: 'error',
-          message: e.message
-        });
+      } catch (error) {
+        results.push({ bucket: bucketName, status: 'error', message: error.message });
       }
     }
 
     return new Response(
-      JSON.stringify({
-        message: 'Storage buckets check completed',
-        existing: existingBuckets,
-        created: results.filter(r => r.status === 'created').map(r => r.bucket),
-        errors: results.filter(r => r.status === 'error')
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-    )
+      JSON.stringify({ success: true, results }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
-    console.error('Function error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ success: false, error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+    );
   }
-})
+});
