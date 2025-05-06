@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format, subDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -26,33 +25,31 @@ export const useHistoricalPowerData = () => {
           end: today.toISOString()
         });
         
-        // Get the anon key for authorization
+        // First get the current session to include auth token
         const { data: { session } } = await supabase.auth.getSession();
         
-        // Call our edge function to get the historical power data
-        const response = await fetch(
-          "https://zbixjkgwperxqrdhvtoy.supabase.co/functions/v1/get-historical-power-data",
+        if (!session) {
+          throw new Error("No active session found. Please log in.");
+        }
+        
+        // Call our edge function to get the historical power data with auth header
+        const response = await supabase.functions.invoke(
+          "get-historical-power-data", 
           {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpiaXhqa2d3cGVyeHFyZGh2dG95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkwNzM1MjAsImV4cCI6MjA1NDY0OTUyMH0.ENpjlH5HgHT1Pqx6-tXeYO8gaPeGKx5wk_YUpzP5oHQ",
-            },
-            body: JSON.stringify({
+            body: {
               start_date: oneHundredTwentyDaysAgo.toISOString(),
               end_date: today.toISOString(),
               limit: 100000, // Very high limit to ensure we get all records
-            }),
+            }
           }
         );
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Edge function error:', errorText);
-          throw new Error(`Error from edge function: ${response.status} ${errorText}`);
+        if (response.error) {
+          console.error('Edge function error:', response.error);
+          throw new Error(`Error from edge function: ${response.error.message}`);
         }
 
-        const data: PowerData[] = await response.json();
+        const data: PowerData[] = response.data;
 
         if (!data || data.length === 0) {
           console.log("No data found in the specified date range");
