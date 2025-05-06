@@ -32,8 +32,8 @@ export const useUserManagement = () => {
         return;
       }
 
+      console.log("Fetching users from users_auth...");
       // Obtener usuarios de la tabla auth.users primero
-      // Usamos users_auth que es una vista de auth.users
       const { data: authUsers, error: authError } = await supabase
         .from('users_auth')
         .select('*')
@@ -46,6 +46,8 @@ export const useUserManagement = () => {
         return;
       }
 
+      console.log("Auth users:", authUsers);
+
       // Obtener información adicional de user_accounts
       const { data: accountsData, error: accountsError } = await supabase
         .from('user_accounts')
@@ -54,6 +56,8 @@ export const useUserManagement = () => {
       if (accountsError) {
         console.error('Error fetching user accounts:', accountsError);
       }
+
+      console.log("User accounts data:", accountsData);
 
       // Crear un mapa de cuentas de usuario para búsqueda rápida
       const accountsMap = new Map();
@@ -65,17 +69,31 @@ export const useUserManagement = () => {
 
       // Combinar datos de users_auth con user_accounts
       if (authUsers && authUsers.length > 0) {
-        const combinedUsers = authUsers.map(user => {
+        const combinedUsers = await Promise.all(authUsers.map(async user => {
           const accountInfo = accountsMap.get(user.id);
           
           // Crear entrada en user_accounts si no existe para este usuario
           if (!accountInfo && user.id) {
-            addUserManually(user.id, user.email || '', 'user');
+            console.log(`Creating missing user_account for ${user.id} (${user.email})`);
+            const { error } = await supabase
+              .from('user_accounts')
+              .insert({
+                id: user.id,
+                email: user.email?.toLowerCase() || '',
+                role: 'user',
+                has_access: true
+              });
+              
+            if (error) {
+              console.error(`Error creating account for ${user.id}:`, error);
+            } else {
+              console.log(`Created user_account for ${user.id}`);
+            }
           }
           
           return {
             id: user.id,
-            email: user.email,
+            email: user.email || '',
             last_login: user.last_login,
             created_at: user.created_at,
             // Usar datos de user_accounts si existen, de lo contrario valores predeterminados
@@ -83,8 +101,10 @@ export const useUserManagement = () => {
             business_name: accountInfo?.business_name || null,
             has_access: accountInfo?.has_access !== false // Por defecto true si no existe
           };
-        });
+        }));
+        
         setUsers(combinedUsers);
+        console.log("Combined users:", combinedUsers);
       } else {
         setUsers([]);
         toast.info('No hay usuarios registrados en el sistema');
@@ -94,48 +114,6 @@ export const useUserManagement = () => {
       toast.error('Error al cargar usuarios');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Función para resetear la contraseña directamente a "admin01"
-  const resetPassword = async (userId: string, userEmail: string) => {
-    try {
-      // Solo superusuarios pueden realizar esta acción
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user.id) {
-        toast.error('No tiene permisos para realizar esta acción');
-        return false;
-      }
-
-      const { data: currentUser } = await supabase
-        .from('user_accounts')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (currentUser?.role !== 'superuser') {
-        toast.error('Solo superusuarios pueden resetear contraseñas');
-        return false;
-      }
-
-      // Utilizamos el servicio de administrador para actualizar la contraseña
-      const { error } = await supabase.auth.admin.updateUserById(
-        userId,
-        { password: 'admin01' }
-      );
-        
-      if (error) {
-        console.error('Error resetting password:', error);
-        toast.error('Error al resetear la contraseña');
-        return false;
-      }
-      
-      toast.success(`Contraseña reseteada a 'admin01' para ${userEmail}`);
-      return true;
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al resetear la contraseña');
-      return false;
     }
   };
 
@@ -184,6 +162,48 @@ export const useUserManagement = () => {
       return true;
     } catch (error) {
       console.error('Error:', error);
+      return false;
+    }
+  };
+
+  // Función para resetear la contraseña directamente a "admin01"
+  const resetPassword = async (userId: string, userEmail: string) => {
+    try {
+      // Solo superusuarios pueden realizar esta acción
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) {
+        toast.error('No tiene permisos para realizar esta acción');
+        return false;
+      }
+
+      const { data: currentUser } = await supabase
+        .from('user_accounts')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+        
+      if (currentUser?.role !== 'superuser') {
+        toast.error('Solo superusuarios pueden resetear contraseñas');
+        return false;
+      }
+
+      // Utilizamos el servicio de administrador para actualizar la contraseña
+      const { error } = await supabase.auth.admin.updateUserById(
+        userId,
+        { password: 'admin01' }
+      );
+        
+      if (error) {
+        console.error('Error resetting password:', error);
+        toast.error('Error al resetear la contraseña');
+        return false;
+      }
+      
+      toast.success(`Contraseña reseteada a 'admin01' para ${userEmail}`);
+      return true;
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al resetear la contraseña');
       return false;
     }
   };

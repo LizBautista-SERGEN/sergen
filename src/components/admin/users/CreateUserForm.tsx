@@ -94,12 +94,35 @@ export const CreateUserForm = ({ onUserCreated }: CreateUserFormProps) => {
         <FormField
           control={form.control}
           name="email"
-          render={({ field }) => <EmailInput field={field} />}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Correo Electrónico</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="correo@ejemplo.com" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
         <FormField
           control={form.control}
           name="password"
-          render={({ field }) => <PasswordInput field={field} />}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Contraseña</FormLabel>
+              <FormControl>
+                <Input 
+                  type="password" 
+                  placeholder="Contraseña" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
         <FormField
           control={form.control}
@@ -117,7 +140,18 @@ export const CreateUserForm = ({ onUserCreated }: CreateUserFormProps) => {
         <FormField
           control={form.control}
           name="businessName"
-          render={({ field }) => <BusinessNameInput field={field} />}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nombre de Empresa</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Nombre de la empresa (opcional)" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Creando..." : "Crear Usuario"}

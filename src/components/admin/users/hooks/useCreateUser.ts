@@ -11,7 +11,7 @@ interface NewUser {
   business_name: string;
 }
 
-export const useCreateUser = (onUserCreated: () => void) => {
+export const useCreateUser = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newUser, setNewUser] = useState<NewUser>({
     email: "",
@@ -29,7 +29,7 @@ export const useCreateUser = (onUserCreated: () => void) => {
     setNewUser(prev => ({ ...prev, role: value }));
   };
 
-  const handleCreateUser = async () => {
+  const createUser = async (onUserCreated?: () => void) => {
     // Validación básica
     if (!newUser.email || !newUser.password) {
       toast.error("El correo y la contraseña son obligatorios");
@@ -75,15 +75,34 @@ export const useCreateUser = (onUserCreated: () => void) => {
         return;
       }
 
-      // 3. Recargar para reflejar los cambios
-      toast.success("Usuario creado correctamente");
+      // 3. Asegurarse de que el usuario también está en user_accounts
+      const { error: accountError } = await supabase
+        .from('user_accounts')
+        .insert({
+          id: authData.user.id,
+          email: newUser.email.toLowerCase(),
+          role: newUser.role,
+          business_name: newUser.business_name || null,
+          has_access: true
+        });
+
+      if (accountError) {
+        console.error('Error adding to user_accounts:', accountError);
+        toast.warning(`Usuario creado pero con advertencia: ${accountError.message}`);
+      } else {
+        toast.success("Usuario creado correctamente");
+      }
+
       setNewUser({
         email: "",
         password: "",
         role: "user",
         business_name: ""
       });
-      onUserCreated();
+      
+      if (onUserCreated) {
+        onUserCreated();
+      }
     } catch (error: any) {
       console.error("Error inesperado:", error);
       toast.error(`Error inesperado: ${error.message || "Desconocido"}`);
@@ -95,7 +114,7 @@ export const useCreateUser = (onUserCreated: () => void) => {
   return {
     newUser,
     isSubmitting,
-    handleCreateUser,
+    createUser,
     handleInputChange,
     handleRoleChange
   };

@@ -14,6 +14,7 @@ export const useAuth = () => {
   // Function to ensure user exists in user_accounts
   const ensureUserAccount = async (userId: string, email: string, metadata: any) => {
     try {
+      console.log("Ensuring user exists in user_accounts:", userId, email);
       // First check if user already exists in user_accounts
       const { data: existingAccount, error: checkError } = await supabase
         .from('user_accounts')
@@ -40,7 +41,11 @@ export const useAuth = () => {
             
         if (insertError) {
           console.error('Error creating user account:', insertError);
+        } else {
+          console.log('Successfully created user_account for:', userId);
         }
+      } else {
+        console.log('User account already exists for:', userId);
       }
     } catch (error) {
       console.error('Error in ensureUserAccount:', error);
