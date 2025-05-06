@@ -11,6 +11,8 @@ export const useUserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log("Comenzando a cargar usuarios...");
+      
       // Check if current user is superuser
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user.id) {
@@ -27,6 +29,7 @@ export const useUserManagement = () => {
         .single();
         
       if (profileError || currentUserProfile?.role !== 'superuser') {
+        console.error("Error al verificar rol de usuario:", profileError);
         toast.error('No tienes permisos para administrar usuarios');
         setLoading(false);
         return;
@@ -45,6 +48,15 @@ export const useUserManagement = () => {
         return;
       }
 
+      console.log("Usuarios de auth obtenidos:", authUsers?.length || 0);
+      
+      if (!authUsers || authUsers.length === 0) {
+        console.log("No se encontraron usuarios en users_auth");
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+
       // Obtener información adicional de user_accounts
       const { data: accountsData, error: accountsError } = await supabase
         .from('user_accounts')
@@ -54,9 +66,11 @@ export const useUserManagement = () => {
         console.error('Error fetching user accounts:', accountsError);
       }
 
+      console.log("Cuentas de usuario obtenidas:", accountsData?.length || 0);
+
       // Crear un mapa de cuentas de usuario para búsqueda rápida
       const accountsMap = new Map();
-      if (accountsData) {
+      if (accountsData && accountsData.length > 0) {
         accountsData.forEach(account => {
           accountsMap.set(account.id, account);
         });
@@ -77,13 +91,15 @@ export const useUserManagement = () => {
             has_access: accountInfo?.has_access !== false // Por defecto true si no existe
           };
         });
+        
+        console.log("Usuarios combinados a mostrar:", combinedUsers.length);
         setUsers(combinedUsers);
       } else {
+        console.log("No hay usuarios para mostrar después de combinar datos");
         setUsers([]);
-        toast.info('No hay usuarios registrados en el sistema');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error en fetchUsers:', error);
       toast.error('Error al cargar usuarios');
     } finally {
       setLoading(false);
@@ -180,6 +196,7 @@ export const useUserManagement = () => {
   };
 
   useEffect(() => {
+    console.log("Iniciando carga de usuarios...");
     fetchUsers();
   }, []);
 

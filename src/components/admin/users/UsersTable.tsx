@@ -96,6 +96,14 @@ export const UsersTable = ({ users, loading, refreshUsers, resetPassword }: User
     );
   }
 
+  if (!users || users.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">No hay usuarios registrados en el sistema</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <Table>

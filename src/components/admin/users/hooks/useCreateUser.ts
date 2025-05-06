@@ -45,6 +45,8 @@ export const useCreateUser = (onUserCreated: () => void) => {
     setIsSubmitting(true);
 
     try {
+      console.log("Creando usuario:", newUser.email);
+      
       // 1. Crear usuario en Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email.trim(),
@@ -75,7 +77,31 @@ export const useCreateUser = (onUserCreated: () => void) => {
         return;
       }
 
-      // 3. Recargar para reflejar los cambios
+      console.log("Usuario creado con ID:", authData.user.id);
+
+      // 3. Asegurarnos de que el usuario también se agregue a user_accounts
+      try {
+        const { error: accountError } = await supabase
+          .from('user_accounts')
+          .insert({
+            id: authData.user.id,
+            email: newUser.email.trim(),
+            role: newUser.role,
+            business_name: newUser.business_name,
+            has_access: true
+          });
+
+        if (accountError) {
+          console.error("Error adding user to user_accounts:", accountError);
+          // No bloqueamos el flujo si esto falla, el trigger debería manejarlo
+        } else {
+          console.log("Usuario agregado a user_accounts");
+        }
+      } catch (accountErr) {
+        console.error("Error en la inserción a user_accounts:", accountErr);
+      }
+
+      // 4. Recargar para reflejar los cambios
       toast.success("Usuario creado correctamente");
       setNewUser({
         email: "",
