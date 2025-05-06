@@ -80,11 +80,11 @@ serve(async (req) => {
 
     console.log(`Retrieved a total of ${allData.length} records from database`);
     
-    // Log some sample data to verify data structure
+    // Log some sample data to verify data structure and filtering
     if (allData.length > 0) {
       console.log("Sample data structure:", allData.slice(0, 2));
       
-      // Check for records in the 18:00-23:00 range
+      // Filter for records in the 18:00-23:00 range and verify they exist
       const filtered = allData.filter(item => {
         try {
           const date = new Date(item.fecha);
@@ -100,7 +100,15 @@ serve(async (req) => {
       
       if (filtered.length > 0) {
         console.log("Sample filtered data:", filtered.slice(0, 3));
+        filtered.slice(0, 5).forEach(item => {
+          const date = new Date(item.fecha);
+          console.log(`Time (UTC): ${date.toISOString()}, Hour: ${date.getUTCHours()}, Value: ${item.ejecutado}`);
+        });
+      } else {
+        console.log("WARNING: No records found in the 18:00-23:00 UTC range!");
       }
+    } else {
+      console.log("WARNING: No records returned from the database query!");
     }
 
     return new Response(

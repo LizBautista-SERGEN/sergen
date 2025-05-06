@@ -65,6 +65,8 @@ export const useHistoricalPowerData = () => {
 
         console.log(`Retrieved ${data.length} records from edge function`);
         console.log("Sample data:", data.slice(0, 3));
+        
+        // Process the data to find daily maximums between 18:00 and 23:00 UTC
         processData(data);
         
       } catch (err: any) {
@@ -82,8 +84,10 @@ export const useHistoricalPowerData = () => {
         // Process to find daily maximums between 18:00 and 23:00
         const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
         
+        // Count records in the 18:00-23:00 range for debugging
         let count18to23 = 0;
         
+        // Extract records from the 18:00-23:00 UTC range
         data.forEach(item => {
           if (!item.fecha || typeof item.ejecutado !== 'number') {
             console.log("Skipping invalid item:", item);
@@ -92,17 +96,16 @@ export const useHistoricalPowerData = () => {
 
           try {
             // Parse the date string to a Date object
-            const date = typeof item.fecha === 'string' ? parseISO(item.fecha) : new Date(item.fecha);
+            const date = new Date(item.fecha);
             
-            // Get hour in UTC since the dates in Supabase are stored in UTC
+            // Get hour in UTC
             const hour = date.getUTCHours();
             
             // Filter for hours between 18:00 and 23:00
             if (hour >= 18 && hour <= 23) {
               count18to23++;
-              console.log(`Time (UTC): ${date.getUTCHours()}:${date.getUTCMinutes().toString().padStart(2, '0')}:${date.getUTCSeconds().toString().padStart(2, '0')}, Value: ${item.ejecutado}`);
-              
               const dateString = format(date, 'yyyy-MM-dd');
+              console.log(`Time (UTC): ${hour}:${date.getUTCMinutes().toString().padStart(2, '0')}:${date.getUTCSeconds().toString().padStart(2, '0')}, Value: ${item.ejecutado}`);
               
               if (!dailyMaximums[dateString] || item.ejecutado > dailyMaximums[dateString].max_power) {
                 dailyMaximums[dateString] = {
@@ -124,7 +127,7 @@ export const useHistoricalPowerData = () => {
           const maxEntry = Object.values(dailyMaximums).reduce((max, current) => 
             current.max_power > max.max_power ? current : max
           );
-          console.log(`Selected max value: ${maxEntry.max_power} at ${new Date(maxEntry.fecha).toTimeString()} UTC`);
+          console.log(`Selected max value: ${maxEntry.max_power} at ${new Date(maxEntry.fecha).toISOString()}`);
         } else {
           console.log("No maximum values found in the 18:00-23:00 time range");
         }
@@ -132,7 +135,7 @@ export const useHistoricalPowerData = () => {
         // Convert to chart data format
         const formattedData = Object.values(dailyMaximums)
           .map(item => {
-            const date = typeof item.fecha === 'string' ? parseISO(item.fecha) : new Date(item.fecha);
+            const date = new Date(item.fecha);
             return {
               date: format(date, 'dd/MM'),
               fullDate: item.fecha,
@@ -159,10 +162,16 @@ export const useHistoricalPowerData = () => {
               item.color = '#156082'; // Default blue for the rest
             }
           });
+          
+          console.log('Color assignment completed:', {
+            highest: sortedByValue[0]?.value,
+            secondHighest: sortedByValue[1]?.value,
+            totalPoints: formattedData.length
+          });
         }
         
         setChartData(formattedData);
-        console.log('Power maximum data count:', formattedData.length);
+        console.log('Power maximum data ready for chart, count:', formattedData.length);
       } catch (err: any) {
         console.error('Error in processData:', err);
         setError(`Error processing data: ${err.message}`);
