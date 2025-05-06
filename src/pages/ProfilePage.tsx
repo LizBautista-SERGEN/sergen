@@ -1,14 +1,14 @@
+
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { ProfileCard } from "@/components/profile/ProfileCard";
 
 const ProfilePage = () => {
   const { toast } = useToast();
@@ -29,17 +29,13 @@ const ProfilePage = () => {
       notice_period: form.notice_period.value,
     };
     
-    // Handle contract_expiration separately - either set it to null or a valid value
+    // Handle contract_expiration separately
     const contractExpValue = form.contract_expiration.value;
     if (contractExpValue && contractExpValue.trim() !== '') {
-      // Keep it as is if it's not empty
       formData.contract_expiration = contractExpValue;
     } else {
-      // Explicitly set to null if empty to avoid SQL date format errors
       formData.contract_expiration = null;
     }
-
-    console.log("Updating profile with data:", formData);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -129,8 +125,8 @@ const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-gray-50 pt-16">
-        <div className="container mx-auto px-4 py-8">
+      <div className="flex min-h-screen bg-gray-50 pt-8">
+        <div className="container mx-auto px-4 py-4">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
             <p>Cargando información del perfil...</p>
@@ -142,8 +138,8 @@ const ProfilePage = () => {
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-gray-50 pt-16">
-        <div className="container mx-auto px-4 py-8">
+      <div className="flex min-h-screen bg-gray-50 pt-8">
+        <div className="container mx-auto px-4 py-4">
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>
               Error al cargar el perfil: {error}. Por favor, intenta recargar la página.
@@ -156,22 +152,14 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 pt-16">
-      <div className="container mx-auto px-4 py-8">
+    <div className="flex min-h-screen bg-gray-50 pt-8">
+      <div className="container mx-auto px-4 py-4">
         <h1 className="text-2xl font-bold mb-6">Perfil</h1>
 
         <div className="flex flex-col md:flex-row gap-8">
           {/* Profile Card */}
-          <div className="flex flex-col items-center">
-            <Card className="w-72 h-72 overflow-hidden bg-gradient-to-b from-sergen-100 to-sergen-50">
-              <div className="relative w-full h-full">
-                <Avatar className="w-full h-full rounded-lg">
-                  <AvatarImage src={profile?.profile_image || ""} className="object-cover w-full h-full" />
-                  <AvatarFallback className="text-4xl w-full h-full">{profile?.business_name?.charAt(0) || "U"}</AvatarFallback>
-                </Avatar>
-              </div>
-            </Card>
-            <h2 className="text-xl font-semibold mt-4 text-center">{profile?.business_name || "Empresa"}</h2>
+          <div className="md:w-1/4">
+            <ProfileCard profile={profile} onProfileUpdate={refetchProfile} />
           </div>
 
           {/* Tabs */}
@@ -180,7 +168,6 @@ const ProfilePage = () => {
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="datos-usuario">Datos de usuario</TabsTrigger>
                 <TabsTrigger value="datos-contacto">Datos de contacto</TabsTrigger>
-                <TabsTrigger value="archivos">Subir archivos</TabsTrigger>
               </TabsList>
 
               <TabsContent value="datos-usuario" className="mt-6">
@@ -276,24 +263,6 @@ const ProfilePage = () => {
                     {isUpdating ? "Actualizando..." : "Actualizar contacto"}
                   </Button>
                 </form>
-              </TabsContent>
-
-              <TabsContent value="archivos" className="mt-6">
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-semibold mb-4">CONTRATOS Y ADENDAS:</h3>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <p className="text-gray-600">Función temporalmente no disponible</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold mb-4">FACTURA DE SUMINISTRO ELÉCTRICO:</h3>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <p className="text-gray-600">Función temporalmente no disponible</p>
-                    </div>
-                  </div>
-                </div>
               </TabsContent>
             </Tabs>
           </div>
