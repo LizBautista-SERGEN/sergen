@@ -13,19 +13,19 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
       if (!date) return;
       
       try {
-        const startOfDay = new Date(date);
-        startOfDay.setHours(18, 0, 0, 0);
+        const startDate = new Date(date);
+        startDate.setHours(18, 0, 0, 0);
         
-        const endOfDay = new Date(date);
-        endOfDay.setHours(23, 59, 59, 999);
+        const endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
         
-        console.log('Fetching max power for range:', startOfDay.toISOString(), 'to', endOfDay.toISOString());
+        console.log('Fetching max power for range:', startDate.toISOString(), 'to', endDate.toISOString());
         
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, reprogramado')
-          .gte('fecha', startOfDay.toISOString())
-          .lte('fecha', endOfDay.toISOString());
+          .gte('fecha', startDate.toISOString())
+          .lte('fecha', endDate.toISOString());
           
         if (error) {
           console.error('Error fetching max power:', error);
@@ -34,26 +34,23 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
         }
         
         if (data && data.length > 0) {
-          // Log all values to help with debugging
+          // Log data for debugging
           data.forEach(item => {
             const time = new Date(item.fecha).toLocaleTimeString();
             console.log(`Time: ${time}, Value: ${item.reprogramado}`);
           });
           
-          // Find the maximum reprogramado value in the dataset
-          let maxValue = 0;
-          let maxTime = '';
+          // Filter out any null values first
+          const validData = data.filter(item => item.reprogramado !== null);
           
-          data.forEach(record => {
-            if (record.reprogramado && record.reprogramado > maxValue) {
-              maxValue = record.reprogramado;
-              maxTime = new Date(record.fecha).toLocaleTimeString();
-            }
-          });
-          
-          if (maxValue > 0) {
-            console.log(`Selected max value: ${maxValue} at ${maxTime}`);
-            setMaxPower(Number(maxValue.toFixed(2)));
+          if (validData.length > 0) {
+            // Find the maximum reprogramado value in the dataset
+            const maxRecord = validData.reduce((prev, current) => {
+              return (prev.reprogramado! > current.reprogramado!) ? prev : current;
+            });
+            
+            console.log(`Selected max value: ${maxRecord.reprogramado} at ${new Date(maxRecord.fecha).toLocaleTimeString()}`);
+            setMaxPower(Number(maxRecord.reprogramado!.toFixed(2)));
             return;
           } else {
             console.log('No valid reprogramado values found in range');
