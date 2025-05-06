@@ -25,15 +25,14 @@ export const usePasswordReset = () => {
         return false;
       }
 
-      // Utilizamos el servicio de administrador para actualizar la contraseña
-      const { error } = await supabase.auth.admin.updateUserById(
-        userId,
-        { password: 'admin01' }
-      );
+      // Usar la función edge para resetear la contraseña
+      const { data, error } = await supabase.functions.invoke('reset-password', {
+        body: { userId, email: userEmail }
+      });
         
-      if (error) {
-        console.error('Error resetting password:', error);
-        toast.error('Error al resetear la contraseña: ' + error.message);
+      if (error || (data && !data.success)) {
+        console.error('Error resetting password:', error || data.error);
+        toast.error('Error al resetear la contraseña: ' + (error?.message || data?.error || 'Error desconocido'));
         return false;
       }
       

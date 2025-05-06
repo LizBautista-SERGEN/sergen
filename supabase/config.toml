@@ -48,6 +48,12 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
 
+[functions]
+[functions.cleanup-users]
+verify_jwt = false
+[functions.reset-password]
+verify_jwt = false
+
 [auth.external.apple]
 enabled = false
 client_id = ""
@@ -157,7 +163,3 @@ enabled = false
 client_id = ""
 secret = ""
 redirect_uri = ""
-
-[functions]
-[functions.cleanup-users]
-verify_jwt = false
