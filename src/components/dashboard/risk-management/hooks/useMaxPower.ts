@@ -13,6 +13,7 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
       if (!date) return;
       
       try {
+        // Set up date range for 18:00-23:00
         const startDate = new Date(date);
         startDate.setHours(18, 0, 0, 0);
         
@@ -21,6 +22,7 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
         
         console.log('Fetching max power for range:', startDate.toISOString(), 'to', endDate.toISOString());
         
+        // Query the database for records in the time range
         const { data, error } = await supabase
           .from('coes_forecast')
           .select('fecha, reprogramado')
@@ -29,38 +31,45 @@ export const useMaxPower = (date: Date | undefined, energyData: EnergyData[]) =>
           
         if (error) {
           console.error('Error fetching max power:', error);
-          calculateMaxPower(); // Fallback
+          calculateMaxPower(); // Fallback if there's an error
           return;
         }
         
         if (data && data.length > 0) {
-          // Log data for debugging
-          data.forEach(item => {
+          console.log(`Found ${data.length} records in range. Full data:`, data);
+          
+          // Filter out null values and print all records for debugging
+          const validRecords = data.filter(record => record.reprogramado !== null);
+          
+          if (validRecords.length === 0) {
+            console.log('No valid data found in range (all reprogramado values are null)');
+            calculateMaxPower(); // Fallback
+            return;
+          }
+          
+          console.log(`Found ${validRecords.length} valid records after filtering nulls`);
+          
+          // Find maximum value manually to ensure we get the absolute maximum
+          let maxRecord = validRecords[0];
+          for (let i = 1; i < validRecords.length; i++) {
+            if (validRecords[i].reprogramado! > maxRecord.reprogramado!) {
+              maxRecord = validRecords[i];
+            }
+          }
+          
+          console.log('All valid values in range:');
+          validRecords.forEach(item => {
             const time = new Date(item.fecha).toLocaleTimeString();
             console.log(`Time: ${time}, Value: ${item.reprogramado}`);
           });
           
-          // Filter out any null values first
-          const validData = data.filter(item => item.reprogramado !== null);
+          console.log(`Selected maximum value: ${maxRecord.reprogramado} at ${new Date(maxRecord.fecha).toLocaleTimeString()}`);
           
-          if (validData.length > 0) {
-            // Find the maximum reprogramado value in the dataset
-            const maxRecord = validData.reduce((prev, current) => {
-              return (prev.reprogramado! > current.reprogramado!) ? prev : current;
-            });
-            
-            console.log(`Selected max value: ${maxRecord.reprogramado} at ${new Date(maxRecord.fecha).toLocaleTimeString()}`);
-            setMaxPower(Number(maxRecord.reprogramado!.toFixed(2)));
-            return;
-          } else {
-            console.log('No valid reprogramado values found in range');
-          }
+          setMaxPower(Number(maxRecord.reprogramado!.toFixed(2)));
         } else {
-          console.log('No data found for the selected date');
+          console.log('No data found for the selected date range');
+          calculateMaxPower(); // Fallback
         }
-        
-        // Fallback to simulated data if real data not available
-        calculateMaxPower();
       } catch (error) {
         console.error('Error in fetchMaxPower:', error);
         calculateMaxPower(); // Fallback
