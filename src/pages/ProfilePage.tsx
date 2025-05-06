@@ -30,11 +30,17 @@ const ProfilePage = () => {
       notice_period: form.notice_period.value,
     };
     
-    // Handle contract_expiration separately to avoid date format issues
+    // Handle contract_expiration separately - either set it to null or a valid value
     const contractExpValue = form.contract_expiration.value;
     if (contractExpValue && contractExpValue.trim() !== '') {
+      // Keep it as is if it's not empty
       formData.contract_expiration = contractExpValue;
+    } else {
+      // Explicitly set to null if empty to avoid SQL date format errors
+      formData.contract_expiration = null;
     }
+
+    console.log("Updating profile with data:", formData);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();

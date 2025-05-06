@@ -36,6 +36,7 @@ serve(async (req) => {
     }
 
     console.log(`Fetching historical power data from ${start_date} to ${end_date} with limit ${limit}`);
+    console.log(`Table being queried: coes_historical`);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -44,6 +45,18 @@ serve(async (req) => {
         global: { headers: { Authorization: authHeader } }
       }
     )
+
+    // First, check if there's any data in the table
+    const { count, error: countError } = await supabase
+      .from('coes_historical')
+      .select('*', { count: 'exact', head: true });
+    
+    if (countError) {
+      console.error("Error checking data count:", countError);
+      throw countError;
+    }
+    
+    console.log(`Total records in coes_historical table: ${count}`);
 
     // Use pagination to fetch all records
     let allData = [];
@@ -80,6 +93,16 @@ serve(async (req) => {
 
     console.log(`Retrieved a total of ${allData.length} records from database`);
     
+    if (allData.length === 0) {
+      console.log("WARNING: No records found in the database for the specified date range!");
+      return new Response(
+        JSON.stringify([]),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+    
+    console.log("Sample raw data:", allData.slice(0, 3));
+    
     // Filter records to keep only those in the 18:00-23:00 UTC range
     const filteredData = allData.filter(item => {
       if (!item.fecha || item.ejecutado == null) {
@@ -90,7 +113,13 @@ serve(async (req) => {
       try {
         const date = new Date(item.fecha);
         const hour = date.getUTCHours();
-        return hour >= 18 && hour <= 23;
+        const isInRange = hour >= 18 && hour <= 23;
+        
+        if (isInRange) {
+          console.log(`Including record: ${date.toISOString()}, Hour: ${hour}, Value: ${item.ejecutado}`);
+        }
+        
+        return isInRange;
       } catch (e) {
         console.error("Error filtering date:", e);
         return false;

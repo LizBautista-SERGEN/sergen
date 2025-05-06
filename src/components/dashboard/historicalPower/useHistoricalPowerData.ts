@@ -20,10 +20,13 @@ export const useHistoricalPowerData = () => {
         // Get date from 120 days ago to ensure we get all data from previous months
         const oneHundredTwentyDaysAgo = subDays(today, 120);
         
+        const formattedToday = format(today, 'yyyy-MM-dd');
+        const formatted120DaysAgo = format(oneHundredTwentyDaysAgo, 'yyyy-MM-dd');
+        
         console.log("Fetching historical power data...");
         console.log("Date range:", {
-          start: oneHundredTwentyDaysAgo.toISOString(),
-          end: today.toISOString()
+          start: formatted120DaysAgo,
+          end: formattedToday
         });
         
         // First get the current session to include auth token
@@ -43,8 +46,8 @@ export const useHistoricalPowerData = () => {
               Authorization: `Bearer ${session.access_token}`,
             },
             body: {
-              start_date: oneHundredTwentyDaysAgo.toISOString(),
-              end_date: today.toISOString(),
+              start_date: formatted120DaysAgo,
+              end_date: formattedToday,
               limit: 100000, // Very high limit to ensure we get all records
             }
           }
@@ -59,6 +62,7 @@ export const useHistoricalPowerData = () => {
 
         if (!data || data.length === 0) {
           console.log("No data found in the specified date range");
+          setChartData([]);
           setIsLoading(false);
           return;
         }
@@ -81,6 +85,7 @@ export const useHistoricalPowerData = () => {
     const processData = (data: PowerData[]) => {
       try {
         console.log("Processing data, total records:", data.length);
+        
         // Process to find daily maximums between 18:00 and 23:00
         const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
         
@@ -105,9 +110,12 @@ export const useHistoricalPowerData = () => {
             if (hour >= 18 && hour <= 23) {
               count18to23++;
               const dateString = format(date, 'yyyy-MM-dd');
-              console.log(`Time (UTC): ${hour}:${date.getUTCMinutes().toString().padStart(2, '0')}:${date.getUTCSeconds().toString().padStart(2, '0')}, Value: ${item.ejecutado}`);
+              
+              // Debug logging for each data point
+              console.log(`Processing data point: Date=${dateString}, Hour=${hour}, Value=${item.ejecutado}`);
               
               if (!dailyMaximums[dateString] || item.ejecutado > dailyMaximums[dateString].max_power) {
+                console.log(`New maximum for ${dateString}: ${item.ejecutado}, replacing ${dailyMaximums[dateString]?.max_power || 'none'}`);
                 dailyMaximums[dateString] = {
                   fecha: item.fecha,
                   max_power: item.ejecutado
@@ -124,17 +132,21 @@ export const useHistoricalPowerData = () => {
         
         if (Object.keys(dailyMaximums).length > 0) {
           // Get the maximum value found and log it
-          const maxEntry = Object.values(dailyMaximums).reduce((max, current) => 
-            current.max_power > max.max_power ? current : max
-          );
-          console.log(`Selected max value: ${maxEntry.max_power} at ${new Date(maxEntry.fecha).toISOString()}`);
+          const maxValues = Object.values(dailyMaximums).sort((a, b) => b.max_power - a.max_power);
+          const highestValue = maxValues[0];
+          const secondHighestValue = maxValues.length > 1 ? maxValues[1] : null;
+          
+          console.log(`Highest value: ${highestValue.max_power} at ${new Date(highestValue.fecha).toISOString()}`);
+          if (secondHighestValue) {
+            console.log(`Second highest value: ${secondHighestValue.max_power} at ${new Date(secondHighestValue.fecha).toISOString()}`);
+          }
         } else {
           console.log("No maximum values found in the 18:00-23:00 time range");
         }
         
         // Convert to chart data format
-        const formattedData = Object.values(dailyMaximums)
-          .map(item => {
+        const formattedData = Object.entries(dailyMaximums)
+          .map(([dateKey, item]) => {
             const date = new Date(item.fecha);
             return {
               date: format(date, 'dd/MM'),
@@ -152,12 +164,16 @@ export const useHistoricalPowerData = () => {
           // Sort by value to find highest values
           const sortedByValue = [...formattedData].sort((a, b) => b.value - a.value);
           
-          // Assign colors
+          console.log('Top values after sorting:', sortedByValue.slice(0, 3).map(v => v.value));
+          
+          // Assign colors - make sure we have at least one data point
           formattedData.forEach(item => {
             if (sortedByValue.length > 0 && item.value === sortedByValue[0].value) {
               item.color = '#D9001B'; // Red for highest
+              console.log(`Setting highest value color (red): ${item.date}, ${item.value}`);
             } else if (sortedByValue.length > 1 && item.value === sortedByValue[1].value) {
               item.color = '#F97316'; // Amber for second highest
+              console.log(`Setting second highest value color (amber): ${item.date}, ${item.value}`);
             } else {
               item.color = '#156082'; // Default blue for the rest
             }
