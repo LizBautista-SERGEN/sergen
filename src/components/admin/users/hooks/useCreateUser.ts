@@ -47,7 +47,32 @@ export const useCreateUser = (onUserCreated: () => void) => {
     try {
       console.log("Creando usuario:", newUser.email);
       
-      // 1. Crear usuario en Auth
+      // 1. Verificar primero si el usuario ya existe en user_accounts
+      const { data: existingUserAccounts, error: checkUserAccountsError } = await supabase
+        .from('user_accounts')
+        .select('email')
+        .eq('email', newUser.email.trim().toLowerCase());
+        
+      console.log('Verificación en user_accounts:', {
+        existingUserAccounts,
+        error: checkUserAccountsError
+      });
+      
+      if (!checkUserAccountsError && existingUserAccounts && existingUserAccounts.length > 0) {
+        toast.error("Este correo ya está registrado en user_accounts");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // 2. Intentar crear usuario en Auth
+      console.log("Intentando crear usuario en Auth con:", {
+        email: newUser.email.trim(),
+        metadata: {
+          business_name: newUser.business_name,
+          role: newUser.role
+        }
+      });
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email.trim(),
         password: newUser.password,
@@ -60,18 +85,25 @@ export const useCreateUser = (onUserCreated: () => void) => {
       });
 
       if (authError) {
+        console.error("Error detallado de Auth:", {
+          message: authError.message,
+          code: (authError as any).code,
+          status: (authError as any).status,
+          details: authError
+        });
+        
         if (authError.message.includes("already")) {
-          toast.error("Este correo ya está registrado");
+          toast.error("Este correo ya está registrado en auth.users");
         } else {
           toast.error(`Error al crear usuario: ${authError.message}`);
         }
-        console.error("Error creating user:", authError);
         setIsSubmitting(false);
         return;
       }
 
-      // 2. Verificar que se creó el usuario
+      // 3. Verificar que se creó el usuario
       if (!authData.user) {
+        console.error("No se pudo obtener el ID de usuario después del signUp");
         toast.error("Error al crear usuario: No se pudo obtener el ID de usuario");
         setIsSubmitting(false);
         return;
@@ -79,7 +111,7 @@ export const useCreateUser = (onUserCreated: () => void) => {
 
       console.log("Usuario creado con ID:", authData.user.id);
 
-      // 3. Agregar el usuario a user_accounts
+      // 4. Agregar el usuario a user_accounts
       try {
         const { error: accountError } = await supabase
           .from('user_accounts')
@@ -89,18 +121,17 @@ export const useCreateUser = (onUserCreated: () => void) => {
             role: newUser.role,
             business_name: newUser.business_name,
             has_access: true,
-            created_at: new Date().toISOString(),
-            last_login: null
+            created_at: new Date().toISOString()
           });
 
         if (accountError) {
-          console.error("Error adding user to user_accounts:", accountError);
+          console.error("Error al agregar usuario a user_accounts:", accountError);
           toast.error(`Error al agregar usuario a la base de datos: ${accountError.message}`);
           setIsSubmitting(false);
           return;
         }
         
-        console.log("Usuario agregado a user_accounts");
+        console.log("Usuario agregado a user_accounts exitosamente");
       } catch (accountErr: any) {
         console.error("Error en la inserción a user_accounts:", accountErr);
         toast.error(`Error en la inserción a user_accounts: ${accountErr.message}`);
@@ -108,7 +139,7 @@ export const useCreateUser = (onUserCreated: () => void) => {
         return;
       }
 
-      // 4. Recargar para reflejar los cambios
+      // 5. Recargar para reflejar los cambios
       toast.success("Usuario creado correctamente");
       setNewUser({
         email: "",
