@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HistoricalTab } from "@/components/admin/forecast/HistoricalTab";
 import { ModulationTab } from "@/components/admin/ModulationTab";
 import { PublicoTab } from "@/components/admin/PublicoTab";
+import { MetricsTab } from "@/components/admin/MetricsTab";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -66,11 +67,12 @@ const ConfiguracionPage = () => {
       <h1 className="text-2xl font-bold">Configuración</h1>
       <Card className="p-6">
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-fit grid-cols-4 gap-4">
+          <TabsList className="grid w-fit grid-cols-5 gap-4">
             <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="historical">Histórico</TabsTrigger>
             <TabsTrigger value="modulation">Modulación</TabsTrigger>
             <TabsTrigger value="publico">Público</TabsTrigger>
+            <TabsTrigger value="metrics">Métricas</TabsTrigger>
           </TabsList>
           
           <TabsContent value="users">
@@ -87,6 +89,10 @@ const ConfiguracionPage = () => {
           
           <TabsContent value="publico">
             <PublicoTab />
+          </TabsContent>
+
+          <TabsContent value="metrics">
+            <MetricsTab />
           </TabsContent>
         </Tabs>
       </Card>

@@ -31,7 +31,6 @@ interface UsersTableProps {
   users: User[];
   loading: boolean;
   refreshUsers: () => void;
-  resetPassword: (userId: string, userEmail: string) => Promise<boolean>;
 }
 
 export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) => {
