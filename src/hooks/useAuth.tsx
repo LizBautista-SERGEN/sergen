@@ -93,15 +93,15 @@ export const useAuth = () => {
                 navigate('/servicios/control');
               }
               
-              // Actualizamos el último login sin bloquear el flujo usando setTimeout
+              // Actualizamos el último login directamente en user_accounts
               setTimeout(() => {
                 try {
                   supabase
-                    .from('users_auth')
+                    .from('user_accounts')
                     .update({ last_login: new Date().toISOString() })
                     .eq('id', session.user.id)
                     .then(({ error }) => {
-                      if (error && !error.message.includes('JSON object requested') && !error.message.includes('rows returned')) {
+                      if (error) {
                         console.error('Error updating last login:', error);
                       }
                     });

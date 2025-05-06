@@ -97,14 +97,14 @@ export const useAuthForms = () => {
           }
         }
         
-        // Actualizar last_login sin bloquear el flujo principal
+        // Actualizar last_login directamente en user_accounts
         setTimeout(() => {
           supabase
-            .from('users_auth')
+            .from('user_accounts')
             .update({ last_login: new Date().toISOString() })
-            .eq('id', data.user!.id)
+            .eq('id', data.user.id)
             .then(({ error }) => {
-              if (error && !error.message.includes('JSON object requested') && !error.message.includes('rows returned')) {
+              if (error) {
                 console.error('Error updating last login:', error);
               }
             });
@@ -185,7 +185,7 @@ export const useAuthForms = () => {
       }
 
       if (data.user) {
-        // Registramos el usuario en user_accounts
+        // Registramos el usuario directamente en user_accounts
         const { error: insertError } = await supabase
           .from('user_accounts')
           .insert({
@@ -194,7 +194,8 @@ export const useAuthForms = () => {
             business_name: businessName,
             ruc: ruc,
             role: 'user',
-            has_access: true
+            has_access: true,
+            last_login: new Date().toISOString()
           });
           
         if (insertError && !insertError.message.includes('duplicate key')) {

@@ -13,6 +13,7 @@ export const usePasswordReset = () => {
         return false;
       }
 
+      // Verificar que el usuario actual es superusuario
       const { data: currentUser } = await supabase
         .from('user_accounts')
         .select('role')
@@ -32,15 +33,15 @@ export const usePasswordReset = () => {
         
       if (error) {
         console.error('Error resetting password:', error);
-        toast.error('Error al resetear la contraseña');
+        toast.error('Error al resetear la contraseña: ' + error.message);
         return false;
       }
       
       toast.success(`Contraseña reseteada a 'admin01' para ${userEmail}`);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
-      toast.error('Error al resetear la contraseña');
+      toast.error('Error al resetear la contraseña: ' + error.message);
       return false;
     }
   };

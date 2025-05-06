@@ -35,8 +35,7 @@ export const useFetchUsers = () => {
         return;
       }
 
-      // Intentar obtener los usuarios directamente de user_accounts
-      // Esta tabla debería tener todas las cuentas de usuario y menos restricciones de acceso
+      // Obtener todos los usuarios de user_accounts
       const { data: accountsData, error: accountsError } = await supabase
         .from('user_accounts')
         .select('*')
@@ -45,6 +44,8 @@ export const useFetchUsers = () => {
       if (accountsError) {
         console.error('Error fetching user accounts:', accountsError);
         toast.error('Error al cargar cuentas de usuario');
+        setLoading(false);
+        return;
       }
 
       console.log("Cuentas de usuario obtenidas:", accountsData?.length || 0);
@@ -56,30 +57,12 @@ export const useFetchUsers = () => {
         return;
       }
 
-      // Intentar obtener información de login desde users_auth para complementar
-      const { data: authUsers, error: authError } = await supabase
-        .from('users_auth')
-        .select('*');
-
-      console.log("Usuarios de auth obtenidos:", authUsers?.length || 0);
-      
-      // Crear un mapa de usuarios de autenticación para búsqueda rápida
-      const authMap = new Map();
-      if (authUsers && authUsers.length > 0) {
-        authUsers.forEach(user => {
-          authMap.set(user.id, user);
-        });
-      }
-
-      // Construir la lista de usuarios combinando ambas fuentes
-      // pero partiendo de user_accounts que debería ser más accesible
-      const combinedUsers = accountsData.map(account => {
-        const authInfo = authMap.get(account.id);
-        
+      // Construir la lista de usuarios directamente desde user_accounts
+      const usersList = accountsData.map(account => {
         return {
           id: account.id,
           email: account.email,
-          last_login: authInfo?.last_login || null,
+          last_login: account.last_login || null,
           created_at: account.created_at,
           role: account.role || 'user',
           business_name: account.business_name || null,
@@ -87,8 +70,8 @@ export const useFetchUsers = () => {
         };
       });
       
-      console.log("Usuarios combinados a mostrar:", combinedUsers.length);
-      setUsers(combinedUsers);
+      console.log("Usuarios a mostrar:", usersList.length);
+      setUsers(usersList);
       
     } catch (error) {
       console.error('Error en fetchUsers:', error);

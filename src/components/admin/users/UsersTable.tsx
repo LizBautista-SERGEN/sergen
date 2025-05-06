@@ -47,15 +47,15 @@ export const UsersTable = ({ users, loading, refreshUsers, resetPassword }: User
 
       if (error) {
         console.error('Error toggling access:', error);
-        toast.error('Error al actualizar acceso');
+        toast.error('Error al actualizar acceso: ' + error.message);
         return;
       }
 
       toast.success('Acceso actualizado exitosamente');
       refreshUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
-      toast.error('Error al actualizar acceso');
+      toast.error('Error al actualizar acceso: ' + error.message);
     }
   };
 
@@ -75,16 +75,24 @@ export const UsersTable = ({ users, loading, refreshUsers, resetPassword }: User
 
       if (deleteError) {
         console.error('Error deleting user from user_accounts:', deleteError);
-        toast.error('Error al eliminar usuario');
+        toast.error('Error al eliminar usuario: ' + deleteError.message);
         return;
+      }
+
+      // También intentar eliminar de auth
+      try {
+        await supabase.auth.admin.deleteUser(userToDelete.id);
+      } catch (authError) {
+        console.error('Error deleting auth user (non-critical):', authError);
+        // No bloqueamos el proceso si falla
       }
 
       toast.success('Usuario eliminado exitosamente');
       setUserToDelete(null);
       refreshUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error);
-      toast.error('Error al eliminar usuario');
+      toast.error('Error al eliminar usuario: ' + error.message);
     }
   };
 

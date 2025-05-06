@@ -20,6 +20,7 @@ export type ProfileType = {
   contracted_power: string | null;
   contract_expiration: string | null;
   notice_period: string | null;
+  last_login: string | null;
 };
 
 export const useUserProfile = () => {
@@ -48,7 +49,7 @@ export const useUserProfile = () => {
         return;
       }
 
-      // Usar la tabla user_accounts directamente sin depender de la tabla profiles
+      // Usar la tabla user_accounts directamente
       const { data, error: profileError } = await supabase
         .from('user_accounts')
         .select('*')
