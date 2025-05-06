@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format, subDays, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ export const useHistoricalPowerData = () => {
         }
 
         console.log(`Retrieved ${data.length} records from edge function`);
+        console.log("Sample data:", data.slice(0, 3));
         processData(data);
         
       } catch (err: any) {
@@ -71,11 +73,15 @@ export const useHistoricalPowerData = () => {
     
     const processData = (data: PowerData[]) => {
       try {
+        console.log("Processing data, total records:", data.length);
         // Process to find daily maximums between 18:00 and 23:00
         const dailyMaximums: Record<string, { fecha: string, max_power: number }> = {};
         
+        let count18to23 = 0;
+        
         data.forEach(item => {
           if (!item.fecha || typeof item.ejecutado !== 'number') {
+            console.log("Skipping invalid item:", item);
             return;
           }
 
@@ -88,6 +94,9 @@ export const useHistoricalPowerData = () => {
             
             // Filter for hours between 18:00 and 23:00
             if (hour >= 18 && hour <= 23) {
+              count18to23++;
+              console.log(`Time (UTC): ${date.getUTCHours()}:${date.getUTCMinutes().toString().padStart(2, '0')}:${date.getUTCSeconds().toString().padStart(2, '0')}, Value: ${item.ejecutado}`);
+              
               const dateString = format(date, 'yyyy-MM-dd');
               
               if (!dailyMaximums[dateString] || item.ejecutado > dailyMaximums[dateString].max_power) {
@@ -102,7 +111,18 @@ export const useHistoricalPowerData = () => {
           }
         });
         
+        console.log(`Found ${count18to23} records in the 18:00-24:00 range`);
         console.log('Daily maximums processed:', Object.keys(dailyMaximums).length);
+        
+        if (Object.keys(dailyMaximums).length > 0) {
+          // Get the maximum value found and log it
+          const maxEntry = Object.values(dailyMaximums).reduce((max, current) => 
+            current.max_power > max.max_power ? current : max
+          );
+          console.log(`Selected max value: ${maxEntry.max_power} at ${new Date(maxEntry.fecha).toTimeString()} UTC`);
+        } else {
+          console.log("No maximum values found in the 18:00-23:00 time range");
+        }
         
         // Convert to chart data format
         const formattedData = Object.values(dailyMaximums)
