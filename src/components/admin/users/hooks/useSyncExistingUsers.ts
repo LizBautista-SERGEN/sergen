@@ -12,6 +12,7 @@ interface SyncUserData {
 
 export const useSyncExistingUsers = (onUserSynced: () => void) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
   const [syncData, setSyncData] = useState<SyncUserData>({
     email: "",
     uuid: "",
@@ -85,11 +86,55 @@ export const useSyncExistingUsers = (onUserSynced: () => void) => {
     }
   };
 
+  // Nueva función para limpiar usuarios excepto el correo especificado
+  const cleanupUsersExcept = async (exemptEmail: string) => {
+    if (!exemptEmail) {
+      toast.error("Debe especificar un correo electrónico a preservar");
+      return;
+    }
+
+    // Solicitar confirmación
+    if (!confirm(`¿Está seguro de eliminar todos los usuarios excepto ${exemptEmail}? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    setIsCleaning(true);
+    toast.info("Iniciando limpieza de usuarios...");
+
+    try {
+      // Primero obtener todos los usuarios de auth.users excepto el correo a preservar
+      // Esto debe hacerse desde una función de administrador, ya que no se puede acceder directamente a auth.users
+      const { data: result, error } = await supabase.functions.invoke('cleanup-users', {
+        body: { exemptEmail }
+      });
+
+      if (error) {
+        console.error("Error en la limpieza:", error);
+        toast.error(`Error al limpiar usuarios: ${error.message}`);
+        return;
+      }
+
+      if (result && result.success) {
+        toast.success(`Limpieza completada: ${result.deletedCount} usuarios eliminados`);
+        onUserSynced(); // Refrescar la lista de usuarios
+      } else {
+        toast.error(`Error: ${result?.message || "Error desconocido"}`);
+      }
+    } catch (error: any) {
+      console.error("Error inesperado:", error);
+      toast.error(`Error inesperado: ${error.message || "Desconocido"}`);
+    } finally {
+      setIsCleaning(false);
+    }
+  };
+
   return {
     syncData,
     isSubmitting,
+    isCleaning,
     syncExistingUser,
     handleInputChange,
-    handleRoleChange
+    handleRoleChange,
+    cleanupUsersExcept
   };
 };

@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RoleSelector } from "./RoleSelector";
 import { useSyncExistingUsers } from "./hooks/useSyncExistingUsers";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 interface SyncUserFormProps {
   onUserSynced: () => void;
@@ -14,9 +16,11 @@ export const SyncUserForm = ({ onUserSynced }: SyncUserFormProps) => {
   const {
     syncData,
     isSubmitting,
+    isCleaning,
     syncExistingUser,
     handleInputChange,
-    handleRoleChange
+    handleRoleChange,
+    cleanupUsersExcept
   } = useSyncExistingUsers(onUserSynced);
 
   return (
@@ -75,13 +79,46 @@ export const SyncUserForm = ({ onUserSynced }: SyncUserFormProps) => {
         </div>
       </div>
       
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button variant="outline">Cancelar</Button>
-        </DialogClose>
-        <Button onClick={syncExistingUser} disabled={isSubmitting}>
-          {isSubmitting ? 'Sincronizando...' : 'Sincronizar Usuario'}
-        </Button>
+      <DialogFooter className="flex justify-between items-center">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              disabled={isCleaning}
+            >
+              <Trash2 size={16} className="mr-2" />
+              Limpiar Usuarios
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción eliminará TODOS los usuarios excepto victoria_bautista@sergen.pe.
+                Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => cleanupUsersExcept("victoria_bautista@sergen.pe")}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Eliminar Usuarios
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        
+        <div className="flex gap-2">
+          <DialogClose asChild>
+            <Button variant="outline">Cancelar</Button>
+          </DialogClose>
+          <Button onClick={syncExistingUser} disabled={isSubmitting || isCleaning}>
+            {isSubmitting ? 'Sincronizando...' : 'Sincronizar Usuario'}
+          </Button>
+        </div>
       </DialogFooter>
     </>
   );
