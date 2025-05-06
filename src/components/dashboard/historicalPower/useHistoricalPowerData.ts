@@ -38,6 +38,21 @@ export const useHistoricalPowerData = () => {
         
         console.log("Session found, auth token available:", !!session.access_token);
         
+        // Check if we can directly query some data to verify access
+        const { data: directData, error: directError } = await supabase
+          .from('coes_historical')
+          .select('*')
+          .limit(5);
+          
+        if (directError) {
+          console.error('Error accessing table directly:', directError);
+        } else {
+          console.log('Direct table access successful, found records:', directData?.length);
+          if (directData && directData.length > 0) {
+            console.log('Sample record from direct query:', directData[0]);
+          }
+        }
+        
         // Call our edge function to get the historical power data with auth header
         const response = await supabase.functions.invoke(
           "get-historical-power-data", 
@@ -127,7 +142,7 @@ export const useHistoricalPowerData = () => {
           }
         });
         
-        console.log(`Found ${count18to23} records in the 18:00-24:00 range`);
+        console.log(`Found ${count18to23} records in the 18:00-23:00 range`);
         console.log('Daily maximums processed:', Object.keys(dailyMaximums).length);
         
         if (Object.keys(dailyMaximums).length > 0) {
@@ -140,6 +155,11 @@ export const useHistoricalPowerData = () => {
           if (secondHighestValue) {
             console.log(`Second highest value: ${secondHighestValue.max_power} at ${new Date(secondHighestValue.fecha).toISOString()}`);
           }
+          
+          // Log the daily maximum for each day
+          Object.entries(dailyMaximums).forEach(([dateKey, item]) => {
+            console.log(`Daily maximum for ${dateKey}: ${item.max_power} at ${new Date(item.fecha).toISOString()}`);
+          });
         } else {
           console.log("No maximum values found in the 18:00-23:00 time range");
         }

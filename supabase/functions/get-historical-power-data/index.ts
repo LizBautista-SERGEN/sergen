@@ -46,19 +46,50 @@ serve(async (req) => {
       }
     )
 
-    // First, check if there's any data in the table
-    const { count, error: countError } = await supabase
+    // First, get the first 5 records to verify access and data format
+    const { data: sampleData, error: sampleError } = await supabase
       .from('coes_historical')
-      .select('*', { count: 'exact', head: true });
-    
-    if (countError) {
-      console.error("Error checking data count:", countError);
-      throw countError;
+      .select('*')
+      .limit(5);
+      
+    if (sampleError) {
+      console.error("Error accessing coes_historical table:", sampleError);
+      throw new Error(`Database access error: ${sampleError.message}`);
     }
     
-    console.log(`Total records in coes_historical table: ${count}`);
+    if (!sampleData || sampleData.length === 0) {
+      console.log("WARNING: No records found in the coes_historical table at all!");
+    } else {
+      console.log(`Successfully accessed coes_historical table. Sample records:`);
+      sampleData.forEach((record, index) => {
+        console.log(`Record ${index + 1}:`, JSON.stringify(record));
+      });
+    }
 
-    // Use pagination to fetch all records
+    // Check if there's any data in the table with the date range
+    const { data: rangeData, error: rangeError } = await supabase
+      .from('coes_historical')
+      .select('fecha', { count: 'exact' })
+      .gte('fecha', start_date)
+      .lte('fecha', end_date)
+      .limit(1);
+      
+    if (rangeError) {
+      console.error("Error checking data in date range:", rangeError);
+      throw rangeError;
+    }
+    
+    if (!rangeData || rangeData.length === 0) {
+      console.log(`WARNING: No records found between ${start_date} and ${end_date}`);
+      return new Response(
+        JSON.stringify([]),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    } else {
+      console.log(`Found records in the specified date range. Proceeding with query.`);
+    }
+    
+    // Use pagination to fetch all records within the date range
     let allData = [];
     let page = 0;
     let hasMore = true;
@@ -101,7 +132,7 @@ serve(async (req) => {
       );
     }
     
-    console.log("Sample raw data:", allData.slice(0, 3));
+    console.log("Sample raw data:", allData.slice(0, 5).map(item => JSON.stringify(item)));
     
     // Filter records to keep only those in the 18:00-23:00 UTC range
     const filteredData = allData.filter(item => {
@@ -129,7 +160,7 @@ serve(async (req) => {
     console.log(`Found ${filteredData.length} records in the 18:00-23:00 UTC range`);
     
     if (filteredData.length > 0) {
-      console.log("Sample filtered data:", filteredData.slice(0, 3));
+      console.log("Sample filtered data:", filteredData.slice(0, 5).map(item => JSON.stringify(item)));
       filteredData.slice(0, 5).forEach(item => {
         const date = new Date(item.fecha);
         console.log(`Time (UTC): ${date.toISOString()}, Hour: ${date.getUTCHours()}, Value: ${item.ejecutado}`);
