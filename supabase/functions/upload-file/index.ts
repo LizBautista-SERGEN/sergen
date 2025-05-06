@@ -34,9 +34,39 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Create bucket if it doesn't exist
+    // Determine the bucket name
     const bucketName = type === 'profile' ? 'profile_images' : 
-                      type === 'contract' ? 'contracts' : 'invoices'
+                     type === 'contract' ? 'contracts' : 'invoices'
+                     
+    console.log(`Using bucket name: ${bucketName}`)
+
+    // Check if the bucket exists, if not create it
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets()
+    
+    if (listError) {
+      console.error('Error listing buckets:', listError)
+      throw new Error(`Error listing buckets: ${listError.message}`)
+    }
+    
+    const bucketExists = buckets.some(bucket => bucket.name === bucketName)
+    
+    if (!bucketExists) {
+      console.log(`Bucket ${bucketName} does not exist, creating...`)
+      const { error: createError } = await supabase.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+        allowedMimeTypes: ['image/*', 'application/pdf']
+      })
+      
+      if (createError) {
+        console.error(`Error creating bucket ${bucketName}:`, createError)
+        throw new Error(`Error creating bucket: ${createError.message}`)
+      }
+      
+      console.log(`Successfully created bucket ${bucketName}`)
+    } else {
+      console.log(`Bucket ${bucketName} already exists`)
+    }
 
     // Create unique file name
     const fileExt = file.name.split('.').pop()

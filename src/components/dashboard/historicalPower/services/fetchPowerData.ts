@@ -1,4 +1,3 @@
-
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,35 +14,85 @@ export const fetchPowerData = async () => {
     const formattedThirtyDaysAgo = format(thirtyDaysAgo, 'yyyy-MM-dd');
     
     console.log("Fetching historical power data...");
+    console.log("Date range:", { start: formattedThirtyDaysAgo, end: formattedToday });
     
-    // First, try to directly access coes_historical data
-    const { data: directData, error: directError } = await supabase
+    // First, try to directly access coes_historical data without date filters to verify table access
+    const { data: checkData, error: checkError } = await supabase
       .from('coes_historical')
       .select('fecha, ejecutado')
       .order('fecha', { ascending: true })
-      .limit(100);
+      .limit(5);
       
-    if (directError) {
-      console.error('Error accessing table directly:', directError);
-      throw new Error(`Error accessing data directly: ${directError.message}`);
+    if (checkError) {
+      console.error('Error checking data table access:', checkError);
+      throw new Error(`Error accessing data table: ${checkError.message}`);
     }
 
-    if (directData && directData.length > 0) {
-      console.log('Direct data access successful, found records:', directData.length);
-      console.log('Sample records from direct query:');
-      directData.slice(0, 5).forEach((record, i) => {
+    console.log("Attempting to directly query coes_historical to verify access...");
+    if (checkData && checkData.length > 0) {
+      console.log('Table access successful, found sample records:', checkData.length);
+      console.log('Sample records:');
+      checkData.forEach((record, i) => {
         console.log(`Record ${i+1}:`, record);
       });
-      
-      // If direct access works, return this data
-      return directData.map(item => ({ 
-        fecha: item.fecha,
-        ejecutado: item.ejecutado 
-      }));
+    } else {
+      console.log('No sample records found in direct table access check');
     }
     
-    // If no data from direct access, try the edge function
-    console.log("No data from direct query. Trying edge function...");
+    // Now try to get data within the 18-24h UTC range to find power peaks
+    const { data: peakData } = await supabase
+      .from('coes_historical')
+      .select('fecha, ejecutado')
+      .gte('fecha', formattedThirtyDaysAgo)
+      .lte('fecha', formattedToday)
+      .order('fecha', { ascending: true });
+    
+    if (peakData && peakData.length > 0) {
+      // Filter to keep only records between 18:00 and 24:00 UTC (peak hours)
+      const filteredData = peakData.filter(item => {
+        if (!item.fecha) return false;
+        const date = new Date(item.fecha);
+        const hour = date.getUTCHours();
+        return hour >= 18 && hour < 24;
+      });
+      
+      console.log(`Found ${filteredData.length} records in the 18:00-24:00 range`);
+      
+      // Log the first few records for debugging
+      filteredData.slice(0, 5).forEach(item => {
+        const date = new Date(item.fecha);
+        console.log(`Time (UTC): ${format(date, 'HH:mm:ss')}, Value: ${item.ejecutado}`);
+      });
+      
+      // Find the maximum value for each day
+      const dailyMaximums = filteredData.reduce((acc, curr) => {
+        const date = new Date(curr.fecha);
+        const dateString = format(date, 'yyyy-MM-dd');
+        
+        if (!acc[dateString] || curr.ejecutado > acc[dateString].ejecutado) {
+          acc[dateString] = {
+            fecha: curr.fecha,
+            ejecutado: curr.ejecutado
+          };
+        }
+        
+        return acc;
+      }, {});
+      
+      // Convert to array
+      const result = Object.values(dailyMaximums);
+      
+      if (result.length > 0) {
+        // Find the maximum value overall for reporting
+        const maxValue = result.reduce((max, curr) => curr.ejecutado > max.ejecutado ? curr : max, result[0]);
+        console.log(`Selected max value: ${maxValue.ejecutado} at ${format(new Date(maxValue.fecha), 'HH:mm:ss')} UTC`);
+      }
+      
+      return result;
+    }
+    
+    // If no direct data access or no data within the period, try the edge function
+    console.log("No direct data found in the specified range. Calling edge function get-historical-power-data...");
     
     // Get session for auth
     const { data: { session } } = await supabase.auth.getSession();
@@ -51,6 +100,8 @@ export const fetchPowerData = async () => {
     if (!session) {
       throw new Error("No active session found. Please log in.");
     }
+    
+    console.log("Session found, auth token available:", !!session.access_token);
     
     // Call edge function as fallback
     const response = await supabase.functions.invoke(
@@ -74,7 +125,7 @@ export const fetchPowerData = async () => {
     const data: PowerData[] = response.data;
 
     if (!data || data.length === 0) {
-      console.log("No data found from edge function either");
+      console.log("No data found in the specified date range from edge function");
       return [];
     }
 
