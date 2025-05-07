@@ -48,6 +48,15 @@ export const fetchPowerData = async (): Promise<PowerData[]> => {
       console.log("No data found in direct query. Calling edge function...");
       
       try {
+        // Get the current session - this is key for authentication
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (!sessionData || !sessionData.session) {
+          console.error('No active session found for authentication');
+          throw new Error('No authorization available');
+        }
+        
+        // Call the edge function with proper authentication
         const { data: edgeFunctionData, error: edgeFunctionError } = await supabase.functions.invoke(
           'get-historical-power-data',
           {
@@ -92,11 +101,13 @@ export const fetchPowerData = async (): Promise<PowerData[]> => {
           return false;
         }
         
-        // Filter for peak hours (18:00-23:00 UTC) - moving this filter here instead of in the query
+        // For debugging, log all records with their hours
         try {
           const date = new Date(item.fecha);
           const hour = date.getUTCHours();
           console.log(`Record: ${item.fecha}, Hour: ${hour}, Value: ${item.ejecutado}`);
+          
+          // Filter for peak hours (18:00-23:00 UTC)
           return hour >= 18 && hour <= 23;
         } catch (e) {
           console.error("Error parsing date:", e, item);

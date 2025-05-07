@@ -9,12 +9,20 @@ export const useHistoricalPowerData = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionFetched, setSessionFetched] = useState(false);
 
   useEffect(() => {
     const fetchMaxPowerData = async () => {
       setIsLoading(true);
       setError(null);
+      
       try {
+        // Artificial delay to ensure authentication is fully loaded
+        if (!sessionFetched) {
+          setSessionFetched(true);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
         // Fetch the power data
         const powerData = await fetchPowerData();
         
@@ -22,12 +30,14 @@ export const useHistoricalPowerData = () => {
         
         if (!powerData || powerData.length === 0) {
           setError("No se encontraron datos de potencia para el período seleccionado");
+          toast.error("No se encontraron datos de potencia");
           return;
         }
         
         // Display sample data for debugging
         if (powerData.length > 0) {
           console.log("Sample power data:", powerData.slice(0, 3));
+          toast.success(`Se encontraron ${powerData.length} registros de potencia`);
         }
         
         // Process the data to get daily maximums
@@ -55,7 +65,7 @@ export const useHistoricalPowerData = () => {
     // Refresh every 15 minutes
     const interval = setInterval(fetchMaxPowerData, 15 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [sessionFetched]);
 
   return { chartData, isLoading, error };
 };

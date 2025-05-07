@@ -18,7 +18,7 @@ const ServiceControl = () => {
   const navigate = useNavigate();
   const { session, loading: authLoading, isAuthenticated } = useAuth();
 
-  // Efecto para redirigir cuando no hay sesión (autenticación)
+  // Verificar autenticación y redirigir si no hay sesión
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       console.log("No hay sesión activa, redirigiendo a login");
@@ -26,7 +26,23 @@ const ServiceControl = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  // Efecto para actualizar la información de pronóstico sin cargar datos de energy_data
+  // Efecto para verificar y crear buckets de almacenamiento necesarios
+  useEffect(() => {
+    const checkStorageBuckets = async () => {
+      try {
+        await supabase.functions.invoke('check-storage-buckets');
+        console.log("Verificación de buckets de almacenamiento completada");
+      } catch (err) {
+        console.error("Error verificando buckets de almacenamiento:", err);
+      }
+    };
+    
+    if (isAuthenticated) {
+      checkStorageBuckets();
+    }
+  }, [isAuthenticated]);
+
+  // Efecto para actualizar la información de pronóstico
   useEffect(() => {
     // Si todavía está cargando la autenticación, no hacemos nada
     if (authLoading || !isAuthenticated) {
@@ -42,8 +58,10 @@ const ServiceControl = () => {
         try {
           await supabase.functions.invoke('get-coes-forecast');
           setLastUpdated(new Date());
+          toast.success("Datos de pronóstico actualizados");
         } catch (e) {
           console.error('Error updating forecast data:', e);
+          toast.error("Error al actualizar datos de pronóstico");
         }
       } catch (error) {
         console.error('Error general:', error);
@@ -82,7 +100,7 @@ const ServiceControl = () => {
       <div className="min-h-screen bg-gray-50 flex w-full">
         <DashboardSidebar />
         <div className="flex-1">
-          <div className="container mx-auto px-2 pt-12 pb-8">
+          <div className="container mx-auto px-2 py-6">
             <div className="mb-4">
               <h1 className="text-3xl font-bold text-gray-800 mb-2">Control de Demanda</h1>
               {lastUpdated && (
@@ -99,8 +117,8 @@ const ServiceControl = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-12 gap-6 mt-4">
-                <div className="col-span-4 space-y-4">
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-4 space-y-4">
                   <RiskManagement 
                     energyData={[]} 
                     date={date} 
@@ -108,7 +126,7 @@ const ServiceControl = () => {
                   />
                 </div>
 
-                <div className="col-span-8 space-y-4">
+                <div className="col-span-12 lg:col-span-8 space-y-4">
                   <PowerCharts 
                     energyData={[]}
                     date={date}
