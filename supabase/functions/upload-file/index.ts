@@ -87,19 +87,61 @@ serve(async (req) => {
 
   // POST request for file upload
   try {
-    // Parse the form data
-    const formData = await req.formData()
-    const file = formData.get('file')
-    const type = formData.get('type')
-    const userId = formData.get('userId')
-
-    console.log('Upload request received:', { type, userId, fileName: file?.name })
-
-    if (!file || !type || !userId) {
+    console.log('Upload request received');
+    
+    // Check Content-Type to ensure it's multipart/form-data
+    const contentType = req.headers.get('Content-Type') || '';
+    if (!contentType.includes('multipart/form-data')) {
+      console.error('Invalid content type:', contentType);
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Content type must be multipart/form-data' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
+      );
+    }
+
+    // Try to parse the form data
+    let formData;
+    try {
+      formData = await req.formData();
+    } catch (error) {
+      console.error('Error parsing form data:', error);
+      return new Response(
+        JSON.stringify({ error: 'Could not parse form data: ' + error.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Extract file and metadata from form data
+    const file = formData.get('file');
+    const type = formData.get('type');
+    const userId = formData.get('userId');
+
+    console.log('Upload request parameters:', { 
+      type, 
+      userId, 
+      fileName: file?.name,
+      fileType: file?.type 
+    });
+
+    if (!file) {
+      return new Response(
+        JSON.stringify({ error: 'No file provided' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    if (!type) {
+      return new Response(
+        JSON.stringify({ error: 'Missing type parameter' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing userId parameter' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
     // Initialize Supabase client
@@ -112,43 +154,43 @@ serve(async (req) => {
     const bucketName = type === 'profile' ? 'profile_images' : 
                      type === 'contract' ? 'contracts' : 'invoices'
                      
-    console.log(`Using bucket name: ${bucketName}`)
+    console.log(`Using bucket name: ${bucketName}`);
 
     try {
       // Check if the bucket exists, if not create it
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets()
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
       
       if (listError) {
-        console.error('Error listing buckets:', listError)
-        throw new Error(`Error listing buckets: ${listError.message}`)
+        console.error('Error listing buckets:', listError);
+        throw new Error(`Error listing buckets: ${listError.message}`);
       }
       
-      const bucketExists = buckets.some(bucket => bucket.name === bucketName)
+      const bucketExists = buckets.some(bucket => bucket.name === bucketName);
       
       if (!bucketExists) {
-        console.log(`Bucket ${bucketName} does not exist, creating...`)
+        console.log(`Bucket ${bucketName} does not exist, creating...`);
         const { error: createError } = await supabase.storage.createBucket(bucketName, {
           public: true,
           fileSizeLimit: 10485760, // 10MB
-          allowedMimeTypes: ['image/*', 'application/pdf']
-        })
+          allowedMimeTypes: ['image/*', 'application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+        });
         
         if (createError) {
-          console.error(`Error creating bucket ${bucketName}:`, createError)
-          throw new Error(`Error creating bucket: ${createError.message}`)
+          console.error(`Error creating bucket ${bucketName}:`, createError);
+          throw new Error(`Error creating bucket: ${createError.message}`);
         }
         
-        console.log(`Successfully created bucket ${bucketName}`)
+        console.log(`Successfully created bucket ${bucketName}`);
       } else {
-        console.log(`Bucket ${bucketName} already exists`)
+        console.log(`Bucket ${bucketName} already exists`);
       }
 
       // Create unique file name
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${crypto.randomUUID()}.${fileExt}`
-      const filePath = `${userId}/${fileName}`
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
       
-      console.log(`Uploading to bucket: ${bucketName}, path: ${filePath}`)
+      console.log(`Uploading to bucket: ${bucketName}, path: ${filePath}`);
 
       // Upload the file
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -156,37 +198,37 @@ serve(async (req) => {
         .upload(filePath, file, {
           contentType: file.type,
           upsert: true
-        })
+        });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError)
-        throw uploadError
+        console.error('Upload error:', uploadError);
+        throw uploadError;
       }
 
-      console.log('File uploaded successfully')
+      console.log('File uploaded successfully');
 
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from(bucketName)
-        .getPublicUrl(filePath)
+        .getPublicUrl(filePath);
 
-      console.log('Generated public URL:', publicUrl)
+      console.log('Generated public URL:', publicUrl);
 
       // Update user profile if profile image
       if (type === 'profile') {
-        console.log('Updating user profile with new image URL')
+        console.log('Updating user profile with new image URL');
         const { error: updateError } = await supabase
           .from('user_accounts')
           .update({ profile_image: publicUrl })
-          .eq('id', userId)
+          .eq('id', userId);
 
         if (updateError) {
-          console.error('Profile update error:', updateError)
-          throw updateError
+          console.error('Profile update error:', updateError);
+          throw updateError;
         }
       } else {
         // Add document entry if contract or invoice
-        console.log('Adding document record')
+        console.log('Adding document record');
         const { error: insertError } = await supabase
           .from('documents')
           .insert({
@@ -194,11 +236,11 @@ serve(async (req) => {
             filename: file.name,
             file_path: filePath,
             document_type: type
-          })
+          });
 
         if (insertError) {
-          console.error('Document insert error:', insertError)
-          throw insertError
+          console.error('Document insert error:', insertError);
+          throw insertError;
         }
       }
 
@@ -208,19 +250,19 @@ serve(async (req) => {
           url: publicUrl
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      )
+      );
     } catch (storageError) {
-      console.error('Storage operation error:', storageError)
+      console.error('Storage operation error:', storageError);
       return new Response(
         JSON.stringify({ error: `Storage operation failed: ${storageError.message}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
+      );
     }
   } catch (error) {
-    console.error('Function error:', error)
+    console.error('Function error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+    );
   }
 })

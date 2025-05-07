@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { FileText, Upload, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -27,15 +28,13 @@ export const DocumentsTab = () => {
 
       console.log('Fetching documents for user:', session.user.id);
 
-      // Problem: GET requests shouldn't have a body, let's fix this by using URL parameters
       // Using URL parameters instead of body for GET request
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        },
-        // Don't include body for GET requests
-        // Use query parameters in the URL instead
+          'Authorization': `Bearer ${session.access_token}`
+        }
       });
 
       if (response.error) {
@@ -115,16 +114,20 @@ export const DocumentsTab = () => {
       await checkStorageBuckets();
       
       // Then upload the file
-      const response = await supabase.functions.invoke('upload-file', {
+      const { data, error } = await supabase.functions.invoke('upload-file', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: formData,
       });
 
-      if (response.error) {
-        console.error('Upload error:', response.error);
-        throw response.error;
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
       }
 
-      console.log('Upload response:', response);
+      console.log('Upload response:', data);
 
       toast({
         title: "Éxito",
