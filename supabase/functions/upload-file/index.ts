@@ -16,34 +16,46 @@ serve(async (req) => {
   // GET request for fetching documents
   if (req.method === 'GET') {
     try {
-      // Parse the URL or request body for parameters
-      let userId;
-      let type;
-      
-      try {
-        // Try to parse body if it exists
-        const body = await req.json();
-        userId = body.userId;
-        type = body.type;
-      } catch (e) {
-        // If request body can't be parsed, try URL params
-        const url = new URL(req.url);
-        userId = url.searchParams.get('userId');
-        type = url.searchParams.get('type');
-      }
-
-      if (!userId || !type) {
-        return new Response(
-          JSON.stringify({ error: 'Missing userId or type parameter' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-        );
-      }
-
       // Initialize Supabase client with service role to bypass RLS policies
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
+      
+      // Get user ID from either authentication token or query parameter
+      let userId;
+      
+      try {
+        // First try to get from auth
+        const authHeader = req.headers.get('Authorization');
+        if (authHeader) {
+          const token = authHeader.replace('Bearer ', '');
+          const { data: { user }, error } = await supabase.auth.getUser(token);
+          if (!error && user) {
+            userId = user.id;
+            console.log('User ID from auth:', userId);
+          }
+        }
+      } catch (error) {
+        console.error('Error extracting user ID from auth:', error);
+      }
+      
+      // If we don't have a userId yet, get it from URL params
+      if (!userId) {
+        const url = new URL(req.url);
+        userId = url.searchParams.get('userId');
+        console.log('User ID from URL param:', userId);
+      }
+
+      // Default to invoice type
+      const type = 'invoice';
+
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: 'Missing userId parameter' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
 
       console.log(`Fetching ${type} documents for user ${userId}`);
 

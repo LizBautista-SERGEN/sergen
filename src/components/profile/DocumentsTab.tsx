@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { FileText, Upload, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -28,10 +27,15 @@ export const DocumentsTab = () => {
 
       console.log('Fetching documents for user:', session.user.id);
 
-      // Use direct fetch with simplified query to avoid recursion issue
+      // Problem: GET requests shouldn't have a body, let's fix this by using URL parameters
+      // Using URL parameters instead of body for GET request
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
-        body: { userId: session.user.id, type: 'invoice' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Don't include body for GET requests
+        // Use query parameters in the URL instead
       });
 
       if (response.error) {
