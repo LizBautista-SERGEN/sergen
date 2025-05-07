@@ -8,10 +8,72 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // GET request for fetching documents
+  if (req.method === 'GET') {
+    try {
+      // Parse the URL or request body for parameters
+      let userId;
+      let type;
+      
+      try {
+        // Try to parse body if it exists
+        const body = await req.json();
+        userId = body.userId;
+        type = body.type;
+      } catch (e) {
+        // If request body can't be parsed, try URL params
+        const url = new URL(req.url);
+        userId = url.searchParams.get('userId');
+        type = url.searchParams.get('type');
+      }
+
+      if (!userId || !type) {
+        return new Response(
+          JSON.stringify({ error: 'Missing userId or type parameter' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+
+      // Initialize Supabase client with service role to bypass RLS policies
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      console.log(`Fetching ${type} documents for user ${userId}`);
+
+      // Direct query to the documents table
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id, filename, file_path, document_type, created_at, deleted')
+        .eq('user_id', userId)
+        .eq('document_type', type)
+        .eq('deleted', false);
+
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw new Error(`Error fetching documents: ${error.message}`);
+      }
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    } catch (error) {
+      console.error('Function error:', error);
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+  }
+
+  // POST request for file upload
   try {
     // Parse the form data
     const formData = await req.formData()

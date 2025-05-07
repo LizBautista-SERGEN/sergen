@@ -28,23 +28,20 @@ export const DocumentsTab = () => {
 
       console.log('Fetching documents for user:', session.user.id);
 
-      // Fetch only invoice documents that are not deleted
-      // Use simpler direct query to avoid RLS recursion issues
-      const { data, error } = await supabase
-        .from('documents')
-        .select('id, filename, file_path, document_type, created_at, deleted')
-        .eq('user_id', session.user.id)
-        .eq('document_type', 'invoice')
-        .eq('deleted', false);
+      // Use direct fetch with simplified query to avoid recursion issue
+      const response = await supabase.functions.invoke('upload-file', {
+        method: 'GET',
+        body: { userId: session.user.id, type: 'invoice' },
+      });
 
-      if (error) {
-        console.error('Error fetching documents:', error);
-        setErrorMessage(`Error al cargar facturas: ${error.message}`);
-        throw error;
+      if (response.error) {
+        console.error('Error fetching documents:', response.error);
+        setErrorMessage(`Error al cargar facturas: ${response.error.message}`);
+        throw response.error;
       }
 
-      console.log('Documents fetched:', data);
-      setDocuments(data || []);
+      console.log('Documents fetched:', response.data);
+      setDocuments(response.data || []);
     } catch (error: any) {
       console.error('Error fetching documents:', error);
       toast({
