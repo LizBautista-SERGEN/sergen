@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
@@ -22,7 +21,7 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      // Get user ID and document type from URL parameters
+      // Get URL params from the request
       const url = new URL(req.url);
       const userId = url.searchParams.get('userId');
       const documentType = url.searchParams.get('type') || 'invoice';

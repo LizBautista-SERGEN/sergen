@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Upload, Download, FileText, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
@@ -15,9 +15,10 @@ const ReportsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useState(() => {
+  // Fix: Changed useState() to useEffect()
+  useEffect(() => {
     fetchReports();
-  });
+  }, []); // Added dependency array to avoid infinite loop
 
   const fetchReports = async () => {
     try {
@@ -31,13 +32,14 @@ const ReportsPage = () => {
         return;
       }
 
-      // Using URL parameters for GET request
+      // Fix: Use proper params format for edge functions
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         },
-        query: {
+        // Fix: Using params instead of query
+        params: {
           userId: session.user.id,
           type: 'report'
         }
