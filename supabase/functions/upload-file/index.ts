@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
@@ -21,10 +22,21 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      // Get URL params from the request
-      const url = new URL(req.url);
-      const userId = url.searchParams.get('userId');
-      const documentType = url.searchParams.get('type') || 'invoice';
+      // Fix: Parse the request body for GET requests using FunctionsClient
+      let body;
+      try {
+        body = await req.json();
+      } catch (e) {
+        // If req.json() fails, try to get params from URL
+        const url = new URL(req.url);
+        const userId = url.searchParams.get('userId');
+        const documentType = url.searchParams.get('type') || 'invoice';
+        
+        body = { userId, type: documentType };
+      }
+      
+      const userId = body?.userId;
+      const documentType = body?.type || 'invoice';
       
       console.log(`Fetching ${documentType} documents for user ${userId}`);
 

@@ -37,15 +37,18 @@ const DocumentsTab = () => {
         return;
       }
 
-      // Fix: Using params instead of query
+      // Fix: Use query parameters in the URL instead of params property
+      const documentType = type === 'facturas' ? 'invoice' : 'contract';
+      
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
-        params: {
+        // Using query strings without the params property
+        body: {
           userId: session.user.id,
-          type: type === 'facturas' ? 'invoice' : 'contract'
+          type: documentType
         }
       });
 

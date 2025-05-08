@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Upload, Download, FileText, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -32,14 +31,13 @@ const ReportsPage = () => {
         return;
       }
 
-      // Fix: Use proper params format for edge functions
+      // Fix: Use body instead of params for query parameters
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         },
-        // Fix: Using params instead of query
-        params: {
+        body: {
           userId: session.user.id,
           type: 'report'
         }

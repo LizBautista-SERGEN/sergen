@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -9,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileCard } from "@/components/profile/ProfileCard";
-import { DocumentsTab } from "@/components/profile/DocumentsTab";
+import DocumentsTab from "@/components/profile/DocumentsTab";
 
 const ProfilePage = () => {
   const { toast } = useToast();
