@@ -22,33 +22,12 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      // Get user ID from either authentication token or query parameter
-      let userId;
+      // Get user ID and document type from URL parameters
+      const url = new URL(req.url);
+      const userId = url.searchParams.get('userId');
+      const documentType = url.searchParams.get('type') || 'invoice';
       
-      try {
-        // First try to get from auth
-        const authHeader = req.headers.get('Authorization');
-        if (authHeader) {
-          const token = authHeader.replace('Bearer ', '');
-          const { data: { user }, error } = await supabase.auth.getUser(token);
-          if (!error && user) {
-            userId = user.id;
-            console.log('User ID from auth:', userId);
-          }
-        }
-      } catch (error) {
-        console.error('Error extracting user ID from auth:', error);
-      }
-      
-      // If we don't have a userId yet, get it from URL params
-      if (!userId) {
-        const url = new URL(req.url);
-        userId = url.searchParams.get('userId');
-        console.log('User ID from URL param:', userId);
-      }
-
-      // Default to invoice type
-      const type = 'invoice';
+      console.log(`Fetching ${documentType} documents for user ${userId}`);
 
       if (!userId) {
         return new Response(
@@ -57,14 +36,12 @@ serve(async (req) => {
         );
       }
 
-      console.log(`Fetching ${type} documents for user ${userId}`);
-
       // Direct query to the documents table
       const { data, error } = await supabase
         .from('documents')
         .select('id, filename, file_path, document_type, created_at, deleted')
         .eq('user_id', userId)
-        .eq('document_type', type)
+        .eq('document_type', documentType)
         .eq('deleted', false);
 
       if (error) {
@@ -113,7 +90,7 @@ serve(async (req) => {
 
     // Extract file and metadata from form data
     const file = formData.get('file');
-    const type = formData.get('type');
+    const type = formData.get('type') || 'invoice';
     const userId = formData.get('userId');
 
     console.log('Upload request parameters:', { 
@@ -130,13 +107,6 @@ serve(async (req) => {
       );
     }
     
-    if (!type) {
-      return new Response(
-        JSON.stringify({ error: 'Missing type parameter' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-    
     if (!userId) {
       return new Response(
         JSON.stringify({ error: 'Missing userId parameter' }),
@@ -148,11 +118,12 @@ serve(async (req) => {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
-    // Determine the bucket name
+    // Determine the bucket name based on type
     const bucketName = type === 'profile' ? 'profile_images' : 
-                     type === 'contract' ? 'contracts' : 'invoices'
+                     type === 'contract' ? 'contracts' : 
+                     type === 'report' ? 'reports' : 'invoices';
                      
     console.log(`Using bucket name: ${bucketName}`);
 
@@ -227,7 +198,7 @@ serve(async (req) => {
           throw updateError;
         }
       } else {
-        // Add document entry if contract or invoice
+        // Add document entry if contract, invoice or report
         console.log('Adding document record');
         const { error: insertError } = await supabase
           .from('documents')

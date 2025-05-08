@@ -1,5 +1,5 @@
 
-import { BarChart2, Settings, User } from "lucide-react";
+import { BarChart2, Settings, User, FileText } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
@@ -19,6 +19,11 @@ export const DashboardSidebar = () => {
       label: "Control de Demanda", 
       href: "/servicios/control",
       icon: <BarChart2 className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
+    },
+    { 
+      label: "Reportes", 
+      href: "/reportes",
+      icon: <FileText className="text-neutral-700 dark:text-neutral-200 h-6 w-6 flex-shrink-0" />
     }
   ];
   

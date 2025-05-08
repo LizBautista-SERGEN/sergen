@@ -20,6 +20,7 @@ import ServiceEfficiency from "./pages/ServiceEfficiency";
 import ServiceDemanda from "./pages/ServiceDemanda";
 import ProfilePage from "./pages/ProfilePage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
+import ReportsPage from "./pages/ReportsPage";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 
 // Create a client
@@ -58,6 +59,7 @@ const App = () => {
                   <Route element={<DashboardLayout />}>
                     <Route path="/perfil" element={<ProfilePage />} />
                     <Route path="/servicios/control" element={<ServiceControl />} />
+                    <Route path="/reportes" element={<ReportsPage />} />
                     <Route path="/configuracion" element={<ConfiguracionPage />} />
                   </Route>
                   

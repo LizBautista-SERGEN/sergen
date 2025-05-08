@@ -1,63 +1,86 @@
 
 import { useState, useEffect } from "react";
-import { FileText, Upload, Loader2 } from "lucide-react";
+import { FileText, Upload, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 export const DocumentsTab = () => {
   const { toast } = useToast();
   const { profile } = useUserProfile();
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [uploadingContract, setUploadingContract] = useState(false);
+  const [uploadingReport, setUploadingReport] = useState(false);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+  const [isLoadingContracts, setIsLoadingContracts] = useState(false);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (type: 'invoice' | 'contract' | 'report') => {
+    const loadingStateSetter = type === 'invoice' 
+      ? setIsLoadingInvoices 
+      : type === 'contract' 
+        ? setIsLoadingContracts
+        : setIsLoadingReports;
+    
+    const documentsSetter = type === 'invoice' 
+      ? setInvoices 
+      : type === 'contract' 
+        ? setContracts
+        : setReports;
+
     try {
-      setIsLoading(true);
+      loadingStateSetter(true);
       setErrorMessage(null);
       
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         console.log('No active session found');
-        setDocuments([]);
+        documentsSetter([]);
         return;
       }
 
-      console.log('Fetching documents for user:', session.user.id);
+      console.log(`Fetching ${type} documents for user:`, session.user.id);
 
-      // Using URL parameters instead of body for GET request
+      // Using URL parameters for GET request
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
+        },
+        query: {
+          userId: session.user.id,
+          type: type
         }
       });
 
       if (response.error) {
-        console.error('Error fetching documents:', response.error);
-        setErrorMessage(`Error al cargar facturas: ${response.error.message}`);
+        console.error(`Error fetching ${type} documents:`, response.error);
+        setErrorMessage(`Error al cargar documentos: ${response.error.message}`);
         throw response.error;
       }
 
-      console.log('Documents fetched:', response.data);
-      setDocuments(response.data || []);
+      console.log(`${type.charAt(0).toUpperCase() + type.slice(1)}s fetched:`, response.data);
+      documentsSetter(response.data || []);
     } catch (error: any) {
-      console.error('Error fetching documents:', error);
+      console.error(`Error fetching ${type} documents:`, error);
       toast({
         title: "Error",
-        description: "No se pudieron cargar las facturas",
+        description: `No se pudieron cargar los documentos: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      loadingStateSetter(false);
     }
   };
 
-  // Call check-storage-buckets function to ensure buckets exist
   const checkStorageBuckets = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('check-storage-buckets');
@@ -71,22 +94,31 @@ export const DocumentsTab = () => {
     }
   };
 
-  // Use useEffect to call fetchDocuments and checkStorageBuckets on component mount
   useEffect(() => {
-    fetchDocuments();
     checkStorageBuckets();
+    fetchDocuments('invoice');
+    fetchDocuments('contract');
+    fetchDocuments('report');
   }, []);
 
-  const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'invoice' | 'contract' | 'report') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ['application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    // Define allowed MIME types based on document type
+    let allowedTypes: string[];
+    if (type === 'invoice') {
+      allowedTypes = ['application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    } else {
+      allowedTypes = ['application/pdf'];
+    }
     
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Error",
-        description: "Formato de archivo no permitido. Solo se aceptan PDF y Excel.",
+        description: type === 'invoice' 
+          ? "Formato de archivo no permitido. Solo se aceptan PDF y Excel."
+          : "Formato de archivo no permitido. Solo se aceptan PDF.",
         variant: "destructive",
       });
       return;
@@ -96,15 +128,18 @@ export const DocumentsTab = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session");
 
-      setUploadingInvoice(true);
+      if (type === 'invoice') setUploadingInvoice(true);
+      else if (type === 'contract') setUploadingContract(true);
+      else setUploadingReport(true);
+      
       setErrorMessage(null);
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('type', 'invoice');
+      formData.append('type', type);
       formData.append('userId', session.user.id);
 
-      console.log('Uploading invoice with data:', {
+      console.log(`Uploading ${type} with data:`, {
         userId: session.user.id,
         fileName: file.name,
         fileType: file.type
@@ -131,88 +166,166 @@ export const DocumentsTab = () => {
 
       toast({
         title: "Éxito",
-        description: "Factura subida correctamente",
+        description: `${type === 'invoice' ? 'Factura' : type === 'contract' ? 'Contrato' : 'Reporte'} subido correctamente`,
       });
 
       // Refresh documents list
-      fetchDocuments();
+      fetchDocuments(type);
     } catch (error: any) {
-      console.error('Error uploading invoice:', error);
+      console.error(`Error uploading ${type}:`, error);
       toast({
         title: "Error",
-        description: `No se pudo subir la factura: ${error.message || 'Error desconocido'}`,
+        description: `No se pudo subir el ${type === 'invoice' ? 'la factura' : type === 'contract' ? 'el contrato' : 'el reporte'}: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
     } finally {
-      setUploadingInvoice(false);
+      if (type === 'invoice') setUploadingInvoice(false);
+      else if (type === 'contract') setUploadingContract(false);
+      else setUploadingReport(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <h3 className="font-semibold mb-4">FACTURAS DE SUMINISTRO ELÉCTRICO:</h3>
-      
-      {errorMessage && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-md mb-4">
-          {errorMessage}
-        </div>
-      )}
-      
-      {isLoading ? (
-        <div className="text-center py-10">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p>Cargando facturas...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
-          {documents.length === 0 ? (
-            <p className="col-span-full text-center text-gray-500">No hay facturas disponibles</p>
-          ) : (
-            documents.map((doc) => (
-              <a 
-                key={doc.id}
-                href={`${supabase.storage.from('invoices').getPublicUrl(doc.file_path).data.publicUrl}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="aspect-square flex items-center justify-center mb-4 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
-                    <FileText className="w-12 h-12 text-green-600" />
-                  </div>
-                  <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
-                    {doc.filename}
-                    {doc.deleted && <span className="block text-xs text-red-500">(Eliminado)</span>}
-                  </div>
-                </div>
-              </a>
-            ))
-          )}
-        </div>
-      )}
+  const handleDelete = async (id: string, type: 'invoice' | 'contract' | 'report') => {
+    try {
+      setDeletingId(id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
 
-      <div className="mt-6">
-        <input
-          type="file"
-          id="invoice-upload"
-          className="hidden"
-          accept=".pdf,.xls,.xlsx"
-          onChange={handleInvoiceUpload}
-        />
-        <label
-          htmlFor="invoice-upload"
-          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block cursor-pointer hover:border-gray-400"
-        >
-          {uploadingInvoice ? (
-            <Loader2 className="w-12 h-12 mx-auto mb-4 text-gray-400 animate-spin" />
-          ) : (
-            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          )}
-          <p className="text-gray-600">
-            Arrastra o dale clic para subir una factura (PDF o Excel)
-          </p>
-        </label>
+      const { error } = await supabase
+        .from('documents')
+        .update({ deleted: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Documento eliminado correctamente",
+      });
+
+      // Refresh documents after deletion
+      fetchDocuments(type);
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: "Error",
+        description: `No se pudo eliminar el documento: ${error.message || 'Error desconocido'}`,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const renderDocumentSection = (documents: any[], isLoading: boolean, type: 'invoice' | 'contract' | 'report', uploading: boolean) => {
+    const bucketName = type === 'invoice' ? 'invoices' : type === 'contract' ? 'contracts' : 'reports';
+    const acceptTypes = type === 'invoice' ? '.pdf,.xls,.xlsx' : '.pdf';
+    const uploadText = type === 'invoice' 
+      ? 'Arrastra o dale clic para subir una factura (PDF o Excel)'
+      : type === 'contract'
+        ? 'Arrastra o dale clic para subir un contrato o adenda (PDF)'
+        : 'Arrastra o dale clic para subir un reporte (PDF)';
+    
+    return (
+      <div className="space-y-6">
+        {errorMessage && (
+          <div className="bg-red-50 text-red-600 p-4 rounded-md mb-4">
+            {errorMessage}
+          </div>
+        )}
+        
+        {isLoading ? (
+          <div className="text-center py-10">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p>Cargando documentos...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
+            {documents.length === 0 ? (
+              <p className="col-span-full text-center text-gray-500">No hay documentos disponibles</p>
+            ) : (
+              documents.map((doc) => (
+                <div key={doc.id} className="relative group">
+                  <a 
+                    href={`${supabase.storage.from(bucketName).getPublicUrl(doc.file_path).data.publicUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <div className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="aspect-square flex items-center justify-center mb-4 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+                        <FileText className="w-12 h-12 text-green-600" />
+                      </div>
+                      <div className="text-sm text-center font-medium text-gray-700 truncate group-hover:text-green-600">
+                        {doc.filename}
+                      </div>
+                    </div>
+                  </a>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleDelete(doc.id, type)}
+                    disabled={deletingId === doc.id}
+                  >
+                    {deletingId === doc.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        <div className="mt-6">
+          <input
+            type="file"
+            id={`${type}-upload`}
+            className="hidden"
+            accept={acceptTypes}
+            onChange={(e) => handleFileUpload(e, type)}
+          />
+          <label
+            htmlFor={`${type}-upload`}
+            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center block cursor-pointer hover:border-gray-400"
+          >
+            {uploading ? (
+              <Loader2 className="w-12 h-12 mx-auto mb-4 text-gray-400 animate-spin" />
+            ) : (
+              <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            )}
+            <p className="text-gray-600">{uploadText}</p>
+          </label>
+        </div>
       </div>
-    </div>
+    );
+  };
+
+  return (
+    <Tabs defaultValue="facturas" className="w-full">
+      <TabsList>
+        <TabsTrigger value="facturas">Facturas</TabsTrigger>
+        <TabsTrigger value="contratos">Contratos y Adendas</TabsTrigger>
+        <TabsTrigger value="reportes">Reportes</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="facturas" className="mt-6">
+        <h3 className="font-semibold mb-4">FACTURAS DE SUMINISTRO ELÉCTRICO:</h3>
+        {renderDocumentSection(invoices, isLoadingInvoices, 'invoice', uploadingInvoice)}
+      </TabsContent>
+      
+      <TabsContent value="contratos" className="mt-6">
+        <h3 className="font-semibold mb-4">CONTRATOS Y ADENDAS:</h3>
+        {renderDocumentSection(contracts, isLoadingContracts, 'contract', uploadingContract)}
+      </TabsContent>
+      
+      <TabsContent value="reportes" className="mt-6">
+        <h3 className="font-semibold mb-4">REPORTES:</h3>
+        {renderDocumentSection(reports, isLoadingReports, 'report', uploadingReport)}
+      </TabsContent>
+    </Tabs>
   );
 };
