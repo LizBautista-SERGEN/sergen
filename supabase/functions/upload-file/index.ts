@@ -211,13 +211,22 @@ serve(async (req) => {
       } else {
         // Add document entry if contract, invoice or report
         console.log('Adding document record');
+        
+        // Ensure we're using a valid document_type
+        let documentType = type;
+        // Check if documentType is valid (invoice, contract, report)
+        if (!['invoice', 'contract', 'report'].includes(documentType)) {
+          console.warn(`Invalid document type: ${documentType}, defaulting to 'invoice'`);
+          documentType = 'invoice';
+        }
+        
         const { error: insertError } = await supabase
           .from('documents')
           .insert({
             user_id: userId,
             filename: file.name,
             file_path: filePath,
-            document_type: type
+            document_type: documentType
           });
 
         if (insertError) {

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -8,7 +9,8 @@ import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileCard } from "@/components/profile/ProfileCard";
-import DocumentsTab from "@/components/profile/DocumentsTab";
+import InvoicesTab from "@/components/profile/InvoicesTab";
+import ContractsTab from "@/components/profile/ContractsTab";
 
 const ProfilePage = () => {
   const { toast } = useToast();
@@ -169,6 +171,7 @@ const ProfilePage = () => {
                 <TabsTrigger value="datos-usuario">Datos de usuario</TabsTrigger>
                 <TabsTrigger value="datos-contacto">Datos de contacto</TabsTrigger>
                 <TabsTrigger value="facturas">Facturas</TabsTrigger>
+                <TabsTrigger value="contratos">Contratos y Adendas</TabsTrigger>
               </TabsList>
 
               <TabsContent value="datos-usuario" className="mt-6">
@@ -267,7 +270,11 @@ const ProfilePage = () => {
               </TabsContent>
 
               <TabsContent value="facturas" className="mt-6">
-                <DocumentsTab />
+                <InvoicesTab />
+              </TabsContent>
+              
+              <TabsContent value="contratos" className="mt-6">
+                <ContractsTab />
               </TabsContent>
             </Tabs>
           </div>
