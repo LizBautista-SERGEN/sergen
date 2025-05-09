@@ -31,12 +31,15 @@ const InvoicesTab = () => {
         return;
       }
 
+      // Use URL parameters instead of body for GET request
+      const functionUrl = `${supabase.functions.url('upload-file')}?userId=${session.user.id}&type=invoice`;
+      
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: {
+        query: {
           userId: session.user.id,
           type: 'invoice'
         }

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,16 +38,16 @@ const DocumentsTab = () => {
         return;
       }
 
-      // Fix: Use query parameters in the URL instead of params property
+      // Convert tab type to document type for the API
       const documentType = type === 'facturas' ? 'invoice' : 'contract';
       
+      // Use query parameters instead of body
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
-        // Using query strings without the params property
-        body: {
+        query: {
           userId: session.user.id,
           type: documentType
         }

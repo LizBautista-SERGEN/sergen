@@ -31,12 +31,13 @@ const ContractsTab = () => {
         return;
       }
 
+      // Use query parameters instead of body
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: {
+        query: {
           userId: session.user.id,
           type: 'contract'
         }

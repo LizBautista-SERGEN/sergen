@@ -22,21 +22,10 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      // Fix: Parse the request body for GET requests using FunctionsClient
-      let body;
-      try {
-        body = await req.json();
-      } catch (e) {
-        // If req.json() fails, try to get params from URL
-        const url = new URL(req.url);
-        const userId = url.searchParams.get('userId');
-        const documentType = url.searchParams.get('type') || 'invoice';
-        
-        body = { userId, type: documentType };
-      }
-      
-      const userId = body?.userId;
-      const documentType = body?.type || 'invoice';
+      // Parse URL to get query parameters instead of trying to parse body
+      const url = new URL(req.url);
+      const userId = url.searchParams.get('userId');
+      const documentType = url.searchParams.get('type') || 'invoice';
       
       console.log(`Fetching ${documentType} documents for user ${userId}`);
 
@@ -213,9 +202,11 @@ serve(async (req) => {
         console.log('Adding document record');
         
         // Ensure we're using a valid document_type
+        const validDocumentTypes = ['invoice', 'contract', 'report'];
         let documentType = type;
-        // Check if documentType is valid (invoice, contract, report)
-        if (!['invoice', 'contract', 'report'].includes(documentType)) {
+        
+        // Check if documentType is valid
+        if (!validDocumentTypes.includes(documentType)) {
           console.warn(`Invalid document type: ${documentType}, defaulting to 'invoice'`);
           documentType = 'invoice';
         }

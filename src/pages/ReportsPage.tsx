@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Upload, Download, FileText, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -14,10 +15,9 @@ const ReportsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Fix: Changed useState() to useEffect()
   useEffect(() => {
     fetchReports();
-  }, []); // Added dependency array to avoid infinite loop
+  }, []);
 
   const fetchReports = async () => {
     try {
@@ -31,13 +31,13 @@ const ReportsPage = () => {
         return;
       }
 
-      // Fix: Use body instead of params for query parameters
+      // Use query parameters instead of body
       const response = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: {
+        query: {
           userId: session.user.id,
           type: 'report'
         }
