@@ -31,15 +31,13 @@ const ReportsPage = () => {
         return;
       }
 
-      // Use query parameters instead of body
-      const response = await supabase.functions.invoke('upload-file', {
+      // Create URL path with parameters
+      const functionPath = `upload-file?userId=${session.user.id}&type=report`;
+
+      const response = await supabase.functions.invoke(functionPath, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
-        },
-        query: {
-          userId: session.user.id,
-          type: 'report'
         }
       });
 
