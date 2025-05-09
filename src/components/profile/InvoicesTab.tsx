@@ -31,8 +31,10 @@ const InvoicesTab = () => {
         return;
       }
 
-      // Create URL path with parameters
+      // Correct way to invoke the function with parameters in the path
       const functionPath = `upload-file?userId=${session.user.id}&type=invoice`;
+      
+      console.log('Invoking function with path:', functionPath);
       
       const response = await supabase.functions.invoke(functionPath, {
         method: 'GET',
@@ -46,6 +48,7 @@ const InvoicesTab = () => {
         throw response.error;
       }
 
+      console.log('Invoices fetched successfully:', response.data);
       setInvoices(response.data || []);
     } catch (error: any) {
       console.error(`Error fetching invoices:`, error);
@@ -85,6 +88,8 @@ const InvoicesTab = () => {
       formData.append('type', 'invoice');
       formData.append('userId', session.user.id);
 
+      console.log('Uploading invoice file:', file.name);
+      
       // Upload the file
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
@@ -99,6 +104,8 @@ const InvoicesTab = () => {
         throw error;
       }
 
+      console.log('Invoice uploaded successfully:', data);
+      
       toast({
         title: "Éxito",
         description: "Factura subida correctamente",
@@ -124,6 +131,8 @@ const InvoicesTab = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session");
 
+      console.log('Deleting invoice with ID:', id);
+      
       const { error } = await supabase
         .from('documents')
         .update({ deleted: true })

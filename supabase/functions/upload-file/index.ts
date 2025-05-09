@@ -10,19 +10,22 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling OPTIONS request for CORS');
     return new Response(null, { headers: corsHeaders })
   }
 
   // GET request for fetching documents
   if (req.method === 'GET') {
     try {
+      console.log('Processing GET request to fetch documents');
+      
       // Initialize Supabase client with service role to bypass RLS policies
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      // Parse URL to get query parameters instead of trying to parse body
+      // Parse URL to get query parameters
       const url = new URL(req.url);
       const userId = url.searchParams.get('userId');
       const documentType = url.searchParams.get('type') || 'invoice';
@@ -30,6 +33,7 @@ serve(async (req) => {
       console.log(`Fetching ${documentType} documents for user ${userId}`);
 
       if (!userId) {
+        console.error('Missing userId parameter');
         return new Response(
           JSON.stringify({ error: 'Missing userId parameter' }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -49,6 +53,8 @@ serve(async (req) => {
         throw new Error(`Error fetching documents: ${error.message}`);
       }
 
+      console.log(`Successfully retrieved ${data?.length || 0} ${documentType} documents`);
+      
       return new Response(
         JSON.stringify(data || []),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }

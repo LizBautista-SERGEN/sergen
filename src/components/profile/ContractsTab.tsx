@@ -31,8 +31,10 @@ const ContractsTab = () => {
         return;
       }
 
-      // Create URL path with parameters
+      // Correct way to invoke the function with parameters in the path
       const functionPath = `upload-file?userId=${session.user.id}&type=contract`;
+
+      console.log('Invoking function with path:', functionPath);
 
       const response = await supabase.functions.invoke(functionPath, {
         method: 'GET',
@@ -46,6 +48,7 @@ const ContractsTab = () => {
         throw response.error;
       }
 
+      console.log('Contracts fetched successfully:', response.data);
       setContracts(response.data || []);
     } catch (error: any) {
       console.error(`Error fetching contracts:`, error);
@@ -85,6 +88,8 @@ const ContractsTab = () => {
       formData.append('type', 'contract');
       formData.append('userId', session.user.id);
 
+      console.log('Uploading contract file:', file.name);
+
       // Upload the file
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
@@ -98,6 +103,8 @@ const ContractsTab = () => {
         console.error('Upload error:', error);
         throw error;
       }
+
+      console.log('Contract uploaded successfully:', data);
 
       toast({
         title: "Éxito",
@@ -123,6 +130,8 @@ const ContractsTab = () => {
       setDeletingId(id);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session");
+
+      console.log('Deleting contract with ID:', id);
 
       const { error } = await supabase
         .from('documents')
