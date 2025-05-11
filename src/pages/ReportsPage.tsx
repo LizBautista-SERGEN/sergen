@@ -35,24 +35,17 @@ const ReportsPage = () => {
       
       console.log(`Fetching reports for user: ${userId}`);
 
-      // Use URL parameters for GET request
-      const url = new URL(`${supabase.functions.url('upload-file')}`);
-      url.searchParams.append('userId', userId);
-      url.searchParams.append('type', 'report');
-      
-      const response = await fetch(url.toString(), {
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': supabase.supabaseKey
-        }
+        },
+        body: { userId, type: 'report' }
       });
       
-      if (!response.ok) {
-        throw new Error(`Error fetching reports: ${response.status} ${response.statusText}`);
+      if (error) {
+        throw error;
       }
-      
-      const data = await response.json();
 
       console.log('Reports fetched successfully:', data);
       setReports(data || []);
@@ -89,7 +82,7 @@ const ReportsPage = () => {
 
       setUploading(true);
 
-      // Crear FormData para la subida
+      // Create FormData for upload
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', 'report');
@@ -97,22 +90,18 @@ const ReportsPage = () => {
 
       console.log('Uploading report file:', file.name);
 
-      // Use direct fetch with FormData
-      const response = await fetch(`${supabase.functions.url('upload-file')}`, {
+      // Use supabase.functions.invoke with FormData
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': supabase.supabaseKey
         },
         body: formData
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Upload failed: ${response.status} ${errorText}`);
+      if (error) {
+        throw error;
       }
-      
-      const data = await response.json();
 
       console.log('Report uploaded successfully:', data);
 

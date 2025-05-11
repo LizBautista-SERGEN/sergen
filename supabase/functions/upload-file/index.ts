@@ -24,14 +24,24 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
-      
-      // Get URL parameters correctly for GET request
-      const url = new URL(req.url);
-      const userId = url.searchParams.get('userId');
-      const documentType = url.searchParams.get('type') || 'invoice';
-      
-      console.log(`Fetching ${documentType} documents for user ${userId}`);
 
+      // Parse the request body to get userId and document type
+      let userId = '';
+      let documentType = 'invoice'; // Default document type
+      
+      try {
+        const body = await req.json();
+        userId = body.userId;
+        documentType = body.type || 'invoice';
+        console.log(`Using body params - userId: ${userId}, type: ${documentType}`);
+      } catch (e) {
+        console.error('Error parsing JSON body:', e);
+        return new Response(
+          JSON.stringify({ error: 'Invalid JSON body' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+      
       if (!userId) {
         console.error('Missing userId parameter');
         return new Response(
@@ -39,6 +49,8 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         );
       }
+
+      console.log(`Fetching ${documentType} documents for user ${userId}`);
 
       // Direct query to the documents table
       const { data, error } = await supabase

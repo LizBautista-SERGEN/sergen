@@ -35,24 +35,17 @@ const InvoicesTab = () => {
       
       console.log(`Fetching invoices for user: ${userId}`);
       
-      // Use URL parameters for GET request instead of body
-      const url = new URL(`${supabase.functions.url('upload-file')}`);
-      url.searchParams.append('userId', userId);
-      url.searchParams.append('type', 'invoice');
-      
-      const response = await fetch(url.toString(), {
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': supabase.supabaseKey
-        }
+        },
+        body: { userId, type: 'invoice' }
       });
       
-      if (!response.ok) {
-        throw new Error(`Error fetching invoices: ${response.status} ${response.statusText}`);
+      if (error) {
+        throw error;
       }
-      
-      const data = await response.json();
 
       console.log('Invoices fetched successfully:', data);
       setInvoices(data || []);
@@ -96,22 +89,18 @@ const InvoicesTab = () => {
 
       console.log('Uploading invoice file:', file.name);
       
-      // Upload the file using direct fetch for FormData
-      const response = await fetch(`${supabase.functions.url('upload-file')}`, {
+      // Use supabase.functions.invoke for FormData
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': supabase.supabaseKey
         },
         body: formData
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Upload failed: ${response.status} ${errorText}`);
+      if (error) {
+        throw error;
       }
-      
-      const data = await response.json();
 
       console.log('Invoice uploaded successfully:', data);
       
