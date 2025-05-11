@@ -35,6 +35,7 @@ const ReportsPage = () => {
       
       console.log(`Fetching reports for user: ${userId}`);
 
+      // Corrección: Uso correcto de invoke con query params
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
@@ -83,6 +84,7 @@ const ReportsPage = () => {
 
       setUploading(true);
 
+      // Crear FormData para la subida
       const formData = new FormData();
       formData.append('file', file);
       formData.append('type', 'report');
@@ -90,7 +92,7 @@ const ReportsPage = () => {
 
       console.log('Uploading report file:', file.name);
 
-      // Upload the file
+      // Corrección: Asegurar que se use el FormData correctamente
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
         headers: {
@@ -112,7 +114,7 @@ const ReportsPage = () => {
       });
 
       // Refresh reports list
-      fetchReports();
+      await fetchReports();
     } catch (error: any) {
       console.error('Error uploading report:', error);
       toast({
@@ -146,7 +148,7 @@ const ReportsPage = () => {
       });
 
       // Refresh reports
-      fetchReports();
+      await fetchReports();
     } catch (error: any) {
       console.error('Error deleting report:', error);
       toast({

@@ -25,10 +25,11 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      // Parse URL to get query parameters
+      // Obtener parámetros de la solicitud
       const url = new URL(req.url);
-      const userId = url.searchParams.get('userId');
-      const documentType = url.searchParams.get('type') || 'invoice';
+      const body = await req.json();
+      const userId = body.userId;
+      const documentType = body.type || 'invoice';
       
       console.log(`Fetching ${documentType} documents for user ${userId}`);
 
