@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Upload, Download, FileText, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -35,20 +34,13 @@ const ReportsPage = () => {
       
       console.log(`Fetching reports for user: ${userId}`);
 
-      // Usar URLSearchParams para GET
-      const url = new URL(`${supabase.functions.url('upload-file')}`);
-      url.searchParams.append('userId', userId);
-      url.searchParams.append('type', 'report');
-
+      // Correct way to call the function with parameters
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         },
-        query: {
-          userId,
-          type: 'report'
-        }
+        body: { userId, type: 'report' }
       });
 
       if (error) {
@@ -99,7 +91,7 @@ const ReportsPage = () => {
 
       console.log('Uploading report file:', file.name);
 
-      // Corrección: Asegurar que se use el FormData correctamente
+      // Use proper formData approach
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
         headers: {
