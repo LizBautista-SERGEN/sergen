@@ -28,6 +28,7 @@ const InvoicesTab = () => {
       if (!session) {
         console.log('No active session found');
         setInvoices([]);
+        setIsLoading(false);
         return;
       }
 
@@ -35,12 +36,13 @@ const InvoicesTab = () => {
       
       console.log(`Fetching invoices for user: ${userId}`);
       
+      // Usar el método invoke con los parámetros correctos
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: { userId, type: 'invoice' }
+        params: {
+          userId: userId,
+          type: 'invoice'
+        }
       });
       
       if (error) {
@@ -89,12 +91,9 @@ const InvoicesTab = () => {
 
       console.log('Uploading invoice file:', file.name);
       
-      // Use supabase.functions.invoke for FormData
+      // Usar formData como body directamente
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
         body: formData
       });
       

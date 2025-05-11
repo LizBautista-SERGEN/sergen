@@ -37,10 +37,10 @@ const ReportsPage = () => {
 
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: { userId, type: 'report' }
+        params: {
+          userId,
+          type: 'report'
+        }
       });
       
       if (error) {
@@ -93,9 +93,6 @@ const ReportsPage = () => {
       // Use supabase.functions.invoke with FormData
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
         body: formData
       });
       
