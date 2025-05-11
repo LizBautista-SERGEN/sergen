@@ -35,13 +35,20 @@ const ReportsPage = () => {
       
       console.log(`Fetching reports for user: ${userId}`);
 
-      // Corrección: Uso correcto de invoke con query params
+      // Usar URLSearchParams para GET
+      const url = new URL(`${supabase.functions.url('upload-file')}`);
+      url.searchParams.append('userId', userId);
+      url.searchParams.append('type', 'report');
+
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: { userId, type: 'report' }
+        query: {
+          userId,
+          type: 'report'
+        }
       });
 
       if (error) {
