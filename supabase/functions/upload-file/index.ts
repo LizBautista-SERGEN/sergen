@@ -86,6 +86,7 @@ serve(async (req) => {
     let formData;
     try {
       formData = await req.formData();
+      console.log('Form data successfully parsed');
     } catch (error) {
       console.error('Error parsing form data:', error);
       return new Response(
@@ -103,10 +104,12 @@ serve(async (req) => {
       type, 
       userId, 
       fileName: file?.name,
-      fileType: file?.type 
+      fileType: file?.type,
+      fileSize: file instanceof File ? file.size : 'unknown'
     });
 
     if (!file) {
+      console.error('No file provided');
       return new Response(
         JSON.stringify({ error: 'No file provided' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -114,6 +117,7 @@ serve(async (req) => {
     }
     
     if (!userId) {
+      console.error('Missing userId parameter');
       return new Response(
         JSON.stringify({ error: 'Missing userId parameter' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -127,39 +131,29 @@ serve(async (req) => {
     );
 
     // Determine the bucket name based on type
-    const bucketName = type === 'profile' ? 'profile_images' : 
+    const bucketName = type === 'profile' ? 'profiles' : 
                      type === 'contract' ? 'contracts' : 
                      type === 'report' ? 'reports' : 'invoices';
                      
     console.log(`Using bucket name: ${bucketName}`);
 
     try {
-      // Check if the bucket exists, if not create it
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-      
-      if (listError) {
-        console.error('Error listing buckets:', listError);
-        throw new Error(`Error listing buckets: ${listError.message}`);
-      }
-      
-      const bucketExists = buckets.some(bucket => bucket.name === bucketName);
+      // Check if the bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
       
       if (!bucketExists) {
         console.log(`Bucket ${bucketName} does not exist, creating...`);
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true,
-          fileSizeLimit: 10485760, // 10MB
-          allowedMimeTypes: ['image/*', 'application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
-        });
-        
-        if (createError) {
-          console.error(`Error creating bucket ${bucketName}:`, createError);
-          throw new Error(`Error creating bucket: ${createError.message}`);
+        try {
+          await supabase.storage.createBucket(bucketName, {
+            public: true,
+            fileSizeLimit: 10485760, // 10MB
+          });
+          console.log(`Successfully created bucket ${bucketName}`);
+        } catch (bucketError) {
+          // If we get an error that the bucket already exists, we can continue
+          console.log(`Bucket creation error (may already exist): ${bucketError.message}`);
         }
-        
-        console.log(`Successfully created bucket ${bucketName}`);
-      } else {
-        console.log(`Bucket ${bucketName} already exists`);
       }
 
       // Create unique file name

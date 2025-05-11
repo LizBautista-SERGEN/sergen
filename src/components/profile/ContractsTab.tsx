@@ -31,25 +31,25 @@ const ContractsTab = () => {
         return;
       }
 
-      // Correct way to invoke the function with parameters in the path
-      const functionPath = `upload-file?userId=${session.user.id}&type=contract`;
+      const userId = session.user.id;
+      
+      console.log(`Fetching contracts for user: ${userId}`);
 
-      console.log('Invoking function with path:', functionPath);
-
-      const response = await supabase.functions.invoke(functionPath, {
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-        }
+        },
+        body: { userId, type: 'contract' },
       });
 
-      if (response.error) {
-        console.error(`Error fetching contracts:`, response.error);
-        throw response.error;
+      if (error) {
+        console.error(`Error fetching contracts:`, error);
+        throw error;
       }
 
-      console.log('Contracts fetched successfully:', response.data);
-      setContracts(response.data || []);
+      console.log('Contracts fetched successfully:', data);
+      setContracts(data || []);
     } catch (error: any) {
       console.error(`Error fetching contracts:`, error);
       toast({

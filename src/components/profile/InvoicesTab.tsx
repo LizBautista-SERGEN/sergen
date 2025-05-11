@@ -31,25 +31,25 @@ const InvoicesTab = () => {
         return;
       }
 
-      // Correct way to invoke the function with parameters in the path
-      const functionPath = `upload-file?userId=${session.user.id}&type=invoice`;
+      const userId = session.user.id;
       
-      console.log('Invoking function with path:', functionPath);
+      console.log(`Fetching invoices for user: ${userId}`);
       
-      const response = await supabase.functions.invoke(functionPath, {
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-        }
+        },
+        body: { userId, type: 'invoice' },
       });
 
-      if (response.error) {
-        console.error(`Error fetching invoices:`, response.error);
-        throw response.error;
+      if (error) {
+        console.error(`Error fetching invoices:`, error);
+        throw error;
       }
 
-      console.log('Invoices fetched successfully:', response.data);
-      setInvoices(response.data || []);
+      console.log('Invoices fetched successfully:', data);
+      setInvoices(data || []);
     } catch (error: any) {
       console.error(`Error fetching invoices:`, error);
       toast({

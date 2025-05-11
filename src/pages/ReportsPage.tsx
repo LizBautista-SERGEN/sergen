@@ -31,25 +31,25 @@ const ReportsPage = () => {
         return;
       }
 
-      // Correct way to invoke the function with parameters in the path
-      const functionPath = `upload-file?userId=${session.user.id}&type=report`;
+      const userId = session.user.id;
+      
+      console.log(`Fetching reports for user: ${userId}`);
 
-      console.log('Invoking function with path:', functionPath);
-
-      const response = await supabase.functions.invoke(functionPath, {
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
-        }
+        },
+        body: { userId, type: 'report' }
       });
 
-      if (response.error) {
-        console.error('Error fetching reports:', response.error);
-        throw response.error;
+      if (error) {
+        console.error('Error fetching reports:', error);
+        throw error;
       }
 
-      console.log('Reports fetched successfully:', response.data);
-      setReports(response.data || []);
+      console.log('Reports fetched successfully:', data);
+      setReports(data || []);
     } catch (error: any) {
       console.error('Error fetching reports:', error);
       toast({
