@@ -25,24 +25,10 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      // For GET requests, we need to parse the body as JSON
-      let userId;
-      let documentType;
-      
-      try {
-        // Try to get parameters from the request body
-        const body = await req.json();
-        userId = body.userId;
-        documentType = body.type || 'invoice';
-        console.log('Got parameters from request body:', { userId, documentType });
-      } catch (jsonError) {
-        console.error('Failed to parse JSON body:', jsonError);
-        // If parsing fails, try to get from URL parameters
-        const url = new URL(req.url);
-        userId = url.searchParams.get('userId');
-        documentType = url.searchParams.get('type') || 'invoice';
-        console.log('Got parameters from URL:', { userId, documentType });
-      }
+      // Get URL parameters correctly for GET request
+      const url = new URL(req.url);
+      const userId = url.searchParams.get('userId');
+      const documentType = url.searchParams.get('type') || 'invoice';
       
       console.log(`Fetching ${documentType} documents for user ${userId}`);
 

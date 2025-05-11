@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Upload, Download, FileText, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -34,19 +35,24 @@ const ReportsPage = () => {
       
       console.log(`Fetching reports for user: ${userId}`);
 
-      // Correct way to call the function with parameters
-      const { data, error } = await supabase.functions.invoke('upload-file', {
+      // Use URL parameters for GET request
+      const url = new URL(`${supabase.functions.url('upload-file')}`);
+      url.searchParams.append('userId', userId);
+      url.searchParams.append('type', 'report');
+      
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: { userId, type: 'report' }
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': supabase.supabaseKey
+        }
       });
-
-      if (error) {
-        console.error('Error fetching reports:', error);
-        throw error;
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching reports: ${response.status} ${response.statusText}`);
       }
+      
+      const data = await response.json();
 
       console.log('Reports fetched successfully:', data);
       setReports(data || []);
@@ -91,19 +97,22 @@ const ReportsPage = () => {
 
       console.log('Uploading report file:', file.name);
 
-      // Use proper formData approach
-      const { data, error } = await supabase.functions.invoke('upload-file', {
+      // Use direct fetch with FormData
+      const response = await fetch(`${supabase.functions.url('upload-file')}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': supabase.supabaseKey
         },
-        body: formData,
+        body: formData
       });
-
-      if (error) {
-        console.error('Upload error:', error);
-        throw error;
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
       }
+      
+      const data = await response.json();
 
       console.log('Report uploaded successfully:', data);
 

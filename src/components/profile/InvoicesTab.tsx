@@ -35,18 +35,24 @@ const InvoicesTab = () => {
       
       console.log(`Fetching invoices for user: ${userId}`);
       
-      const { data, error } = await supabase.functions.invoke('upload-file', {
+      // Use URL parameters for GET request instead of body
+      const url = new URL(`${supabase.functions.url('upload-file')}`);
+      url.searchParams.append('userId', userId);
+      url.searchParams.append('type', 'invoice');
+      
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: { userId, type: 'invoice' },
+          'apikey': supabase.supabaseKey
+        }
       });
-
-      if (error) {
-        console.error(`Error fetching invoices:`, error);
-        throw error;
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching invoices: ${response.status} ${response.statusText}`);
       }
+      
+      const data = await response.json();
 
       console.log('Invoices fetched successfully:', data);
       setInvoices(data || []);
@@ -90,19 +96,22 @@ const InvoicesTab = () => {
 
       console.log('Uploading invoice file:', file.name);
       
-      // Upload the file
-      const { data, error } = await supabase.functions.invoke('upload-file', {
+      // Upload the file using direct fetch for FormData
+      const response = await fetch(`${supabase.functions.url('upload-file')}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': supabase.supabaseKey
         },
-        body: formData,
+        body: formData
       });
-
-      if (error) {
-        console.error('Upload error:', error);
-        throw error;
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
       }
+      
+      const data = await response.json();
 
       console.log('Invoice uploaded successfully:', data);
       
