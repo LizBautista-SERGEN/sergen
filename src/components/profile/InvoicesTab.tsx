@@ -36,10 +36,10 @@ const InvoicesTab = () => {
       
       console.log(`Fetching invoices for user: ${userId}`);
       
-      // Usar el método invoke con los parámetros correctos
+      // Use the correct queryParams property instead of params
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
-        params: {
+        queryParams: {
           userId: userId,
           type: 'invoice'
         }
@@ -91,7 +91,7 @@ const InvoicesTab = () => {
 
       console.log('Uploading invoice file:', file.name);
       
-      // Usar formData como body directamente
+      // Use formData as body directly
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
         body: formData

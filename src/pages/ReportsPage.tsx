@@ -37,7 +37,7 @@ const ReportsPage = () => {
 
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
-        params: {
+        queryParams: {
           userId,
           type: 'report'
         }
