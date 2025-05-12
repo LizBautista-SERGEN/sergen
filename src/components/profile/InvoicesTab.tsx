@@ -36,10 +36,10 @@ const InvoicesTab = () => {
       
       console.log(`Fetching invoices for user: ${userId}`);
       
-      // Use URL parameters instead of body for GET request
+      // Use body for parameters in GET request
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
-        queryParams: { userId, type: 'invoice' }
+        body: { userId, type: 'invoice' }
       });
       
       if (error) {

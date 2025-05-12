@@ -24,13 +24,28 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
+
+      let userId;
+      let documentType;
       
-      // Extract query parameters from the URL
+      // First try to get parameters from URL query parameters
       const url = new URL(req.url);
-      const userId = url.searchParams.get('userId');
-      const documentType = url.searchParams.get('type') || 'invoice';
+      userId = url.searchParams.get('userId');
+      documentType = url.searchParams.get('type') || 'invoice';
       
-      console.log(`Using URL query params - userId: ${userId}, type: ${documentType}`);
+      // If not found in URL parameters, try to get from request body
+      if (!userId) {
+        try {
+          const body = await req.json();
+          userId = body.userId;
+          documentType = body.type || 'invoice';
+          console.log(`Using request body params - userId: ${userId}, type: ${documentType}`);
+        } catch (e) {
+          console.error('Error parsing request body:', e);
+        }
+      } else {
+        console.log(`Using URL query params - userId: ${userId}, type: ${documentType}`);
+      }
       
       if (!userId) {
         console.error('Missing userId parameter');
