@@ -36,10 +36,10 @@ const InvoicesTab = () => {
       
       console.log(`Fetching invoices for user: ${userId}`);
       
-      // Fix: Use correct parameter passing for edge function
+      // Use URL parameters instead of body for GET request
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
-        body: { userId: userId, type: 'invoice' }
+        queryParams: { userId, type: 'invoice' }
       });
       
       if (error) {

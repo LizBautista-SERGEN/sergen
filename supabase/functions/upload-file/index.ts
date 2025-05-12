@@ -30,7 +30,7 @@ serve(async (req) => {
       const userId = url.searchParams.get('userId');
       const documentType = url.searchParams.get('type') || 'invoice';
       
-      console.log(`Using query params - userId: ${userId}, type: ${documentType}`);
+      console.log(`Using URL query params - userId: ${userId}, type: ${documentType}`);
       
       if (!userId) {
         console.error('Missing userId parameter');
