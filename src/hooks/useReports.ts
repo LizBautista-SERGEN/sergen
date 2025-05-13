@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 export interface Report {
   id: string;
@@ -49,7 +49,6 @@ export const useReports = () => {
     } catch (error: any) {
       console.error('Error fetching reports:', error);
       toast({
-        title: "Error",
         description: `No se pudieron cargar los reportes: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
@@ -66,7 +65,6 @@ export const useReports = () => {
     
     if (!allowedTypes.includes(file.type)) {
       toast({
-        title: "Error",
         description: "Formato de archivo no permitido. Solo se aceptan PDF.",
         variant: "destructive",
       });
@@ -100,7 +98,6 @@ export const useReports = () => {
       console.log('Report uploaded successfully:', data);
 
       toast({
-        title: "Éxito",
         description: "Reporte subido correctamente",
       });
 
@@ -109,7 +106,6 @@ export const useReports = () => {
     } catch (error: any) {
       console.error('Error uploading report:', error);
       toast({
-        title: "Error",
         description: `No se pudo subir el reporte: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
@@ -134,7 +130,6 @@ export const useReports = () => {
       if (error) throw error;
 
       toast({
-        title: "Éxito",
         description: "Reporte eliminado correctamente",
       });
 
@@ -143,7 +138,6 @@ export const useReports = () => {
     } catch (error: any) {
       console.error('Error deleting report:', error);
       toast({
-        title: "Error",
         description: `No se pudo eliminar el reporte: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
