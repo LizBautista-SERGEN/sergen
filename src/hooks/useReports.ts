@@ -39,8 +39,9 @@ export const useReports = () => {
       console.log('Session access token length:', session.access_token.length);
       console.log('Session access token first 10 chars:', session.access_token.substring(0, 10));
 
-      // Log the Edge Function URL for debugging
-      const functionUrl = `${supabase.functions.getUrl('upload-file')}`;
+      // Construct the Edge Function URL using string template
+      const projectId = supabase.supabaseUrl.split('https://')[1].split('.')[0];
+      const functionUrl = `https://${projectId}.supabase.co/functions/v1/upload-file`;
       console.log('Edge Function URL:', functionUrl);
 
       try {
