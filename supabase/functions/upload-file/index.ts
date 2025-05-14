@@ -48,50 +48,12 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
 
-      let userId;
-      let documentType;
-      
-      // First try to get parameters from URL query parameters
+      // Get parameters from URL query parameters
       const url = new URL(req.url);
-      userId = url.searchParams.get('userId');
-      documentType = url.searchParams.get('type') || 'invoice';
+      const userId = url.searchParams.get('userId');
+      const documentType = url.searchParams.get('type') || 'invoice';
       
       console.log('URL parameters - userId:', userId, 'type:', documentType);
-      
-      // If not found in URL parameters, try to get from request body
-      if (!userId) {
-        try {
-          // Clone the request to avoid consuming the body
-          const clonedReq = req.clone();
-          
-          let body;
-          const contentType = req.headers.get('Content-Type') || '';
-          
-          if (contentType.includes('application/json')) {
-            body = await clonedReq.json();
-            console.log('JSON body received:', body);
-          } else {
-            const text = await clonedReq.text();
-            console.log('Text body received:', text);
-            try {
-              body = JSON.parse(text);
-              console.log('Parsed JSON body:', body);
-            } catch (e) {
-              console.error('Error parsing JSON from text body:', e);
-            }
-          }
-          
-          if (body) {
-            userId = body.userId;
-            documentType = body.type || 'invoice';
-            console.log(`Using request body params - userId: ${userId}, type: ${documentType}`);
-          }
-        } catch (e) {
-          console.error('Error parsing request body:', e);
-        }
-      } else {
-        console.log(`Using URL query params - userId: ${userId}, type: ${documentType}`);
-      }
       
       if (!userId) {
         console.error('Missing userId parameter');
@@ -222,7 +184,8 @@ serve(async (req) => {
       // Create unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `${userId}/${fileName}`;
+      // Store directly in the root of the bucket, not in a user subdirectory
+      const filePath = fileName;
       
       console.log(`Uploading to bucket: ${bucketName}, path: ${filePath}`);
 
@@ -279,7 +242,7 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             filename: file.name,
-            file_path: filePath,
+            file_path: filePath, // Usando la ruta sin el ID del usuario
             document_type: documentType
           });
 
