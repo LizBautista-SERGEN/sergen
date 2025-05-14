@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileText, Upload, Trash2, Download, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, PROJECT_ID } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
 const ContractsTab = () => {
@@ -39,10 +38,8 @@ const ContractsTab = () => {
       console.log('Session access token length:', session.access_token.length);
       console.log('Session access token first 10 chars:', session.access_token.substring(0, 10));
 
-      // Get the project ID from the API URL instead of directly accessing supabaseUrl
-      const url = new URL(supabase.auth.url);
-      const projectId = url.hostname.split('.')[0];
-      const functionUrl = `https://${projectId}.supabase.co/functions/v1/upload-file`;
+      // Use the exported PROJECT_ID constant instead
+      const functionUrl = `https://${PROJECT_ID}.supabase.co/functions/v1/upload-file`;
       console.log('Edge Function URL:', functionUrl);
 
       try {
