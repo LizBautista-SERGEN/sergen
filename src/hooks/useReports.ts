@@ -14,6 +14,7 @@ export const useReports = () => {
   const [reports, setReports] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReports();
@@ -22,6 +23,7 @@ export const useReports = () => {
   const fetchReports = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -34,13 +36,79 @@ export const useReports = () => {
       const userId = session.user.id;
       
       console.log(`Fetching reports for user: ${userId}`);
+      console.log('Session access token length:', session.access_token.length);
+      console.log('Session access token first 10 chars:', session.access_token.substring(0, 10));
+
+      // Log the Edge Function URL for debugging
+      const functionUrl = `${supabase.functions.getUrl('upload-file')}`;
+      console.log('Edge Function URL:', functionUrl);
+
+      try {
+        // Direct fetch attempt for debugging
+        const fetchResponse = await fetch(functionUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ userId, type: 'report' })
+        });
+        
+        console.log('Direct fetch status:', fetchResponse.status);
+        console.log('Direct fetch status text:', fetchResponse.statusText);
+        
+        if (!fetchResponse.ok) {
+          const errorText = await fetchResponse.text();
+          console.error('Direct fetch error response:', errorText);
+        }
+      } catch (fetchError) {
+        console.error('Direct fetch error:', fetchError);
+      }
 
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: { userId, type: 'report' }
       });
       
       if (error) {
+        console.error('Error details:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Error status:', error.status);
+        
+        if (error.message && error.message.includes('JWT')) {
+          console.error('Possible JWT/Authentication issue detected');
+          
+          // Try refreshing the session
+          console.log('Attempting to refresh session...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            console.error('Session refresh failed:', refreshError);
+            throw error;
+          } else {
+            console.log('Session refreshed successfully, retrying fetch...');
+            // Retry with the new session
+            const { data: retriedData, error: retriedError } = await supabase.functions.invoke('upload-file', {
+              method: 'GET',
+              body: { userId, type: 'report' },
+            });
+            
+            if (retriedError) {
+              console.error('Retry after session refresh failed:', retriedError);
+              throw retriedError;
+            }
+            
+            console.log('Retry successful:', retriedData);
+            setReports(retriedData || []);
+            return;
+          }
+        }
+        
         throw error;
       }
 
@@ -48,6 +116,7 @@ export const useReports = () => {
       setReports(data || []);
     } catch (error: any) {
       console.error('Error fetching reports:', error);
+      setError(error.message || 'Error desconocido');
       toast({
         description: `No se pudieron cargar los reportes: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
@@ -151,6 +220,7 @@ export const useReports = () => {
     isLoading,
     uploading,
     deletingId,
+    error,
     handleFileUpload,
     handleDelete,
     fetchReports

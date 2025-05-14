@@ -8,10 +8,33 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log("--------------------------------------------------");
+  console.log(`Request received: ${req.method} ${new URL(req.url).pathname}`);
+  console.log("Headers:", JSON.stringify([...req.headers.entries()]));
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     console.log('Handling OPTIONS request for CORS');
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Create Supabase client
+  try {
+    console.log("Supabase URL:", Deno.env.get('SUPABASE_URL'));
+    console.log("Service role key length:", (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '').length);
+    
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    console.log("Supabase client created successfully");
+  } catch (error) {
+    console.error("Error creating Supabase client:", error);
+    return new Response(
+      JSON.stringify({ error: 'Error initializing Supabase client' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
   }
 
   // GET request for fetching documents
@@ -33,13 +56,36 @@ serve(async (req) => {
       userId = url.searchParams.get('userId');
       documentType = url.searchParams.get('type') || 'invoice';
       
+      console.log('URL parameters - userId:', userId, 'type:', documentType);
+      
       // If not found in URL parameters, try to get from request body
       if (!userId) {
         try {
-          const body = await req.json();
-          userId = body.userId;
-          documentType = body.type || 'invoice';
-          console.log(`Using request body params - userId: ${userId}, type: ${documentType}`);
+          // Clone the request to avoid consuming the body
+          const clonedReq = req.clone();
+          
+          let body;
+          const contentType = req.headers.get('Content-Type') || '';
+          
+          if (contentType.includes('application/json')) {
+            body = await clonedReq.json();
+            console.log('JSON body received:', body);
+          } else {
+            const text = await clonedReq.text();
+            console.log('Text body received:', text);
+            try {
+              body = JSON.parse(text);
+              console.log('Parsed JSON body:', body);
+            } catch (e) {
+              console.error('Error parsing JSON from text body:', e);
+            }
+          }
+          
+          if (body) {
+            userId = body.userId;
+            documentType = body.type || 'invoice';
+            console.log(`Using request body params - userId: ${userId}, type: ${documentType}`);
+          }
         } catch (e) {
           console.error('Error parsing request body:', e);
         }

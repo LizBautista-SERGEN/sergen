@@ -12,8 +12,10 @@ const ReportsPage = () => {
     isLoading, 
     uploading, 
     deletingId, 
+    error,
     handleFileUpload, 
-    handleDelete 
+    handleDelete,
+    fetchReports
   } = useReports();
 
   return (
@@ -28,8 +30,10 @@ const ReportsPage = () => {
       <ReportsList 
         reports={reports} 
         isLoading={isLoading} 
-        deletingId={deletingId} 
-        onDelete={handleDelete} 
+        deletingId={deletingId}
+        error={error}
+        onDelete={handleDelete}
+        onRetry={fetchReports}
       />
     </div>
   );

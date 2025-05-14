@@ -13,6 +13,7 @@ const ContractsTab = () => {
   const [uploading, setUploading] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch contracts on component mount
   useEffect(() => {
@@ -22,6 +23,7 @@ const ContractsTab = () => {
   const fetchContracts = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -34,7 +36,37 @@ const ContractsTab = () => {
       const userId = session.user.id;
       
       console.log(`Fetching contracts for user: ${userId}`);
+      console.log('Session access token length:', session.access_token.length);
+      console.log('Session access token first 10 chars:', session.access_token.substring(0, 10));
 
+      // Log the Edge Function URL for debugging
+      const functionUrl = `${supabase.functions.getUrl('upload-file')}`;
+      console.log('Edge Function URL:', functionUrl);
+
+      try {
+        // Direct fetch attempt for debugging
+        const fetchResponse = await fetch(functionUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ userId, type: 'contract' })
+        });
+        
+        console.log('Direct fetch status:', fetchResponse.status);
+        console.log('Direct fetch status text:', fetchResponse.statusText);
+        
+        if (!fetchResponse.ok) {
+          const errorText = await fetchResponse.text();
+          console.error('Direct fetch error response:', errorText);
+        }
+      } catch (fetchError) {
+        console.error('Direct fetch error:', fetchError);
+      }
+
+      console.log('Attempting supabase.functions.invoke call...');
+      
       const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'GET',
         headers: {
@@ -44,7 +76,41 @@ const ContractsTab = () => {
       });
 
       if (error) {
-        console.error(`Error fetching contracts:`, error);
+        console.error('Error details:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Error status:', error.status);
+        
+        if (error.message && error.message.includes('JWT')) {
+          console.error('Possible JWT/Authentication issue detected');
+          
+          // Try refreshing the session
+          console.log('Attempting to refresh session...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            console.error('Session refresh failed:', refreshError);
+            throw error;
+          } else {
+            console.log('Session refreshed successfully, retrying fetch...');
+            // Retry with the new session
+            const { data: retriedData, error: retriedError } = await supabase.functions.invoke('upload-file', {
+              method: 'GET',
+              body: { userId, type: 'contract' },
+            });
+            
+            if (retriedError) {
+              console.error('Retry after session refresh failed:', retriedError);
+              throw retriedError;
+            }
+            
+            console.log('Retry successful:', retriedData);
+            setContracts(retriedData || []);
+            return;
+          }
+        }
+        
         throw error;
       }
 
@@ -52,8 +118,8 @@ const ContractsTab = () => {
       setContracts(data || []);
     } catch (error: any) {
       console.error(`Error fetching contracts:`, error);
+      setError(error.message || 'Error desconocido');
       toast({
-        title: "Error",
         description: `No se pudieron cargar los contratos: ${error.message || 'Error desconocido'}`,
         variant: "destructive",
       });
@@ -162,6 +228,21 @@ const ContractsTab = () => {
   return (
     <div>
       <div className="grid gap-4">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg mb-4">
+            <p className="font-semibold">Error al cargar contratos:</p>
+            <p className="text-sm mt-1">{error}</p>
+            <Button 
+              onClick={fetchContracts} 
+              variant="outline" 
+              size="sm"
+              className="mt-2"
+            >
+              Reintentar
+            </Button>
+          </div>
+        )}
+        
         <div>
           <Label htmlFor="contract-upload">Subir Nuevo Contrato o Adenda</Label>
           <Input
