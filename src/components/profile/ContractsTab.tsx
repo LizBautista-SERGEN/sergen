@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,15 +6,9 @@ import { FileText, Upload, Trash2, Download, Loader2 } from "lucide-react";
 import { supabase, PROJECT_ID } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-interface Contract {
-  id: string;
-  filename: string;
-  file_path: string;
-}
-
 const ContractsTab = () => {
   const { toast } = useToast();
-  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
   const [uploading, setUploading] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -42,36 +35,88 @@ const ContractsTab = () => {
       const userId = session.user.id;
       
       console.log(`Fetching contracts for user: ${userId}`);
+      console.log('Session access token length:', session.access_token.length);
+      console.log('Session access token first 10 chars:', session.access_token.substring(0, 10));
 
-      // Construir URL con parámetros de consulta en lugar de enviarlos en el cuerpo
-      const functionUrl = `https://${PROJECT_ID}.supabase.co/functions/v1/upload-file?userId=${userId}&type=contract`;
+      // Use the exported PROJECT_ID constant instead
+      const functionUrl = `https://${PROJECT_ID}.supabase.co/functions/v1/upload-file`;
       console.log('Edge Function URL:', functionUrl);
 
       try {
-        // Solicitud GET sin cuerpo
-        const response = await fetch(functionUrl, {
+        // Direct fetch attempt for debugging
+        const fetchResponse = await fetch(functionUrl, {
           method: 'GET',
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
+          body: JSON.stringify({ userId, type: 'contract' })
         });
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Fetch error response:', errorText);
-          throw new Error(`Error en la solicitud: ${response.status} ${response.statusText}`);
+        console.log('Direct fetch status:', fetchResponse.status);
+        console.log('Direct fetch status text:', fetchResponse.statusText);
+        
+        if (!fetchResponse.ok) {
+          const errorText = await fetchResponse.text();
+          console.error('Direct fetch error response:', errorText);
+        }
+      } catch (fetchError) {
+        console.error('Direct fetch error:', fetchError);
+      }
+
+      console.log('Attempting supabase.functions.invoke call...');
+      
+      const { data, error } = await supabase.functions.invoke('upload-file', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: { userId, type: 'contract' },
+      });
+
+      if (error) {
+        console.error('Error details:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Error status:', error.status);
+        
+        if (error.message && error.message.includes('JWT')) {
+          console.error('Possible JWT/Authentication issue detected');
+          
+          // Try refreshing the session
+          console.log('Attempting to refresh session...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            console.error('Session refresh failed:', refreshError);
+            throw error;
+          } else {
+            console.log('Session refreshed successfully, retrying fetch...');
+            // Retry with the new session
+            const { data: retriedData, error: retriedError } = await supabase.functions.invoke('upload-file', {
+              method: 'GET',
+              body: { userId, type: 'contract' },
+            });
+            
+            if (retriedError) {
+              console.error('Retry after session refresh failed:', retriedError);
+              throw retriedError;
+            }
+            
+            console.log('Retry successful:', retriedData);
+            setContracts(retriedData || []);
+            return;
+          }
         }
         
-        const data = await response.json();
-        console.log('Contracts fetched successfully:', data);
-        setContracts(data || []);
-        return;
-      } catch (fetchError: any) {
-        console.error('Direct fetch error:', fetchError);
-        throw fetchError;
+        throw error;
       }
+
+      console.log('Contracts fetched successfully:', data);
+      setContracts(data || []);
     } catch (error: any) {
-      console.error('Error fetching contracts:', error);
+      console.error(`Error fetching contracts:`, error);
       setError(error.message || 'Error desconocido');
       toast({
         description: `No se pudieron cargar los contratos: ${error.message || 'Error desconocido'}`,
@@ -110,21 +155,20 @@ const ContractsTab = () => {
 
       console.log('Uploading contract file:', file.name);
 
-      // Use direct fetch for FormData
-      const response = await fetch(`https://${PROJECT_ID}.supabase.co/functions/v1/upload-file`, {
+      // Upload the file
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`
         },
-        body: formData
+        body: formData,
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error en la subida: ${response.status} ${errorText}`);
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
       }
-      
-      const data = await response.json();
+
       console.log('Contract uploaded successfully:', data);
 
       toast({

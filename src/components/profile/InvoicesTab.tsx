@@ -4,22 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileText, Upload, Trash2, Download, Loader2 } from "lucide-react";
-import { supabase, PROJECT_ID } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-
-interface Invoice {
-  id: string;
-  filename: string;
-  file_path: string;
-}
 
 const InvoicesTab = () => {
   const { toast } = useToast();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [uploading, setUploading] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   // Fetch invoices on component mount
   useEffect(() => {
@@ -29,7 +22,6 @@ const InvoicesTab = () => {
   const fetchInvoices = async () => {
     try {
       setIsLoading(true);
-      setError(null);
       
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -43,36 +35,21 @@ const InvoicesTab = () => {
       const userId = session.user.id;
       
       console.log(`Fetching invoices for user: ${userId}`);
-
-      // Construir URL con parámetros de consulta en lugar de enviarlos en el cuerpo
-      const functionUrl = `https://${PROJECT_ID}.supabase.co/functions/v1/upload-file?userId=${userId}&type=invoice`;
-      console.log('Edge Function URL:', functionUrl);
       
-      try {
-        // Solicitud GET sin cuerpo
-        const response = await fetch(functionUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Fetch error response:', errorText);
-          throw new Error(`Error en la solicitud: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Invoices fetched successfully:', data);
-        setInvoices(data || []);
-      } catch (fetchError: any) {
-        console.error('Direct fetch error:', fetchError);
-        throw fetchError;
+      // Use body for parameters in GET request
+      const { data, error } = await supabase.functions.invoke('upload-file', {
+        method: 'GET',
+        body: { userId, type: 'invoice' }
+      });
+      
+      if (error) {
+        throw error;
       }
+
+      console.log('Invoices fetched successfully:', data);
+      setInvoices(data || []);
     } catch (error: any) {
-      console.error('Error fetching invoices:', error);
-      setError(error.message || 'Error desconocido');
+      console.error(`Error fetching invoices:`, error);
       toast({
         title: "Error",
         description: `No se pudieron cargar las facturas: ${error.message || 'Error desconocido'}`,
@@ -111,23 +88,18 @@ const InvoicesTab = () => {
 
       console.log('Uploading invoice file:', file.name);
       
-      // Use direct fetch for FormData
-      const response = await fetch(`https://${PROJECT_ID}.supabase.co/functions/v1/upload-file`, {
+      // Use formData as body directly
+      const { data, error } = await supabase.functions.invoke('upload-file', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
         body: formData
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error en la subida: ${response.status} ${errorText}`);
+      if (error) {
+        throw error;
       }
-      
-      const data = await response.json();
-      console.log('Invoice uploaded successfully:', data);
 
+      console.log('Invoice uploaded successfully:', data);
+      
       toast({
         title: "Éxito",
         description: "Factura subida correctamente",
@@ -184,21 +156,6 @@ const InvoicesTab = () => {
   return (
     <div>
       <div className="grid gap-4">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg mb-4">
-            <p className="font-semibold">Error al cargar facturas:</p>
-            <p className="text-sm mt-1">{error}</p>
-            <Button 
-              onClick={fetchInvoices} 
-              variant="outline" 
-              size="sm"
-              className="mt-2"
-            >
-              Reintentar
-            </Button>
-          </div>
-        )}
-
         <div>
           <Label htmlFor="invoice-upload">Subir Nueva Factura</Label>
           <Input
