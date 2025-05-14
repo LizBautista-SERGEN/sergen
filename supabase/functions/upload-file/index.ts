@@ -157,8 +157,8 @@ serve(async (req) => {
 
     // Determine the bucket name based on type
     const bucketName = type === 'profile' ? 'profiles' : 
-                     type === 'contract' ? 'contracts' : 
-                     type === 'report' ? 'reports' : 'invoices';
+                       type === 'contract' ? 'contracts' : 
+                       type === 'report' ? 'reports' : 'invoices';
                      
     console.log(`Using bucket name: ${bucketName}`);
 
@@ -242,7 +242,7 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             filename: file.name,
-            file_path: filePath, // Usando la ruta sin el ID del usuario
+            file_path: filePath,
             document_type: documentType
           });
 
