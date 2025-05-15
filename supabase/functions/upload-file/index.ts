@@ -207,7 +207,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Validate document type to ensure it matches the database constraint
+    // IMPORTANT: Updated to explicitly include 'report' in the valid document types
     const validDocumentTypes = ['invoice', 'contract', 'report'];
     
     if (!validDocumentTypes.includes(type as string)) {

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -10,7 +11,6 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileCard } from "@/components/profile/ProfileCard";
 import InvoicesTab from "@/components/profile/InvoicesTab";
 import ContractsTab from "@/components/profile/ContractsTab";
-import ReportsTab from "@/components/profile/ReportsTab";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -179,7 +179,6 @@ const ProfilePage = () => {
                 <TabsTrigger value="datos-contacto">Datos de contacto</TabsTrigger>
                 <TabsTrigger value="facturas">Facturas</TabsTrigger>
                 <TabsTrigger value="contratos">Contratos y Adendas</TabsTrigger>
-                <TabsTrigger value="reportes">Reportes</TabsTrigger>
               </TabsList>
 
               <TabsContent value="datos-usuario" className="mt-6">
@@ -305,10 +304,6 @@ const ProfilePage = () => {
               
               <TabsContent value="contratos" className="mt-6">
                 <ContractsTab />
-              </TabsContent>
-              
-              <TabsContent value="reportes" className="mt-6">
-                <ReportsTab />
               </TabsContent>
             </Tabs>
           </div>
