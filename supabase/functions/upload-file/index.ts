@@ -207,6 +207,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Validate document type to ensure it matches the database constraint
+    const validDocumentTypes = ['invoice', 'contract', 'report'];
+    
+    if (!validDocumentTypes.includes(type as string)) {
+      console.error(`Invalid document type: ${type}`);
+      return new Response(
+        JSON.stringify({ error: `Invalid document type: ${type}. Valid types are: invoice, contract, report` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
     // Determine the bucket name based on type
     const bucketName = type === 'profile' ? 'profiles' : 
                        type === 'contract' ? 'contracts' : 
@@ -278,17 +289,6 @@ serve(async (req) => {
       } else {
         // Add document entry if contract, invoice or report
         console.log('Adding document record');
-        
-        // Ensure we're using a valid document_type
-        const validDocumentTypes = ['invoice', 'contract', 'report'];
-        
-        if (!validDocumentTypes.includes(type)) {
-          console.error(`Invalid document type: ${type}`);
-          return new Response(
-            JSON.stringify({ error: `Invalid document type: ${type}. Valid types are: invoice, contract, report` }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-          );
-        }
         
         const { error: insertError } = await supabase
           .from('documents')
