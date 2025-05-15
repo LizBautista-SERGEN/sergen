@@ -1,21 +1,29 @@
-
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileCard } from "@/components/profile/ProfileCard";
 import InvoicesTab from "@/components/profile/InvoicesTab";
 import ContractsTab from "@/components/profile/ContractsTab";
+import ReportsTab from "@/components/profile/ReportsTab";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const ProfilePage = () => {
   const { toast } = useToast();
   const { profile, isLoading, error, refetchProfile } = useUserProfile();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [contractExpirationDate, setContractExpirationDate] = useState<Date | undefined>(
+    profile?.contract_expiration ? new Date(profile.contract_expiration) : undefined
+  );
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,10 +39,9 @@ const ProfilePage = () => {
       notice_period: form.notice_period.value,
     };
     
-    // Handle contract_expiration separately
-    const contractExpValue = form.contract_expiration.value;
-    if (contractExpValue && contractExpValue.trim() !== '') {
-      formData.contract_expiration = contractExpValue;
+    // Use the selected date from the calendar if available
+    if (contractExpirationDate) {
+      formData.contract_expiration = contractExpirationDate.toISOString();
     } else {
       formData.contract_expiration = null;
     }
@@ -172,6 +179,7 @@ const ProfilePage = () => {
                 <TabsTrigger value="datos-contacto">Datos de contacto</TabsTrigger>
                 <TabsTrigger value="facturas">Facturas</TabsTrigger>
                 <TabsTrigger value="contratos">Contratos y Adendas</TabsTrigger>
+                <TabsTrigger value="reportes">Reportes</TabsTrigger>
               </TabsList>
 
               <TabsContent value="datos-usuario" className="mt-6">
@@ -213,12 +221,34 @@ const ProfilePage = () => {
                   </div>
                   <div>
                     <label className="font-semibold mb-2 block">Vencimiento de contrato:</label>
-                    <Input 
-                      name="contract_expiration" 
-                      type="text"
-                      placeholder="Abr 2026"
-                      defaultValue={profile?.contract_expiration || ""} 
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !contractExpirationDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {contractExpirationDate ? (
+                            format(contractExpirationDate, "PPP", { locale: es })
+                          ) : (
+                            "Seleccionar fecha de vencimiento"
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={contractExpirationDate}
+                          onSelect={setContractExpirationDate}
+                          initialFocus
+                          locale={es}
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div>
                     <label className="font-semibold mb-2 block">Periodo de aviso:</label>
@@ -275,6 +305,10 @@ const ProfilePage = () => {
               
               <TabsContent value="contratos" className="mt-6">
                 <ContractsTab />
+              </TabsContent>
+              
+              <TabsContent value="reportes" className="mt-6">
+                <ReportsTab />
               </TabsContent>
             </Tabs>
           </div>
