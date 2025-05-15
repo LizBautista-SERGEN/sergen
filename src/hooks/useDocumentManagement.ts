@@ -151,12 +151,24 @@ export const useDocumentManagement = (documentType: DocumentType) => {
 
       console.log(`Deleting ${documentType} with ID:`, id);
 
-      const { error } = await supabase
-        .from('documents')
-        .update({ deleted: true })
-        .eq('id', id);
-
-      if (error) throw error;
+      // Use the edge function to mark document as deleted
+      const functionUrl = `https://${PROJECT_ID}.supabase.co/functions/v1/upload-file?id=${id}`;
+      const response = await fetch(functionUrl, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error en la eliminación: ${response.status} ${errorText}`);
+      }
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error("Error al eliminar el documento");
+      }
 
       toast({
         description: `${getDocumentTypeDisplay(documentType, true)} eliminado correctamente`,

@@ -92,6 +92,57 @@ serve(async (req) => {
       );
     }
   }
+  
+  // DELETE request for marking documents as deleted
+  if (req.method === 'DELETE') {
+    try {
+      console.log('Processing DELETE request to mark document as deleted');
+      
+      // Initialize Supabase client
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      // Get document ID from URL
+      const url = new URL(req.url);
+      const documentId = url.searchParams.get('id');
+      
+      if (!documentId) {
+        console.error('Missing document ID parameter');
+        return new Response(
+          JSON.stringify({ error: 'Missing document ID parameter' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+      
+      console.log(`Marking document ${documentId} as deleted`);
+      
+      // Update the document to mark as deleted
+      const { error } = await supabase
+        .from('documents')
+        .update({ deleted: true })
+        .eq('id', documentId);
+      
+      if (error) {
+        console.error('Error marking document as deleted:', error);
+        throw new Error(`Error marking document as deleted: ${error.message}`);
+      }
+      
+      console.log(`Successfully marked document ${documentId} as deleted`);
+      
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    } catch (error) {
+      console.error('Function error:', error);
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+  }
 
   // POST request for file upload
   try {
@@ -229,12 +280,13 @@ serve(async (req) => {
         
         // Ensure we're using a valid document_type
         const validDocumentTypes = ['invoice', 'contract', 'report'];
-        let documentType = type;
         
-        // Check if documentType is valid
-        if (!validDocumentTypes.includes(documentType)) {
-          console.warn(`Invalid document type: ${documentType}, defaulting to 'invoice'`);
-          documentType = 'invoice';
+        if (!validDocumentTypes.includes(type)) {
+          console.error(`Invalid document type: ${type}`);
+          return new Response(
+            JSON.stringify({ error: `Invalid document type: ${type}. Valid types are: invoice, contract, report` }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          );
         }
         
         const { error: insertError } = await supabase
@@ -243,7 +295,7 @@ serve(async (req) => {
             user_id: userId,
             filename: file.name,
             file_path: filePath,
-            document_type: documentType
+            document_type: type
           });
 
         if (insertError) {
