@@ -120,6 +120,7 @@ export const useDocumentManagement = (documentType: DocumentType) => {
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('Error response from upload-file function:', errorText);
         throw new Error(`Error en la subida: ${response.status} ${errorText}`);
       }
       

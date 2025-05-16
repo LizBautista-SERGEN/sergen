@@ -207,10 +207,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Define valid document types and explicitly include 'report'
+    // Define valid document types - explicitly allow 'report'
     const validDocumentTypes = ['invoice', 'contract', 'report'];
     
-    if (!validDocumentTypes.includes(type as string)) {
+    if (!validDocumentTypes.includes(type.toString())) {
       console.error(`Invalid document type: ${type}`);
       return new Response(
         JSON.stringify({ error: `Invalid document type: ${type}. Valid types are: invoice, contract, report` }),
@@ -220,8 +220,8 @@ serve(async (req) => {
 
     // Determine the bucket name based on type
     const bucketName = type === 'profile' ? 'profiles' : 
-                       type === 'contract' ? 'contracts' : 
-                       type === 'report' ? 'reports' : 'invoices';
+                      type === 'contract' ? 'contracts' : 
+                      type === 'report' ? 'reports' : 'invoices';
                      
     console.log(`Using bucket name: ${bucketName}`);
 
@@ -244,18 +244,17 @@ serve(async (req) => {
         }
       }
 
-      // Create unique file name
+      // Create unique file name with user prefix for better organization
       const fileExt = file.name.split('.').pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      // Store directly in the root of the bucket, not in a user subdirectory
-      const filePath = fileName;
+      const userFolderPrefix = `user_${userId.toString().substring(0, 8)}`;
+      const fileName = `${userFolderPrefix}/${crypto.randomUUID()}.${fileExt}`;
       
-      console.log(`Uploading to bucket: ${bucketName}, path: ${filePath}`);
+      console.log(`Uploading to bucket: ${bucketName}, path: ${fileName}`);
 
       // Upload the file
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file, {
+        .upload(fileName, file, {
           contentType: file.type,
           upsert: true
         });
@@ -270,7 +269,7 @@ serve(async (req) => {
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from(bucketName)
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
       console.log('Generated public URL:', publicUrl);
 
@@ -287,7 +286,7 @@ serve(async (req) => {
           throw updateError;
         }
       } else {
-        // Add document entry if contract, invoice or report
+        // Add document entry to the documents table
         console.log('Adding document record');
         
         const { error: insertError } = await supabase
@@ -295,8 +294,8 @@ serve(async (req) => {
           .insert({
             user_id: userId,
             filename: file.name,
-            file_path: filePath,
-            document_type: type
+            file_path: fileName,
+            document_type: type.toString()
           });
 
         if (insertError) {

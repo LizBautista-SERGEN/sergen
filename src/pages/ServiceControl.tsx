@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 const ServiceControl = () => {
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(false);
   const [settingsLastUpdate, setSettingsLastUpdate] = useState<Date | null>(null);
@@ -87,7 +86,6 @@ const ServiceControl = () => {
         // Actualizar datos de pronóstico COES sin cargar energy_data
         try {
           await supabase.functions.invoke('get-coes-forecast');
-          setLastUpdated(new Date());
           toast.success("Datos de pronóstico actualizados");
         } catch (e) {
           console.error('Error updating forecast data:', e);
@@ -133,15 +131,10 @@ const ServiceControl = () => {
           <div className="container mx-auto px-2 py-6">
             <div className="mb-4">
               <h1 className="text-3xl font-bold text-gray-800 mb-2">Control de Demanda</h1>
-              <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                {lastUpdated && (
-                  <p>
-                    Última actualización de datos: {format(lastUpdated, 'dd/MM/yyyy HH:mm')}
-                  </p>
-                )}
+              <div className="text-sm text-gray-600">
                 {settingsLastUpdate && (
                   <p>
-                    Última configuración: {format(settingsLastUpdate, 'dd/MM/yyyy HH:mm')}
+                    Última actualización: {format(settingsLastUpdate, 'dd/MM/yyyy HH:mm')}
                   </p>
                 )}
               </div>
