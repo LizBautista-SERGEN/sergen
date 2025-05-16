@@ -1,12 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-}
+import { corsHeaders } from "./corsHeaders.ts";
+import { handleGetRequest } from "./handlers/getHandler.ts";
+import { handleDeleteRequest } from "./handlers/deleteHandler.ts";
+import { handlePostRequest } from "./handlers/postHandler.ts";
 
 serve(async (req) => {
   console.log("--------------------------------------------------");
@@ -19,309 +16,25 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Create Supabase client
+  // Route requests to appropriate handlers
   try {
-    console.log("Supabase URL:", Deno.env.get('SUPABASE_URL'));
-    console.log("Service role key length:", (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '').length);
-    
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-    
-    console.log("Supabase client created successfully");
-  } catch (error) {
-    console.error("Error creating Supabase client:", error);
-    return new Response(
-      JSON.stringify({ error: 'Error initializing Supabase client' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    );
-  }
-
-  // GET request for fetching documents
-  if (req.method === 'GET') {
-    try {
-      console.log('Processing GET request to fetch documents');
-      
-      // Initialize Supabase client with service role to bypass RLS policies
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
-
-      // Get parameters from URL query parameters
-      const url = new URL(req.url);
-      const userId = url.searchParams.get('userId');
-      const documentType = url.searchParams.get('type') || 'invoice';
-      
-      console.log('URL parameters - userId:', userId, 'type:', documentType);
-      
-      if (!userId) {
-        console.error('Missing userId parameter');
+    switch(req.method) {
+      case 'GET':
+        return await handleGetRequest(req);
+      case 'DELETE':
+        return await handleDeleteRequest(req);
+      case 'POST':
+        return await handlePostRequest(req);
+      default:
         return new Response(
-          JSON.stringify({ error: 'Missing userId parameter' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          JSON.stringify({ error: `Method ${req.method} not allowed` }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 405 }
         );
-      }
-
-      console.log(`Fetching ${documentType} documents for user ${userId}`);
-
-      // Direct query to the documents table
-      const { data, error } = await supabase
-        .from('documents')
-        .select('id, filename, file_path, document_type, created_at, deleted')
-        .eq('user_id', userId)
-        .eq('document_type', documentType)
-        .eq('deleted', false);
-
-      if (error) {
-        console.error('Error fetching documents:', error);
-        throw new Error(`Error fetching documents: ${error.message}`);
-      }
-
-      console.log(`Successfully retrieved ${data?.length || 0} ${documentType} documents`);
-      
-      return new Response(
-        JSON.stringify(data || []),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    } catch (error) {
-      console.error('Function error:', error);
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-  }
-  
-  // DELETE request for marking documents as deleted
-  if (req.method === 'DELETE') {
-    try {
-      console.log('Processing DELETE request to mark document as deleted');
-      
-      // Initialize Supabase client
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
-      
-      // Get document ID from URL
-      const url = new URL(req.url);
-      const documentId = url.searchParams.get('id');
-      
-      if (!documentId) {
-        console.error('Missing document ID parameter');
-        return new Response(
-          JSON.stringify({ error: 'Missing document ID parameter' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-        );
-      }
-      
-      console.log(`Marking document ${documentId} as deleted`);
-      
-      // Update the document to mark as deleted
-      const { error } = await supabase
-        .from('documents')
-        .update({ deleted: true })
-        .eq('id', documentId);
-      
-      if (error) {
-        console.error('Error marking document as deleted:', error);
-        throw new Error(`Error marking document as deleted: ${error.message}`);
-      }
-      
-      console.log(`Successfully marked document ${documentId} as deleted`);
-      
-      return new Response(
-        JSON.stringify({ success: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    } catch (error) {
-      console.error('Function error:', error);
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-  }
-
-  // POST request for file upload
-  try {
-    console.log('Upload request received');
-    
-    // Check Content-Type to ensure it's multipart/form-data
-    const contentType = req.headers.get('Content-Type') || '';
-    if (!contentType.includes('multipart/form-data')) {
-      console.error('Invalid content type:', contentType);
-      return new Response(
-        JSON.stringify({ error: 'Content type must be multipart/form-data' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    // Try to parse the form data
-    let formData;
-    try {
-      formData = await req.formData();
-      console.log('Form data successfully parsed');
-    } catch (error) {
-      console.error('Error parsing form data:', error);
-      return new Response(
-        JSON.stringify({ error: 'Could not parse form data: ' + error.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    // Extract file and metadata from form data
-    const file = formData.get('file');
-    const type = formData.get('type') || 'invoice';
-    const userId = formData.get('userId');
-
-    console.log('Upload request parameters:', { 
-      type, 
-      userId, 
-      fileName: file?.name,
-      fileType: file instanceof File ? file.type : 'unknown',
-      fileSize: file instanceof File ? file.size : 'unknown'
-    });
-
-    if (!file) {
-      console.error('No file provided');
-      return new Response(
-        JSON.stringify({ error: 'No file provided' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-    
-    if (!userId) {
-      console.error('Missing userId parameter');
-      return new Response(
-        JSON.stringify({ error: 'Missing userId parameter' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Define valid document types - explicitly allow 'report'
-    const validDocumentTypes = ['invoice', 'contract', 'report'];
-    
-    if (!validDocumentTypes.includes(type.toString())) {
-      console.error(`Invalid document type: ${type}`);
-      return new Response(
-        JSON.stringify({ error: `Invalid document type: ${type}. Valid types are: invoice, contract, report` }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    // Determine the bucket name based on type
-    const bucketName = type === 'profile' ? 'profiles' : 
-                      type === 'contract' ? 'contracts' : 
-                      type === 'report' ? 'reports' : 'invoices';
-                     
-    console.log(`Using bucket name: ${bucketName}`);
-
-    try {
-      // Check if the bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-      
-      if (!bucketExists) {
-        console.log(`Bucket ${bucketName} does not exist, creating...`);
-        try {
-          await supabase.storage.createBucket(bucketName, {
-            public: true,
-            fileSizeLimit: 10485760, // 10MB
-          });
-          console.log(`Successfully created bucket ${bucketName}`);
-        } catch (bucketError) {
-          // If we get an error that the bucket already exists, we can continue
-          console.log(`Bucket creation error (may already exist): ${bucketError.message}`);
-        }
-      }
-
-      // Create unique file name with user prefix for better organization
-      const fileExt = file.name.split('.').pop();
-      const userFolderPrefix = `user_${userId.toString().substring(0, 8)}`;
-      const fileName = `${userFolderPrefix}/${crypto.randomUUID()}.${fileExt}`;
-      
-      console.log(`Uploading to bucket: ${bucketName}, path: ${fileName}`);
-
-      // Upload the file
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(bucketName)
-        .upload(fileName, file, {
-          contentType: file.type,
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
-      }
-
-      console.log('File uploaded successfully');
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(fileName);
-
-      console.log('Generated public URL:', publicUrl);
-
-      // Update user profile if profile image
-      if (type === 'profile') {
-        console.log('Updating user profile with new image URL');
-        const { error: updateError } = await supabase
-          .from('user_accounts')
-          .update({ profile_image: publicUrl })
-          .eq('id', userId);
-
-        if (updateError) {
-          console.error('Profile update error:', updateError);
-          throw updateError;
-        }
-      } else {
-        // Add document entry to the documents table
-        console.log('Adding document record');
-        
-        const { error: insertError } = await supabase
-          .from('documents')
-          .insert({
-            user_id: userId,
-            filename: file.name,
-            file_path: fileName,
-            document_type: type.toString()
-          });
-
-        if (insertError) {
-          console.error('Document insert error:', insertError);
-          throw insertError;
-        }
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          message: 'File uploaded successfully',
-          url: publicUrl
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    } catch (storageError) {
-      console.error('Storage operation error:', storageError);
-      return new Response(
-        JSON.stringify({ error: `Storage operation failed: ${storageError.message}` }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
     }
   } catch (error) {
-    console.error('Function error:', error);
+    console.error("Unhandled error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
