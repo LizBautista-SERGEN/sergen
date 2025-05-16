@@ -15,6 +15,7 @@ const ServiceControl = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(false);
+  const [settingsLastUpdate, setSettingsLastUpdate] = useState<Date | null>(null);
   const navigate = useNavigate();
   const { session, loading: authLoading, isAuthenticated } = useAuth();
 
@@ -39,6 +40,35 @@ const ServiceControl = () => {
     
     if (isAuthenticated) {
       checkStorageBuckets();
+    }
+  }, [isAuthenticated]);
+
+  // Obtener la última actualización de configuración
+  useEffect(() => {
+    const fetchLastSettingsUpdate = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('forecast_settings')
+          .select('last_update')
+          .order('last_update', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error("Error al obtener la última actualización de configuración:", error);
+          return;
+        }
+
+        if (data && data.last_update) {
+          setSettingsLastUpdate(new Date(data.last_update));
+        }
+      } catch (err) {
+        console.error("Error al consultar la última actualización de configuración:", err);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchLastSettingsUpdate();
     }
   }, [isAuthenticated]);
 
@@ -103,11 +133,18 @@ const ServiceControl = () => {
           <div className="container mx-auto px-2 py-6">
             <div className="mb-4">
               <h1 className="text-3xl font-bold text-gray-800 mb-2">Control de Demanda</h1>
-              {lastUpdated && (
-                <p className="text-sm text-gray-600">
-                  Última actualización: {format(lastUpdated, 'dd/MM/yyyy HH:mm')}
-                </p>
-              )}
+              <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                {lastUpdated && (
+                  <p>
+                    Última actualización de datos: {format(lastUpdated, 'dd/MM/yyyy HH:mm')}
+                  </p>
+                )}
+                {settingsLastUpdate && (
+                  <p>
+                    Última configuración: {format(settingsLastUpdate, 'dd/MM/yyyy HH:mm')}
+                  </p>
+                )}
+              </div>
             </div>
             {loading ? (
               <div className="flex justify-center items-center h-64">
