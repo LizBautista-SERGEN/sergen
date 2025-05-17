@@ -1,5 +1,6 @@
 
-import { useDocumentManagement, Document } from "@/hooks/useDocumentManagement";
+import { useDocumentManagement } from "@/hooks/useDocumentManagement";
+import type { Document } from "@/hooks/useDocumentManagement";
 
 export interface Report extends Document {
   id: string;

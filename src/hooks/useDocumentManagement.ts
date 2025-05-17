@@ -1,11 +1,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Document, DocumentType } from "@/types/documents";
 import { fetchDocuments, uploadDocument, deleteDocument } from "@/services/documentService";
 import { getBucketName, getDocumentTypeDisplay } from "@/utils/documentUtils";
+import { Document, DocumentType } from "@/types/documents";
 
-export { Document, DocumentType } from "@/types/documents";
+// Re-export types with the proper "export type" syntax
+export type { Document, DocumentType } from "@/types/documents";
 
 export const useDocumentManagement = (documentType: DocumentType) => {
   const { toast } = useToast();
