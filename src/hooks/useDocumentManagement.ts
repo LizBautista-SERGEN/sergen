@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase, PROJECT_ID } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -24,7 +24,7 @@ export const useDocumentManagement = (documentType: DocumentType) => {
     fetchDocuments();
   }, []);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -77,7 +77,7 @@ export const useDocumentManagement = (documentType: DocumentType) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [documentType, toast]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

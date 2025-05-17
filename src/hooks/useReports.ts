@@ -1,7 +1,7 @@
 
-import { useDocumentManagement } from "@/hooks/useDocumentManagement";
+import { useDocumentManagement, Document } from "@/hooks/useDocumentManagement";
 
-export interface Report {
+export interface Report extends Document {
   id: string;
   filename: string;
   file_path: string;
@@ -9,7 +9,7 @@ export interface Report {
 
 export const useReports = () => {
   const {
-    documents: reports,
+    documents,
     isLoading,
     uploading,
     deletingId,
@@ -17,11 +17,12 @@ export const useReports = () => {
     handleFileUpload,
     handleDelete,
     fetchDocuments,
-    getBucketName
+    getBucketName,
+    getDocumentTypeDisplay
   } = useDocumentManagement('report');
 
   return {
-    reports,
+    reports: documents as Report[],
     isLoading,
     uploading,
     deletingId,
@@ -29,6 +30,7 @@ export const useReports = () => {
     handleFileUpload,
     handleDelete,
     fetchReports: fetchDocuments,
-    getBucketName: () => getBucketName('report')
+    getBucketName: () => getBucketName('report'),
+    getDocumentTypeDisplay: () => getDocumentTypeDisplay('report')
   };
 };

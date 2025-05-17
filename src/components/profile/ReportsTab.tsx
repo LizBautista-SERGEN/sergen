@@ -20,7 +20,7 @@ const ReportsTab = () => {
   return (
     <div>
       <div className="grid gap-4">
-        <ErrorAlert message={error} onRetry={fetchReports} />
+        {error && <ErrorAlert message={error} onRetry={fetchReports} />}
         
         <DocumentUploader
           id="report-upload"
