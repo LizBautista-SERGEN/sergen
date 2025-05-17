@@ -18,7 +18,7 @@ export type ProfileType = {
   activity: string | null;
   electricity_provider: string | null;
   contracted_power: string | null;
-  contract_expiration: string | null;
+  contract_expiration: string | null; // This will be in YYYY-MM-DD format
   notice_period: string | null;
 };
 
@@ -71,6 +71,9 @@ export const useUserProfile = () => {
       
       if (data) {
         console.log('Profile loaded successfully:', data);
+        // Log the contract_expiration specifically to debug date issues
+        console.log('Contract expiration date loaded:', data.contract_expiration);
+        
         setProfile(data as ProfileType);
         setIsSuperUser(data.role === 'superuser');
       } else {

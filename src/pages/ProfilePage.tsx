@@ -12,7 +12,7 @@ import { ProfileCard } from "@/components/profile/ProfileCard";
 import InvoicesTab from "@/components/profile/InvoicesTab";
 import ContractsTab from "@/components/profile/ContractsTab";
 import ReportsTab from "@/components/profile/ReportsTab";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,14 +22,19 @@ const ProfilePage = () => {
   const { toast } = useToast();
   const { profile, isLoading, error, refetchProfile } = useUserProfile();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [contractExpirationDate, setContractExpirationDate] = useState<Date | undefined>(
-    profile?.contract_expiration ? new Date(profile.contract_expiration) : undefined
-  );
+  const [contractExpirationDate, setContractExpirationDate] = useState<Date | undefined>(undefined);
 
   // Update the contract expiration date when profile loads or changes
   useEffect(() => {
     if (profile?.contract_expiration) {
-      setContractExpirationDate(new Date(profile.contract_expiration));
+      try {
+        // Parse the date from ISO format
+        const date = new Date(profile.contract_expiration);
+        console.log("Loaded contract date:", date, "from", profile.contract_expiration);
+        setContractExpirationDate(date);
+      } catch (err) {
+        console.error("Error parsing contract expiration date:", err);
+      }
     }
   }, [profile]);
 
@@ -49,7 +54,9 @@ const ProfilePage = () => {
     
     // Use the selected date from the calendar if available
     if (contractExpirationDate) {
-      formData.contract_expiration = contractExpirationDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      // Format as YYYY-MM-DD for database storage
+      formData.contract_expiration = format(contractExpirationDate, 'yyyy-MM-dd');
+      console.log("Saving contract date:", formData.contract_expiration);
     } else {
       formData.contract_expiration = null;
     }
@@ -240,7 +247,7 @@ const ProfilePage = () => {
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {contractExpirationDate ? (
-                            format(contractExpirationDate, "PPP", { locale: es })
+                            format(contractExpirationDate, "d 'de' MMMM 'de' yyyy", { locale: es })
                           ) : (
                             "Seleccionar fecha de vencimiento"
                           )}
@@ -322,7 +329,6 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

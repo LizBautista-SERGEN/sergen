@@ -1,5 +1,7 @@
 
 import { ProfileType } from "@/hooks/useUserProfile";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface ProfileInfoProps {
   profile: ProfileType | null;
@@ -7,6 +9,20 @@ interface ProfileInfoProps {
 
 export const ProfileInfo = ({ profile }: ProfileInfoProps) => {
   const isSuperUser = profile?.role === 'superuser';
+
+  // Format the contract expiration date if it exists
+  const formatExpirationDate = () => {
+    if (!profile?.contract_expiration) return "No establecido";
+    
+    try {
+      // Parse the ISO date string from the database
+      const date = new Date(profile.contract_expiration);
+      return format(date, "d 'de' MMMM 'de' yyyy", { locale: es });
+    } catch (err) {
+      console.error("Error formatting contract expiration date:", err);
+      return profile.contract_expiration;
+    }
+  };
 
   return (
     <div className="grid gap-4">
@@ -37,9 +53,7 @@ export const ProfileInfo = ({ profile }: ProfileInfoProps) => {
       <div>
         <label className="font-semibold mb-2 block">VENCIMIENTO DE CONTRATO:</label>
         <div className="text-gray-700 bg-gray-50 p-2 rounded">
-          {profile?.contract_expiration ? 
-            new Date(profile.contract_expiration).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 
-            "Abril 2026"}
+          {formatExpirationDate()}
         </div>
       </div>
       <div>
