@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileCard } from "@/components/profile/ProfileCard";
 import InvoicesTab from "@/components/profile/InvoicesTab";
 import ContractsTab from "@/components/profile/ContractsTab";
+import ReportsTab from "@/components/profile/ReportsTab";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -24,6 +25,13 @@ const ProfilePage = () => {
   const [contractExpirationDate, setContractExpirationDate] = useState<Date | undefined>(
     profile?.contract_expiration ? new Date(profile.contract_expiration) : undefined
   );
+
+  // Update the contract expiration date when profile loads or changes
+  useEffect(() => {
+    if (profile?.contract_expiration) {
+      setContractExpirationDate(new Date(profile.contract_expiration));
+    }
+  }, [profile]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +49,7 @@ const ProfilePage = () => {
     
     // Use the selected date from the calendar if available
     if (contractExpirationDate) {
-      formData.contract_expiration = contractExpirationDate.toISOString();
+      formData.contract_expiration = contractExpirationDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
     } else {
       formData.contract_expiration = null;
     }
@@ -179,6 +187,7 @@ const ProfilePage = () => {
                 <TabsTrigger value="datos-contacto">Datos de contacto</TabsTrigger>
                 <TabsTrigger value="facturas">Facturas</TabsTrigger>
                 <TabsTrigger value="contratos">Contratos y Adendas</TabsTrigger>
+                <TabsTrigger value="reportes">Reportes</TabsTrigger>
               </TabsList>
 
               <TabsContent value="datos-usuario" className="mt-6">
@@ -304,6 +313,10 @@ const ProfilePage = () => {
               
               <TabsContent value="contratos" className="mt-6">
                 <ContractsTab />
+              </TabsContent>
+
+              <TabsContent value="reportes" className="mt-6">
+                <ReportsTab />
               </TabsContent>
             </Tabs>
           </div>
