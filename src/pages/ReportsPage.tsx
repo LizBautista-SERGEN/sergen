@@ -1,17 +1,19 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useReports } from "@/hooks/useReports";
 import { ReportsHeader } from "@/components/reports/ReportsHeader";
 import { ReportUploadCard } from "@/components/reports/ReportUploadCard";
 import { ReportsList } from "@/components/reports/ReportsList";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { ReportDateSelector } from "@/components/reports/ReportDateSelector";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 const ReportsPage = () => {
   const { profile } = useUserProfile();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   const [filteredReports, setFilteredReports] = useState<any[]>([]);
   
   const { 
@@ -25,54 +27,112 @@ const ReportsPage = () => {
     fetchReports
   } = useReports();
 
-  // Handle month change in filter
-  const handleMonthChange = (month: string) => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(parseInt(month));
-    setSelectedDate(newDate);
-    filterReports(newDate);
+  // Extract year and month from report filename
+  const parseReportFilename = (filename: string) => {
+    // Expected format: "ENERO 2025 - REPORTE"
+    const parts = filename.split(' ');
+    if (parts.length >= 2) {
+      const month = parts[0].toUpperCase(); // e.g., "ENERO"
+      const year = parts[1].replace('-', '').trim(); // e.g., "2025"
+      return { month, year };
+    }
+    return null;
   };
 
-  // Handle year change in filter
-  const handleYearChange = (year: string) => {
-    const newDate = new Date(selectedDate);
-    newDate.setFullYear(parseInt(year));
-    setSelectedDate(newDate);
-    filterReports(newDate);
+  // Get list of available years from reports
+  const getAvailableYears = () => {
+    if (!reports || reports.length === 0) return [];
+    
+    const years = new Set<string>();
+    reports.forEach(report => {
+      const parsed = parseReportFilename(report.filename);
+      if (parsed && parsed.year) {
+        years.add(parsed.year);
+      }
+    });
+    
+    return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a)); // Sort years descending
   };
 
-  // Filter reports by date
-  const filterReports = (date: Date) => {
+  // Get list of available months for the selected year
+  const updateAvailableMonths = (year: string | null) => {
+    if (!year || !reports || reports.length === 0) {
+      setAvailableMonths([]);
+      return;
+    }
+
+    const months = new Set<string>();
+    reports.forEach(report => {
+      const parsed = parseReportFilename(report.filename);
+      if (parsed && parsed.year === year) {
+        months.add(parsed.month);
+      }
+    });
+
+    setAvailableMonths(Array.from(months));
+  };
+
+  // Filter reports based on selected year and month
+  const filterReports = () => {
     if (!reports || reports.length === 0) {
       setFilteredReports([]);
       return;
     }
 
-    // Extract month and year from the selected date
-    const selectedMonth = date.getMonth();
-    const selectedYear = date.getFullYear();
+    if (!selectedYear) {
+      setFilteredReports([]);
+      return;
+    }
 
-    // Filter reports based on their creation date (or any date field you have)
-    const filtered = reports.filter(report => {
-      // Assuming report has a created_at field or similar
-      if (!report.created_at) return true; // Include if no date info
+    let filtered = reports.filter(report => {
+      const parsed = parseReportFilename(report.filename);
+      if (!parsed) return false;
 
-      const reportDate = new Date(report.created_at);
-      return reportDate.getMonth() === selectedMonth && 
-             reportDate.getFullYear() === selectedYear;
+      if (selectedYear && selectedMonth) {
+        return parsed.year === selectedYear && parsed.month === selectedMonth;
+      } else if (selectedYear) {
+        return parsed.year === selectedYear;
+      }
+      
+      return true;
     });
 
     setFilteredReports(filtered);
   };
 
-  // Initial filter when reports load
-  useState(() => {
-    if (reports && reports.length > 0) {
-      filterReports(selectedDate);
-    } else {
-      setFilteredReports([]);
+  // Handle year change
+  const handleYearChange = (year: string) => {
+    setSelectedYear(year);
+    setSelectedMonth(null); // Reset month when year changes
+    updateAvailableMonths(year);
+  };
+
+  // Handle month change
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+  };
+
+  // Update filtered reports when selection changes
+  useEffect(() => {
+    filterReports();
+  }, [selectedYear, selectedMonth, reports]);
+
+  // Update available months when reports are loaded
+  useEffect(() => {
+    if (selectedYear) {
+      updateAvailableMonths(selectedYear);
     }
-  });
+  }, [reports, selectedYear]);
+
+  // Determine what to display
+  const getDisplayTitle = () => {
+    if (selectedYear && selectedMonth) {
+      return `Reportes - ${selectedMonth} ${selectedYear}`;
+    } else if (selectedYear) {
+      return `Reportes - ${selectedYear}`;
+    }
+    return "Reportes";
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -81,9 +141,12 @@ const ReportsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
           <ReportDateSelector 
-            selectedDate={selectedDate}
-            onMonthChange={handleMonthChange}
+            availableYears={getAvailableYears()}
+            availableMonths={availableMonths}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
             onYearChange={handleYearChange}
+            onMonthChange={handleMonthChange}
           />
 
           <ReportUploadCard 
@@ -95,11 +158,11 @@ const ReportsPage = () => {
 
         <div className="lg:col-span-3">
           <h2 className="text-xl font-semibold mb-4">
-            Reportes - {format(selectedDate, "MMMM yyyy", { locale: es })}
+            {getDisplayTitle()}
           </h2>
           
           <ReportsList 
-            reports={filteredReports.length > 0 ? filteredReports : reports}
+            reports={filteredReports.length > 0 ? filteredReports : (selectedYear ? [] : reports)}
             isLoading={isLoading} 
             deletingId={deletingId}
             error={error}

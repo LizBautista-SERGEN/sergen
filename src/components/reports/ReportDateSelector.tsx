@@ -1,23 +1,30 @@
 
 import { Calendar } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ReportDateSelectorProps {
-  selectedDate: Date;
-  onMonthChange: (month: string) => void;
+  availableYears: string[];
+  availableMonths: string[];
+  selectedYear: string | null;
+  selectedMonth: string | null;
   onYearChange: (year: string) => void;
+  onMonthChange: (month: string) => void;
 }
 
 export const ReportDateSelector = ({
-  selectedDate,
-  onMonthChange,
-  onYearChange
+  availableYears,
+  availableMonths,
+  selectedYear,
+  selectedMonth,
+  onYearChange,
+  onMonthChange
 }: ReportDateSelectorProps) => {
-  const years = Array.from({ length: 11 }, (_, i) => 2020 + i);
-  const months = Array.from({ length: 12 }, (_, i) => i);
+
+  // Spanish month name mapping (for display purposes)
+  const getMonthName = (month: string) => {
+    return month; // Month names are already in Spanish in the filenames
+  };
 
   return (
     <Card className="p-4 mb-4">
@@ -29,15 +36,15 @@ export const ReportDateSelector = ({
         <div>
           <label className="text-sm font-medium mb-2 block">Año</label>
           <Select
-            value={selectedDate.getFullYear().toString()}
+            value={selectedYear || ""}
             onValueChange={onYearChange}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Seleccionar" />
             </SelectTrigger>
             <SelectContent>
-              {years.map(year => (
-                <SelectItem key={year} value={year.toString()}>
+              {availableYears.map(year => (
+                <SelectItem key={year} value={year}>
                   {year}
                 </SelectItem>
               ))}
@@ -47,18 +54,17 @@ export const ReportDateSelector = ({
         <div>
           <label className="text-sm font-medium mb-2 block">Mes</label>
           <Select
-            value={selectedDate.getMonth().toString()}
+            value={selectedMonth || ""}
             onValueChange={onMonthChange}
+            disabled={!selectedYear || availableMonths.length === 0}
           >
             <SelectTrigger>
-              <SelectValue>
-                {format(selectedDate, 'MMMM', { locale: es })}
-              </SelectValue>
+              <SelectValue placeholder="Seleccionar" />
             </SelectTrigger>
             <SelectContent>
-              {months.map(month => (
-                <SelectItem key={month} value={month.toString()}>
-                  {format(new Date(2024, month, 1), 'MMMM', { locale: es })}
+              {availableMonths.map(month => (
+                <SelectItem key={month} value={month}>
+                  {getMonthName(month)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -66,7 +72,9 @@ export const ReportDateSelector = ({
         </div>
       </div>
       <div className="mt-4 text-center text-sm text-gray-600">
-        Informe seleccionado: {format(selectedDate, 'MMMM yyyy', { locale: es })}
+        {selectedYear && selectedMonth ? 
+          `Reporte seleccionado: ${selectedMonth} ${selectedYear}` : 
+          "Seleccione año y mes para filtrar reportes"}
       </div>
     </Card>
   );

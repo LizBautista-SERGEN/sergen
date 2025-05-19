@@ -115,9 +115,15 @@ export const ContactInfo = ({ profile, onProfileUpdate, readOnly = false }: Cont
         />
       </div>
       {!readOnly && (
-        <Button type="submit" disabled={isUpdating}>
-          {isUpdating ? "Actualizando..." : "Actualizar"}
-        </Button>
+        <div className="flex justify-start mt-2">
+          <Button 
+            type="submit" 
+            disabled={isUpdating} 
+            size="sm"
+          >
+            {isUpdating ? "Actualizando..." : "Actualizar"}
+          </Button>
+        </div>
       )}
     </form>
   );
