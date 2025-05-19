@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { FileIcon, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 import { WaitlistEntry, WaitlistInvoice } from "@/types/waitlist";
 
 const WaitlistPage = () => {
@@ -43,21 +43,17 @@ const WaitlistPage = () => {
     try {
       setLoading(true);
       
-      // Use type assertion for custom tables
-      const supabaseWaitlist = supabase.from("waitlist") as unknown as PostgrestQueryBuilder<any, any, any, any>;
-      
-      // Fetch all waitlist entries
-      const { data: entries, error: entriesError } = await supabaseWaitlist
+      // Use type assertion with any to bypass type checking
+      const { data: entries, error: entriesError } = await (supabase
+        .from("waitlist") as any)
         .select("*")
         .order("created_at", { ascending: false });
       
       if (entriesError) throw entriesError;
       
-      // Use type assertion for custom tables
-      const supabaseWaitlistInvoices = supabase.from("waitlist_invoices") as unknown as PostgrestQueryBuilder<any, any, any, any>;
-      
-      // Fetch all invoices
-      const { data: invoices, error: invoicesError } = await supabaseWaitlistInvoices
+      // Use type assertion with any to bypass type checking
+      const { data: invoices, error: invoicesError } = await (supabase
+        .from("waitlist_invoices") as any)
         .select("*");
       
       if (invoicesError) throw invoicesError;
@@ -85,10 +81,9 @@ const WaitlistPage = () => {
     if (!selectedEntry) return;
     
     try {
-      // Use type assertion for custom tables
-      const supabaseWaitlist = supabase.from("waitlist") as unknown as PostgrestQueryBuilder<any, any, any, any>;
-      
-      const { error } = await supabaseWaitlist
+      // Use type assertion with any to bypass type checking
+      const { error } = await (supabase
+        .from("waitlist") as any)
         .update({
           status: status,
           notes: notes

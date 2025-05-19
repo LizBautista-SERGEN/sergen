@@ -1,10 +1,10 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { PostgrestQueryBuilder } from "@supabase/supabase-js";
 import { WaitlistEntry } from "@/types/waitlist";
 
 interface WaitlistFormProps {
@@ -67,9 +67,9 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
         plan_type: plan,
       };
       
-      // Use type assertion for custom tables
-      const supabaseWaitlist = supabase.from("waitlist") as unknown as PostgrestQueryBuilder<any, any, any, any>;
-      const { data: waitlistEntry, error: waitlistError } = await supabaseWaitlist
+      // Use type assertion with any to bypass type checking
+      const { data: waitlistEntry, error: waitlistError } = await (supabase
+        .from("waitlist") as any)
         .insert(waitlistData)
         .select()
         .single();
@@ -98,9 +98,9 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
           file_path: filePath,
         };
         
-        // Use type assertion for custom tables
-        const supabaseWaitlistInvoices = supabase.from("waitlist_invoices") as unknown as PostgrestQueryBuilder<any, any, any, any>;
-        const { error: invoiceRecordError } = await supabaseWaitlistInvoices
+        // Use type assertion with any to bypass type checking
+        const { error: invoiceRecordError } = await (supabase
+          .from("waitlist_invoices") as any)
           .insert(invoiceData);
         
         if (invoiceRecordError) throw invoiceRecordError;
