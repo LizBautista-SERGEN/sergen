@@ -10,22 +10,23 @@ const plans = [
   {
     id: "basic",
     name: "Plan Básico",
+    price: 1000,
     features: [
-      "Consultoría en Eficiencia Energética",
-      "Análisis de requerimientos energéticos",
-      "Consultoría en Generación Distribuida",
       "Control del perfil de carga eléctrico",
       "Seguimiento del consumo y proyección de energía",
-      "Reportes de evolución de energía"
+      "Reportes de evolución de energía",
+      "Consultoría en Eficiencia Energética"
     ],
-    recommendedFor: "Pequeñas y medianas empresas con consumos mensuales de 0-100,000 KWh."
+    recommendedFor: "Pequeñas y medianas empresas con consumos mensuales de 0-250 MWh."
   },
   {
     id: "advanced",
     name: "Plan Avanzado",
+    price: 1500,
     features: [
       "Consultoría en Eficiencia Energética",
       "Análisis de requerimientos energéticos",
+      "Consultoría en Generación Distribuida",
       "Control del perfil de carga eléctrico",
       "Seguimiento del consumo y proyección de energía",
       "Reportes de evolución de energía",
@@ -33,7 +34,7 @@ const plans = [
       "Análisis del contrato de suministro eléctrico",
       "Gestión del costo de la potencia en horas punta"
     ],
-    recommendedFor: "Medianas y grandes empresas con consumos mensuales superiores a 100,000 KWh."
+    recommendedFor: "Empresas con consumos mensuales superiores a 250 MWh."
   }
 ];
 

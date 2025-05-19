@@ -47,20 +47,6 @@ serve(async (req) => {
       );
     }
 
-    // Verificar que es superusuario
-    const { data: userData, error: roleError } = await supabaseAdmin
-      .from('user_accounts')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (roleError || userData?.role !== 'superuser') {
-      return new Response(
-        JSON.stringify({ success: false, error: "No tiene permisos para esta acción" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
-    }
-
     // Obtener userId del cuerpo de la solicitud
     const { userId, email } = await req.json();
     

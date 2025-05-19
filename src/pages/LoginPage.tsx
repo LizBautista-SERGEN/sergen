@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 const LoginPage = () => {
   const navigate = useNavigate();
   const [redirecting, setRedirecting] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const {
     email,
     setEmail,
@@ -35,6 +36,7 @@ const LoginPage = () => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
+        setCheckingSession(true);
         const { data } = await supabase.auth.getSession();
         
         // Only redirect if there's an active session
@@ -44,19 +46,32 @@ const LoginPage = () => {
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
+      } finally {
+        setCheckingSession(false);
       }
     };
 
     checkAuthStatus();
   }, [navigate]);
 
-  // Don't render the login form if we're redirecting
+  // Don't render the login form if we're redirecting or still checking session
   if (redirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-t-sergen-500 border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Redirigiendo a la plataforma...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-t-sergen-500 border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando sesión...</p>
         </div>
       </div>
     );

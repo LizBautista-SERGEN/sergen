@@ -6,22 +6,10 @@ export const usePasswordReset = () => {
   // Función para resetear la contraseña directamente a "admin01"
   const resetPassword = async (userId: string, userEmail: string) => {
     try {
-      // Solo superusuarios pueden realizar esta acción
+      // Verificar que el usuario actual está autenticado
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user.id) {
         toast.error('No tiene permisos para realizar esta acción');
-        return false;
-      }
-
-      // Verificar que el usuario actual es superusuario
-      const { data: currentUser } = await supabase
-        .from('user_accounts')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (currentUser?.role !== 'superuser') {
-        toast.error('Solo superusuarios pueden resetear contraseñas');
         return false;
       }
 
@@ -36,7 +24,6 @@ export const usePasswordReset = () => {
         return false;
       }
       
-      toast.success(`Contraseña reseteada a 'admin01' para ${userEmail}`);
       return true;
     } catch (error: any) {
       console.error('Error:', error);

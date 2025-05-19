@@ -12,11 +12,13 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const isInDashboard = location.pathname.startsWith('/perfil') || 
-                       location.pathname.startsWith('/servicios/control') || 
-                       location.pathname.startsWith('/reportes') || 
-                       location.pathname.startsWith('/configuracion') ||
-                       location.pathname.startsWith('/lista-espera');
+  
+  // Check if the current path is part of the platform
+  const isPlatformRoute = location.pathname.startsWith('/perfil') || 
+                         location.pathname.startsWith('/servicios/control') || 
+                         location.pathname.startsWith('/reportes') || 
+                         location.pathname.startsWith('/configuracion') ||
+                         location.pathname.startsWith('/lista-espera');
 
   useEffect(() => {
     checkAuth();
@@ -67,8 +69,8 @@ const Navbar = () => {
     { text: "Contacto", href: "/contacto" },
   ];
 
-  // Only show dashboard link if user is logged in
-  const dashboardMenuItems = isLoggedIn ? [
+  // Only show dashboard link if user is logged in AND not already in platform routes
+  const dashboardMenuItems = isLoggedIn && !isPlatformRoute ? [
     { text: "Mi Plataforma", href: "/perfil" }
   ] : [];
 

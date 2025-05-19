@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 interface PlanType {
   id: string;
   name: string;
+  price: number;
   features: string[];
   recommendedFor: string;
 }
@@ -20,6 +21,12 @@ export const SubscriptionPlanCard = ({ plan, onSelect }: SubscriptionPlanCardPro
     <Card className="flex flex-col h-full border-2 hover:border-sergen-500 transition-colors">
       <CardHeader className="bg-sergen-50/50">
         <CardTitle className="text-xl font-bold text-center">{plan.name}</CardTitle>
+        <div className="mt-4 text-center">
+          <div className="text-3xl font-bold text-sergen-600">
+            ${plan.price}
+            <span className="text-lg font-normal text-gray-500">/mes</span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 pt-6">
         <ul className="space-y-3">

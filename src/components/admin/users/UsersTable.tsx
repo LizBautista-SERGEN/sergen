@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
+import { usePasswordReset } from "./hooks/usePasswordReset";
 
 export interface User {
   id: string;
@@ -35,6 +36,7 @@ interface UsersTableProps {
 
 export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const { resetPassword } = usePasswordReset();
 
   const handleToggleAccess = async (userId: string, currentAccess: boolean) => {
     try {
@@ -55,6 +57,18 @@ export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) =>
     } catch (error: any) {
       console.error('Error:', error);
       toast.error('Error al actualizar acceso: ' + error.message);
+    }
+  };
+
+  const handleResetPassword = async (userId: string, userEmail: string) => {
+    try {
+      const success = await resetPassword(userId, userEmail);
+      if (success) {
+        toast.success(`Contraseña actualizada a 'admin01' para ${userEmail}`);
+      }
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast.error(`Error al restablecer contraseña: ${error.message}`);
     }
   };
 
@@ -145,6 +159,15 @@ export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) =>
                 >
                   {user.has_access ? 'Suspender' : 'Activar'}
                 </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleResetPassword(user.id, user.email)}
+                >
+                  Restablecer
+                </Button>
+                
                 {user.role !== 'superuser' && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
