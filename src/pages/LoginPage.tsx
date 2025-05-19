@@ -6,8 +6,12 @@ import { RegisterForm } from "@/components/auth/RegisterForm";
 import { useAuthForms } from "@/hooks/useAuthForms";
 import { cn } from "@/lib/utils";
 import { SubscriptionPlansModal } from "@/components/subscription/SubscriptionPlansModal";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const [redirecting, setRedirecting] = useState(false);
   const {
     email,
     setEmail,
@@ -27,9 +31,36 @@ const LoginPage = () => {
 
   const [showPlans, setShowPlans] = useState(false);
 
+  // Check if user is already logged in
   useEffect(() => {
-    checkSession();
-  }, []);
+    const checkAuthStatus = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        
+        // Only redirect if there's an active session
+        if (data.session) {
+          setRedirecting(true);
+          navigate('/servicios/control');
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      }
+    };
+
+    checkAuthStatus();
+  }, [navigate]);
+
+  // Don't render the login form if we're redirecting
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-t-sergen-500 border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirigiendo a la plataforma...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

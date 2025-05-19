@@ -55,9 +55,6 @@ export const useAuthForms = () => {
         return;
       }
 
-      // Cerrar cualquier sesión anterior para evitar conflictos
-      await supabase.auth.signOut();
-
       console.log('Intentando iniciar sesión con:', trimmedEmail);
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,

@@ -41,7 +41,52 @@ export const useAuth = () => {
   useEffect(() => {
     let mounted = true;
     
-    // Función para obtener la sesión inicial
+    // Set up auth state listener FIRST to prevent missing auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        console.log('Auth state change:', _event);
+        
+        if (mounted) {
+          setSession(session);
+        
+          if (_event === 'SIGNED_OUT') {
+            setIsSuperUser(false);
+            // Remove immediate auto-navigation to prevent infinite loops if logout is triggered from login page
+            if (window.location.pathname !== '/login') {
+              navigate('/login');
+            }
+          } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
+            if (session?.user) {
+              // We use setTimeout to avoid deadlock with other Supabase calls
+              setTimeout(async () => {
+                try {
+                  // Verificar si es superuser
+                  const isSuperUserResult = await checkUserRole(session.user.id);
+                  setIsSuperUser(isSuperUserResult);
+                  
+                  // Actualizamos el último login directamente en user_accounts
+                  supabase
+                    .from('user_accounts')
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq('id', session.user.id)
+                    .then(({ error }) => {
+                      if (error) {
+                        console.error('Error updating timestamp:', error);
+                      }
+                    });
+                } catch (err) {
+                  console.error('Error in update attempt:', err);
+                }
+              }, 0);
+            }
+          }
+          
+          setLoading(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
     const getInitialSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -72,52 +117,6 @@ export const useAuth = () => {
 
     getInitialSession();
     
-    // Configurar el listener para cambios de sesión
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        console.log('Auth state change:', _event);
-        
-        if (mounted) {
-          setSession(session);
-        
-          if (_event === 'SIGNED_OUT') {
-            setIsSuperUser(false);
-            navigate('/login');
-          } else if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
-            if (session?.user) {
-              // Verificar si es superuser
-              const isSuperUserResult = await checkUserRole(session.user.id);
-              setIsSuperUser(isSuperUserResult);
-              
-              if (!isSuperUserResult) {
-                navigate('/servicios/control');
-              }
-              
-              // Actualizamos el último login directamente en user_accounts
-              setTimeout(() => {
-                try {
-                  // Using an update object without 'last_login'
-                  supabase
-                    .from('user_accounts')
-                    .update({ updated_at: new Date().toISOString() })
-                    .eq('id', session.user.id)
-                    .then(({ error }) => {
-                      if (error) {
-                        console.error('Error updating timestamp:', error);
-                      }
-                    });
-                } catch (err) {
-                  console.error('Error in update attempt:', err);
-                }
-              }, 0);
-            }
-          }
-          
-          setLoading(false);
-        }
-      }
-    );
-
     // Cleanup function
     return () => {
       mounted = false;
