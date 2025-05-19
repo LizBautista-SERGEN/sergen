@@ -6,6 +6,7 @@ export interface Report extends Document {
   id: string;
   filename: string;
   file_path: string;
+  created_at: string; // Add the missing created_at field
 }
 
 export const useReports = () => {
