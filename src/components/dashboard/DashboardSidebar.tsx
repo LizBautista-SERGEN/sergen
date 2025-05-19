@@ -57,7 +57,7 @@ export const DashboardSidebar = () => {
 
   if (isLoading) {
     return (
-      <div className="h-full min-w-[280px] flex-shrink-0 bg-white border-r border-gray-200 fixed top-16 left-0 z-40">
+      <div className="h-[calc(100vh-64px)] min-w-[280px] flex-shrink-0 bg-white border-r border-gray-200 fixed top-16 left-0 z-40 overflow-y-auto">
         <div className="flex justify-center items-center h-full">
           <div className="w-8 h-8 border-4 border-t-sergen-500 border-gray-200 rounded-full animate-spin"></div>
         </div>
@@ -66,8 +66,8 @@ export const DashboardSidebar = () => {
   }
 
   return (
-    <div className="h-full min-w-[280px] flex-shrink-0 bg-white border-r border-gray-200 fixed top-16 left-0 z-40">
-      <div className="flex flex-col flex-1 overflow-y-auto px-4 py-6">
+    <div className="h-[calc(100vh-64px)] min-w-[280px] flex-shrink-0 bg-white border-r border-gray-200 fixed top-16 left-0 z-40 overflow-y-auto">
+      <div className="flex flex-col flex-1 px-4 py-6">
         <div className="mt-8 flex flex-col gap-4">
           {links.map((link, idx) => (
             <SidebarLink 

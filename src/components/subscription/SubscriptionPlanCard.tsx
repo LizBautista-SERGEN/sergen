@@ -22,7 +22,7 @@ export const SubscriptionPlanCard = ({ plan, onSelect }: SubscriptionPlanCardPro
       <CardHeader className="bg-sergen-50/50">
         <CardTitle className="text-xl font-bold text-center">{plan.name}</CardTitle>
         <div className="mt-4 text-center">
-          <div className="text-3xl font-bold text-sergen-600">
+          <div className="text-3xl font-bold text-[#FF7A00]">
             ${plan.price}
             <span className="text-lg font-normal text-gray-500">/mes</span>
           </div>
