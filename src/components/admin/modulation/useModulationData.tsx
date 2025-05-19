@@ -14,7 +14,7 @@ export const useModulationData = () => {
   const startDate = startOfYear(new Date(2025, 0, 1)); // January 2025
   
   const [selectedDate, setSelectedDate] = useState<Date>(today > startDate ? today : startDate);
-  const [selectedMonth, setSelectedMonth] = useState<Date>(startDate); // Start from January 2025
+  const [selectedMonth, setSelectedMonth] = useState<Date>(today > startDate ? today : startDate); // Changed to default to current month
   const [modulationData, setModulationData] = useState<ModulationDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
