@@ -9,6 +9,9 @@ interface PageMetrics {
 }
 
 export const useMetricsData = () => {
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+  const [timeFilter, setTimeFilter] = useState("month"); // For simple time filter dropdown
   const [timeRange, setTimeRange] = useState("month");
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
   const [year, setYear] = useState(new Date().getFullYear().toString());
@@ -16,7 +19,7 @@ export const useMetricsData = () => {
   const [week, setWeek] = useState("1");
   const [userVisits, setUserVisits] = useState<UserMetrics[]>([]);
   const [generalData, setGeneralData] = useState<PageMetrics[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<UserMetrics[]>([]);
 
   // Generate available years, months, and weeks
   const years = Array.from({length: 5}, (_, i) => (new Date().getFullYear() - 2 + i).toString());
@@ -25,7 +28,7 @@ export const useMetricsData = () => {
 
   useEffect(() => {
     fetchMetricsData();
-  }, [period, year, month, week]);
+  }, [period, year, month, week, timeFilter]);
 
   const fetchMetricsData = async () => {
     setLoading(true);
@@ -112,6 +115,7 @@ export const useMetricsData = () => {
       
       setGeneralData(pageData);
       setUserVisits(userData);
+      setUsers(userData); // Set the users state
       
     } catch (error) {
       console.error("Error fetching metrics:", error);
@@ -127,6 +131,11 @@ export const useMetricsData = () => {
   const avgTime = userVisits.reduce((sum, user) => sum + user.avgTimeMin, 0) / (activeUsers || 1);
 
   return {
+    isLoading: loading,
+    activeTab,
+    setActiveTab,
+    timeFilter,
+    setTimeFilter,
     period,
     setPeriod,
     year,
@@ -138,6 +147,7 @@ export const useMetricsData = () => {
     years,
     months,
     weeks,
+    users,
     userVisits,
     generalData,
     loading,
