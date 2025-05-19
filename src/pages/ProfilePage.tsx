@@ -11,16 +11,18 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileCard } from "@/components/profile/ProfileCard";
 import InvoicesTab from "@/components/profile/InvoicesTab";
 import ContractsTab from "@/components/profile/ContractsTab";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { ContactInfo } from "@/components/profile/ContactInfo";
 
 const ProfilePage = () => {
   const { toast } = useToast();
   const { profile, isLoading, error, refetchProfile } = useUserProfile();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState("datos-usuario");
   const [contractExpirationDate, setContractExpirationDate] = useState<Date | undefined>(undefined);
 
   // Update the contract expiration date when profile loads or changes
@@ -97,55 +99,6 @@ const ProfilePage = () => {
     }
   };
 
-  const handleContactUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating(true);
-    
-    const form = e.target as HTMLFormElement;
-    const formData = {
-      contact_name: form.contact_name.value,
-      position: form.position.value,
-      corporate_email: form.corporate_email.value,
-      phone: form.phone.value,
-    };
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          title: "Error",
-          description: "Debes iniciar sesión para actualizar el perfil",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('user_accounts')
-        .update(formData)
-        .eq('id', session.user.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: "Datos de contacto actualizados correctamente",
-      });
-
-      refetchProfile();
-    } catch (error) {
-      console.error('Error updating contact info:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron actualizar los datos de contacto",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-gray-50 pt-8">
@@ -187,7 +140,7 @@ const ProfilePage = () => {
 
           {/* Tabs */}
           <div className="flex-1">
-            <Tabs defaultValue="datos-usuario" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full justify-start">
                 <TabsTrigger value="datos-usuario">Datos de usuario</TabsTrigger>
                 <TabsTrigger value="datos-contacto">Datos de contacto</TabsTrigger>
@@ -277,39 +230,7 @@ const ProfilePage = () => {
               </TabsContent>
 
               <TabsContent value="datos-contacto" className="mt-6">
-                <form onSubmit={handleContactUpdate} className="space-y-4">
-                  <div>
-                    <label className="font-semibold mb-2 block">Nombres y apellidos:</label>
-                    <Input 
-                      name="contact_name" 
-                      defaultValue={profile?.contact_name || ""} 
-                    />
-                  </div>
-                  <div>
-                    <label className="font-semibold mb-2 block">Cargo:</label>
-                    <Input 
-                      name="position" 
-                      defaultValue={profile?.position || ""} 
-                    />
-                  </div>
-                  <div>
-                    <label className="font-semibold mb-2 block">Correo corporativo:</label>
-                    <Input 
-                      name="corporate_email" 
-                      defaultValue={profile?.corporate_email || ""} 
-                    />
-                  </div>
-                  <div>
-                    <label className="font-semibold mb-2 block">Celular:</label>
-                    <Input 
-                      name="phone" 
-                      defaultValue={profile?.phone || ""} 
-                    />
-                  </div>
-                  <Button type="submit" disabled={isUpdating}>
-                    {isUpdating ? "Actualizando..." : "Actualizar contacto"}
-                  </Button>
-                </form>
+                <ContactInfo profile={profile} onProfileUpdate={refetchProfile} />
               </TabsContent>
 
               <TabsContent value="facturas" className="mt-6">
