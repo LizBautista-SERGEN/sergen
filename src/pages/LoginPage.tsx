@@ -13,6 +13,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [redirecting, setRedirecting] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [shouldCheckSession, setShouldCheckSession] = useState(true);
   const {
     email,
     setEmail,
@@ -37,12 +38,16 @@ const LoginPage = () => {
     const checkAuthStatus = async () => {
       try {
         setCheckingSession(true);
-        const { data } = await supabase.auth.getSession();
         
-        // Only redirect if there's an active session
-        if (data.session) {
-          setRedirecting(true);
-          navigate('/servicios/control');
+        // Only check session if shouldCheckSession is true
+        if (shouldCheckSession) {
+          const { data } = await supabase.auth.getSession();
+          
+          // Only redirect if there's an active session
+          if (data.session) {
+            setRedirecting(true);
+            navigate('/perfil');
+          }
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
@@ -52,7 +57,13 @@ const LoginPage = () => {
     };
 
     checkAuthStatus();
-  }, [navigate]);
+  }, [navigate, shouldCheckSession]);
+
+  // Add a handler for the Login button to prevent auto-redirect
+  const handleShowLoginForm = () => {
+    // Disable session check when showing login form
+    setShouldCheckSession(false);
+  };
 
   // Don't render the login form if we're redirecting or still checking session
   if (redirecting) {
@@ -115,7 +126,7 @@ const LoginPage = () => {
           
           <Tabs defaultValue="login" className="w-full">
             <TabsList className={cn("grid w-full grid-cols-2 mb-6", "hidden")}>
-              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+              <TabsTrigger value="login" onClick={handleShowLoginForm}>Iniciar Sesión</TabsTrigger>
               <TabsTrigger value="register">Registrarse</TabsTrigger>
             </TabsList>
 

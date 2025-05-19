@@ -61,15 +61,7 @@ export const UsersTable = ({ users, loading, refreshUsers }: UsersTableProps) =>
   };
 
   const handleResetPassword = async (userId: string, userEmail: string) => {
-    try {
-      const success = await resetPassword(userId, userEmail);
-      if (success) {
-        toast.success(`Contraseña actualizada a 'admin01' para ${userEmail}`);
-      }
-    } catch (error: any) {
-      console.error('Error:', error);
-      toast.error(`Error al restablecer contraseña: ${error.message}`);
-    }
+    await resetPassword(userId, userEmail);
   };
 
   const handleDeleteUser = async () => {

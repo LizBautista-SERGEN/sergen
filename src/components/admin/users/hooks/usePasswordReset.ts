@@ -24,6 +24,7 @@ export const usePasswordReset = () => {
         return false;
       }
       
+      toast.success(`Contraseña actualizada a 'admin01' para ${userEmail}`);
       return true;
     } catch (error: any) {
       console.error('Error:', error);
