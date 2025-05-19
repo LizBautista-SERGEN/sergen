@@ -84,6 +84,48 @@ export const useWaitlistPage = () => {
       toast.error("Error al actualizar la información: " + error.message);
     }
   };
+  
+  const deleteWaitlistEntry = async (entryId: string) => {
+    if (!confirm("¿Está seguro que desea eliminar este registro? Esta acción no se puede deshacer.")) {
+      return;
+    }
+    
+    try {
+      // First delete associated invoices
+      if (invoicesMap[entryId] && invoicesMap[entryId].length > 0) {
+        const { error: invoicesError } = await supabase
+          .from("waitlist_invoices")
+          .delete()
+          .eq("waitlist_id", entryId);
+          
+        if (invoicesError) {
+          throw invoicesError;
+        }
+      }
+      
+      // Then delete the waitlist entry
+      const { error } = await supabase
+        .from("waitlist")
+        .delete()
+        .eq("id", entryId);
+        
+      if (error) throw error;
+      
+      toast.success("Registro eliminado correctamente");
+      
+      // Update the local state
+      setWaitlistEntries(waitlistEntries.filter(entry => entry.id !== entryId));
+      
+      // Clear invoices for deleted entry
+      const updatedInvoicesMap = { ...invoicesMap };
+      delete updatedInvoicesMap[entryId];
+      setInvoicesMap(updatedInvoicesMap);
+      
+    } catch (error: any) {
+      console.error("Error deleting waitlist entry:", error);
+      toast.error("Error al eliminar el registro: " + error.message);
+    }
+  };
 
   const downloadInvoice = async (filePath: string, fileName: string) => {
     try {
@@ -126,6 +168,7 @@ export const useWaitlistPage = () => {
     setShowInvoices,
     selectedWaitlistId,
     updateWaitlistEntry,
+    deleteWaitlistEntry,
     downloadInvoice,
     viewInvoices
   };

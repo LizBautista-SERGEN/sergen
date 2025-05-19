@@ -1,6 +1,5 @@
 
-import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { UserMetricsTab } from "./UserMetricsTab";
 import { GeneralMetricsTab } from "./GeneralMetricsTab";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -44,37 +43,41 @@ export const MetricsTabs = () => {
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="users">Usuarios</TabsTrigger>
           </TabsList>
+          
+          <MetricsTimeFilter
+            period={period}
+            setPeriod={setPeriod}
+            year={year}
+            setYear={setYear}
+            month={month}
+            setMonth={setMonth}
+            week={week}
+            setWeek={setWeek}
+            years={years}
+            months={months}
+            weeks={weeks}
+          />
+
+          {isLoading ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              <TabsContent value="general">
+                <GeneralMetricsTab
+                  generalData={generalData}
+                  totalVisits={totalVisits}
+                  activeUsers={activeUsers}
+                  avgTime={avgTime}
+                />
+              </TabsContent>
+              
+              <TabsContent value="users">
+                <UserMetricsTab users={users} />
+              </TabsContent>
+            </>
+          )}
         </Tabs>
       </div>
-
-      <MetricsTimeFilter
-        period={period}
-        setPeriod={setPeriod}
-        year={year}
-        setYear={setYear}
-        month={month}
-        setMonth={setMonth}
-        week={week}
-        setWeek={setWeek}
-        years={years}
-        months={months}
-        weeks={weeks}
-      />
-
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : (
-        <>
-          <GeneralMetricsTab
-            generalData={generalData}
-            totalVisits={totalVisits}
-            activeUsers={activeUsers}
-            avgTime={avgTime}
-          />
-          
-          <UserMetricsTab users={users} />
-        </>
-      )}
     </div>
   );
 };

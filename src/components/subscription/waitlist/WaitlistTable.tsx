@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileIcon } from "lucide-react";
+import { TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { FileIcon, Trash2 } from "lucide-react";
 import { WaitlistEntry } from "@/types/waitlist";
 
 interface WaitlistTableProps {
@@ -11,6 +11,7 @@ interface WaitlistTableProps {
   setSelectedEntry: (entry: WaitlistEntry) => void;
   setStatus: (status: string) => void;
   setNotes: (notes: string) => void;
+  deleteEntry?: (entryId: string) => void;
 }
 
 export const WaitlistTable = ({
@@ -19,7 +20,8 @@ export const WaitlistTable = ({
   viewInvoices,
   setSelectedEntry,
   setStatus,
-  setNotes
+  setNotes,
+  deleteEntry
 }: WaitlistTableProps) => {
   const getPlanName = (planType: string) => {
     return planType === "basic" ? "Plan Básico" : "Plan Avanzado";
@@ -29,7 +31,7 @@ export const WaitlistTable = ({
     <TableBody>
       {waitlistEntries.length === 0 ? (
         <TableRow>
-          <TableCell colSpan={9} className="text-center py-6">
+          <TableCell colSpan={10} className="text-center py-6">
             No hay registros en la lista de espera
           </TableCell>
         </TableRow>
@@ -66,17 +68,29 @@ export const WaitlistTable = ({
               </Button>
             </TableCell>
             <TableCell>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setSelectedEntry(entry);
-                  setStatus(entry.status);
-                  setNotes(entry.notes || "");
-                }}
-              >
-                Editar
-              </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedEntry(entry);
+                    setStatus(entry.status);
+                    setNotes(entry.notes || "");
+                  }}
+                >
+                  Editar
+                </Button>
+                
+                {deleteEntry && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteEntry(entry.id)}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                )}
+              </div>
             </TableCell>
           </TableRow>
         ))

@@ -21,6 +21,7 @@ const WaitlistPage = () => {
     setShowInvoices,
     selectedWaitlistId,
     updateWaitlistEntry,
+    deleteWaitlistEntry,
     downloadInvoice,
     viewInvoices
   } = useWaitlistPage();
@@ -58,6 +59,7 @@ const WaitlistPage = () => {
                   setSelectedEntry={setSelectedEntry}
                   setStatus={setStatus}
                   setNotes={setNotes}
+                  deleteEntry={deleteWaitlistEntry}
                 />
               </Table>
             </CardContent>

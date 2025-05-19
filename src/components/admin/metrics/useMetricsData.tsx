@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { UserMetrics } from "./MetricsUserTable";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PageMetrics {
   page: string;
@@ -12,7 +13,6 @@ export const useMetricsData = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   const [timeFilter, setTimeFilter] = useState("month"); // For simple time filter dropdown
-  const [timeRange, setTimeRange] = useState("month");
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
@@ -33,11 +33,16 @@ export const useMetricsData = () => {
   const fetchMetricsData = async () => {
     setLoading(true);
     try {
-      // In a real app, this would be a fetch from your backend
-      // For now, we'll simulate with static data but with different values based on filters
-      
-      // This would be replaced with real API calls
-      // Example: const { data, error } = await supabase.from('user_metrics').select('*');
+      // Attempt to fetch real metrics data from the database
+      const { data: realUserMetrics, error: userError } = await supabase
+        .from('user_accounts')
+        .select('id, email')
+        .order('email');
+
+      if (userError) {
+        console.error("Error fetching real user metrics:", userError);
+        // If there's an error, we'll fall back to simulated data
+      }
       
       // Simulated data - in a real app, you would filter on the backend
       let multiplier = 1;
@@ -67,57 +72,71 @@ export const useMetricsData = () => {
         { page: "Perfil", visits: Math.round(60 * multiplier * (1 + offset)) },
       ];
       
-      // Generate user metrics data with string IDs instead of number IDs
-      const userData: UserMetrics[] = [
-        { 
-          id: "1", 
-          email: "usuario1@sergen.pe", 
-          lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 1).toString().padStart(2, '0')}`, 
-          pageViews: Math.round(42 * (1 + offset)), 
-          avgTimeMin: parseFloat((5.2 * (1 + offset * 0.5)).toFixed(1)) 
-        },
-        { 
-          id: "2", 
-          email: "usuario2@sergen.pe", 
-          lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 3).toString().padStart(2, '0')}`, 
-          pageViews: Math.round(36 * (1 + offset)), 
-          avgTimeMin: parseFloat((4.7 * (1 + offset * 0.5)).toFixed(1)) 
-        },
-        { 
-          id: "3", 
-          email: "usuario3@sergen.pe", 
-          lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 5).toString().padStart(2, '0')}`,
-          pageViews: Math.round(21 * (1 + offset)), 
-          avgTimeMin: parseFloat((2.5 * (1 + offset * 0.5)).toFixed(1)) 
-        },
-        { 
-          id: "4", 
-          email: "victoria_bautista@sergen.pe", 
-          lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 2).toString().padStart(2, '0')}`, 
-          pageViews: Math.round(58 * (1 + offset)), 
-          avgTimeMin: parseFloat((7.1 * (1 + offset * 0.5)).toFixed(1)) 
-        },
-        { 
-          id: "5", 
-          email: "carlos.martinez@sergen.pe", 
-          lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 7).toString().padStart(2, '0')}`, 
-          pageViews: Math.round(15 * (1 + offset)), 
-          avgTimeMin: parseFloat((3.2 * (1 + offset * 0.5)).toFixed(1)) 
-        },
-        { 
-          id: "6", 
-          email: "admin@sergen.com.pe", 
-          lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 4).toString().padStart(2, '0')}`, 
-          pageViews: Math.round(72 * (1 + offset)), 
-          avgTimeMin: parseFloat((8.3 * (1 + offset * 0.5)).toFixed(1)) 
-        },
-      ];
+      // Generate user metrics data based on real users if available, otherwise use sample data
+      let userData: UserMetrics[] = [];
+      
+      if (realUserMetrics && realUserMetrics.length > 0) {
+        // Use real user emails but simulated metrics
+        userData = realUserMetrics.map((user, index) => ({
+          id: user.id,
+          email: user.email,
+          lastVisit: `2023-${month.padStart(2, '0')}-${((index + 1) % 28 + 1).toString().padStart(2, '0')}`,
+          pageViews: Math.round((40 + index * 5) * (1 + offset)),
+          avgTimeMin: parseFloat(((4 + index * 0.5) * (1 + offset * 0.5)).toFixed(1))
+        }));
+      } else {
+        // Fallback to sample user data
+        userData = [
+          { 
+            id: "1", 
+            email: "usuario1@sergen.pe", 
+            lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 1).toString().padStart(2, '0')}`, 
+            pageViews: Math.round(42 * (1 + offset)), 
+            avgTimeMin: parseFloat((5.2 * (1 + offset * 0.5)).toFixed(1)) 
+          },
+          { 
+            id: "2", 
+            email: "usuario2@sergen.pe", 
+            lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 3).toString().padStart(2, '0')}`, 
+            pageViews: Math.round(36 * (1 + offset)), 
+            avgTimeMin: parseFloat((4.7 * (1 + offset * 0.5)).toFixed(1)) 
+          },
+          { 
+            id: "3", 
+            email: "usuario3@sergen.pe", 
+            lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 5).toString().padStart(2, '0')}`,
+            pageViews: Math.round(21 * (1 + offset)), 
+            avgTimeMin: parseFloat((2.5 * (1 + offset * 0.5)).toFixed(1)) 
+          },
+          { 
+            id: "4", 
+            email: "victoria_bautista@sergen.pe", 
+            lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 2).toString().padStart(2, '0')}`, 
+            pageViews: Math.round(58 * (1 + offset)), 
+            avgTimeMin: parseFloat((7.1 * (1 + offset * 0.5)).toFixed(1)) 
+          },
+          { 
+            id: "5", 
+            email: "carlos.martinez@sergen.pe", 
+            lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 7).toString().padStart(2, '0')}`, 
+            pageViews: Math.round(15 * (1 + offset)), 
+            avgTimeMin: parseFloat((3.2 * (1 + offset * 0.5)).toFixed(1)) 
+          },
+          { 
+            id: "6", 
+            email: "admin@sergen.com.pe", 
+            lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 4).toString().padStart(2, '0')}`, 
+            pageViews: Math.round(72 * (1 + offset)), 
+            avgTimeMin: parseFloat((8.3 * (1 + offset * 0.5)).toFixed(1)) 
+          },
+        ];
+      }
       
       setGeneralData(pageData);
       setUserVisits(userData);
       setUsers(userData); // Set the users state
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching metrics:", error);
       toast.error("Error al cargar métricas");
     } finally {
