@@ -826,6 +826,77 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist: {
+        Row: {
+          company_name: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string
+          plan_type: string
+          position: string
+          status: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone: string
+          plan_type: string
+          position: string
+          status?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string
+          plan_type?: string
+          position?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      waitlist_invoices: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          waitlist_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          waitlist_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          waitlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_invoices_waitlist_id_fkey"
+            columns: ["waitlist_id"]
+            isOneToOne: false
+            referencedRelation: "waitlist"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

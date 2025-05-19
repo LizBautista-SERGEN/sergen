@@ -1,8 +1,7 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -23,27 +22,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { FileIcon, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-interface WaitlistEntry {
-  id: string;
-  full_name: string;
-  company_name: string;
-  position: string;
-  email: string;
-  phone: string;
-  plan_type: string;
-  created_at: string;
-  status: string;
-  notes: string | null;
-}
-
-interface WaitlistInvoice {
-  id: string;
-  waitlist_id: string;
-  file_name: string;
-  file_path: string;
-  created_at: string;
-}
+import { PostgrestQueryBuilder } from "@supabase/supabase-js";
+import { WaitlistEntry, WaitlistInvoice } from "@/types/waitlist";
 
 const WaitlistPage = () => {
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
@@ -63,23 +43,27 @@ const WaitlistPage = () => {
     try {
       setLoading(true);
       
+      // Use type assertion for custom tables
+      const supabaseWaitlist = supabase.from("waitlist") as unknown as PostgrestQueryBuilder<any, any, any, any>;
+      
       // Fetch all waitlist entries
-      const { data: entries, error: entriesError } = await (supabase
-        .from("waitlist") as any)
+      const { data: entries, error: entriesError } = await supabaseWaitlist
         .select("*")
         .order("created_at", { ascending: false });
       
       if (entriesError) throw entriesError;
       
+      // Use type assertion for custom tables
+      const supabaseWaitlistInvoices = supabase.from("waitlist_invoices") as unknown as PostgrestQueryBuilder<any, any, any, any>;
+      
       // Fetch all invoices
-      const { data: invoices, error: invoicesError } = await (supabase
-        .from("waitlist_invoices") as any)
+      const { data: invoices, error: invoicesError } = await supabaseWaitlistInvoices
         .select("*");
       
       if (invoicesError) throw invoicesError;
       
       // Group invoices by waitlist_id
-      const invoicesByWaitlistId = invoices ? invoices.reduce<Record<string, WaitlistInvoice[]>>((acc, invoice: any) => {
+      const invoicesByWaitlistId = invoices ? invoices.reduce((acc: Record<string, WaitlistInvoice[]>, invoice: any) => {
         if (!acc[invoice.waitlist_id]) {
           acc[invoice.waitlist_id] = [];
         }
@@ -101,8 +85,10 @@ const WaitlistPage = () => {
     if (!selectedEntry) return;
     
     try {
-      const { error } = await (supabase
-        .from("waitlist") as any)
+      // Use type assertion for custom tables
+      const supabaseWaitlist = supabase.from("waitlist") as unknown as PostgrestQueryBuilder<any, any, any, any>;
+      
+      const { error } = await supabaseWaitlist
         .update({
           status: status,
           notes: notes

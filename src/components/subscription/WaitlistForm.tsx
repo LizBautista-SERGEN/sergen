@@ -1,23 +1,15 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PostgrestQueryBuilder } from "@supabase/supabase-js";
+import { WaitlistEntry } from "@/types/waitlist";
 
 interface WaitlistFormProps {
   plan: string;
   onComplete: () => void;
-}
-
-interface WaitlistEntry {
-  full_name: string;
-  company_name: string;
-  position: string;
-  email: string;
-  phone: string;
-  plan_type: string;
 }
 
 export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
@@ -65,8 +57,8 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
     try {
       setLoading(true);
       
-      // 1. Insert into waitlist table with custom typing
-      const waitlistData: WaitlistEntry = {
+      // 1. Insert into waitlist table
+      const waitlistData: Omit<WaitlistEntry, 'id' | 'created_at' | 'status' | 'notes'> = {
         full_name: fullName,
         company_name: companyName,
         position,
@@ -75,9 +67,9 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
         plan_type: plan,
       };
       
-      // Use type assertion to bypass TypeScript type checking for our custom tables
-      const { data: waitlistEntry, error: waitlistError } = await (supabase
-        .from("waitlist") as any)
+      // Use type assertion for custom tables
+      const supabaseWaitlist = supabase.from("waitlist") as unknown as PostgrestQueryBuilder<any, any, any, any>;
+      const { data: waitlistEntry, error: waitlistError } = await supabaseWaitlist
         .insert(waitlistData)
         .select()
         .single();
@@ -106,9 +98,9 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
           file_path: filePath,
         };
         
-        // Use type assertion again
-        const { error: invoiceRecordError } = await (supabase
-          .from("waitlist_invoices") as any)
+        // Use type assertion for custom tables
+        const supabaseWaitlistInvoices = supabase.from("waitlist_invoices") as unknown as PostgrestQueryBuilder<any, any, any, any>;
+        const { error: invoiceRecordError } = await supabaseWaitlistInvoices
           .insert(invoiceData);
         
         if (invoiceRecordError) throw invoiceRecordError;
