@@ -1,0 +1,86 @@
+
+import { Button } from "@/components/ui/button";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FileIcon } from "lucide-react";
+import { WaitlistEntry } from "@/types/waitlist";
+
+interface WaitlistTableProps {
+  waitlistEntries: WaitlistEntry[];
+  invoicesMap: Record<string, any[]>;
+  viewInvoices: (waitlistId: string) => void;
+  setSelectedEntry: (entry: WaitlistEntry) => void;
+  setStatus: (status: string) => void;
+  setNotes: (notes: string) => void;
+}
+
+export const WaitlistTable = ({
+  waitlistEntries,
+  invoicesMap,
+  viewInvoices,
+  setSelectedEntry,
+  setStatus,
+  setNotes
+}: WaitlistTableProps) => {
+  const getPlanName = (planType: string) => {
+    return planType === "basic" ? "Plan Básico" : "Plan Avanzado";
+  };
+
+  return (
+    <TableBody>
+      {waitlistEntries.length === 0 ? (
+        <TableRow>
+          <TableCell colSpan={9} className="text-center py-6">
+            No hay registros en la lista de espera
+          </TableCell>
+        </TableRow>
+      ) : (
+        waitlistEntries.map((entry) => (
+          <TableRow key={entry.id}>
+            <TableCell className="font-medium">{entry.full_name}</TableCell>
+            <TableCell>{entry.company_name}</TableCell>
+            <TableCell>{entry.position}</TableCell>
+            <TableCell>
+              <div>{entry.email}</div>
+              <div className="text-gray-500">{entry.phone}</div>
+            </TableCell>
+            <TableCell>{getPlanName(entry.plan_type)}</TableCell>
+            <TableCell>
+              <span className={`px-2 py-1 rounded-full text-xs ${
+                entry.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                entry.status === "contacted" ? "bg-blue-100 text-blue-800" :
+                "bg-green-100 text-green-800"
+              }`}>
+                {entry.status === "pending" ? "Pendiente" :
+                 entry.status === "contacted" ? "Contactado" : "Convertido"}
+              </span>
+            </TableCell>
+            <TableCell>{new Date(entry.created_at).toLocaleDateString()}</TableCell>
+            <TableCell>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => viewInvoices(entry.id)}
+              >
+                <FileIcon size={16} className="mr-1" />
+                {(invoicesMap[entry.id] || []).length}
+              </Button>
+            </TableCell>
+            <TableCell>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setSelectedEntry(entry);
+                  setStatus(entry.status);
+                  setNotes(entry.notes || "");
+                }}
+              >
+                Editar
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))
+      )}
+    </TableBody>
+  );
+};
