@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { WaitlistEntry } from "@/types/waitlist";
 
 interface UseWaitlistFormProps {
   plan: string;
@@ -35,7 +34,7 @@ export const useWaitlistForm = ({ plan, onComplete }: UseWaitlistFormProps) => {
       setLoading(true);
       
       // 1. Insert into waitlist table
-      const waitlistData: Omit<WaitlistEntry, 'id' | 'created_at' | 'status' | 'notes'> = {
+      const waitlistData = {
         full_name: fullName,
         company_name: companyName,
         position,
