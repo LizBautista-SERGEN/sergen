@@ -79,7 +79,7 @@ const WaitlistPage = () => {
       if (invoicesError) throw invoicesError;
       
       // Group invoices by waitlist_id
-      const invoicesByWaitlistId = invoices.reduce<Record<string, WaitlistInvoice[]>>((acc, invoice) => {
+      const invoicesByWaitlistId = (invoices || []).reduce<Record<string, WaitlistInvoice[]>>((acc, invoice: WaitlistInvoice) => {
         if (!acc[invoice.waitlist_id]) {
           acc[invoice.waitlist_id] = [];
         }
@@ -87,7 +87,7 @@ const WaitlistPage = () => {
         return acc;
       }, {});
       
-      setWaitlistEntries(entries || []);
+      setWaitlistEntries(entries as WaitlistEntry[] || []);
       setInvoicesMap(invoicesByWaitlistId);
     } catch (error: any) {
       console.error("Error fetching waitlist data:", error);

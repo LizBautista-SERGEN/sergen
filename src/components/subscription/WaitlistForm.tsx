@@ -11,6 +11,15 @@ interface WaitlistFormProps {
   onComplete: () => void;
 }
 
+interface WaitlistEntry {
+  full_name: string;
+  company_name: string;
+  position: string;
+  email: string;
+  phone: string;
+  plan_type: string;
+}
+
 export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -56,17 +65,19 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
     try {
       setLoading(true);
       
-      // 1. Insert into waitlist table
+      // 1. Insert into waitlist table with custom typing
+      const waitlistData: WaitlistEntry = {
+        full_name: fullName,
+        company_name: companyName,
+        position,
+        email,
+        phone,
+        plan_type: plan,
+      };
+      
       const { data: waitlistEntry, error: waitlistError } = await supabase
         .from("waitlist")
-        .insert({
-          full_name: fullName,
-          company_name: companyName,
-          position,
-          email,
-          phone,
-          plan_type: plan,
-        })
+        .insert(waitlistData)
         .select()
         .single();
       
@@ -88,13 +99,15 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
         if (uploadError) throw uploadError;
         
         // 3. Insert record into waitlist_invoices table
+        const invoiceData = {
+          waitlist_id: waitlistId,
+          file_name: file.name,
+          file_path: filePath,
+        };
+        
         const { error: invoiceRecordError } = await supabase
           .from("waitlist_invoices")
-          .insert({
-            waitlist_id: waitlistId,
-            file_name: file.name,
-            file_path: filePath,
-          });
+          .insert(invoiceData);
         
         if (invoiceRecordError) throw invoiceRecordError;
       });
