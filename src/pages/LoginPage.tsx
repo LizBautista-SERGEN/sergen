@@ -1,11 +1,11 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { useAuthForms } from "@/hooks/useAuthForms";
 import { cn } from "@/lib/utils";
+import { SubscriptionPlansModal } from "@/components/subscription/SubscriptionPlansModal";
 
 const LoginPage = () => {
   const {
@@ -24,6 +24,8 @@ const LoginPage = () => {
     handleLogin,
     handleSignUp
   } = useAuthForms();
+
+  const [showPlans, setShowPlans] = useState(false);
 
   useEffect(() => {
     checkSession();
@@ -47,7 +49,7 @@ const LoginPage = () => {
         <div className="w-full max-w-md">
           <div className="flex justify-center mb-8">
             <img 
-              src="/lovable-uploads/c9da053f-d6d7-4371-bc94-66f8f73b3933.png" 
+              src="/lovable-uploads/46924861-677a-4a17-b6fe-666de8979766.png" 
               alt="Sergen Energy" 
               className="h-12"
             />
@@ -57,9 +59,12 @@ const LoginPage = () => {
           
           <div className="mb-2 text-center">
             <span className="text-gray-600">¿No tienes cuenta? </span>
-            <a href="#" className="text-sergen-500 hover:text-sergen-600 font-medium">
+            <button 
+              onClick={() => setShowPlans(true)}
+              className="text-sergen-500 hover:text-sergen-600 font-medium"
+            >
               Regístrate ahora
-            </a>
+            </button>
           </div>
           
           <Tabs defaultValue="login" className="w-full">
@@ -98,6 +103,9 @@ const LoginPage = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Subscription Plans Modal */}
+      <SubscriptionPlansModal open={showPlans} onOpenChange={setShowPlans} />
     </div>
   );
 };

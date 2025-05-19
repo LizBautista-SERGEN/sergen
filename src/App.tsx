@@ -22,6 +22,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import ReportsPage from "./pages/ReportsPage";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
+import WaitlistPage from "./pages/WaitlistPage";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -61,6 +62,7 @@ const App = () => {
                     <Route path="/servicios/control" element={<ServiceControl />} />
                     <Route path="/reportes" element={<ReportsPage />} />
                     <Route path="/configuracion" element={<ConfiguracionPage />} />
+                    <Route path="/lista-espera" element={<WaitlistPage />} />
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />
