@@ -64,28 +64,28 @@ const WaitlistPage = () => {
       setLoading(true);
       
       // Fetch all waitlist entries
-      const { data: entries, error: entriesError } = await supabase
-        .from("waitlist")
+      const { data: entries, error: entriesError } = await (supabase
+        .from("waitlist") as any)
         .select("*")
         .order("created_at", { ascending: false });
       
       if (entriesError) throw entriesError;
       
       // Fetch all invoices
-      const { data: invoices, error: invoicesError } = await supabase
-        .from("waitlist_invoices")
+      const { data: invoices, error: invoicesError } = await (supabase
+        .from("waitlist_invoices") as any)
         .select("*");
       
       if (invoicesError) throw invoicesError;
       
       // Group invoices by waitlist_id
-      const invoicesByWaitlistId = (invoices || []).reduce<Record<string, WaitlistInvoice[]>>((acc, invoice: WaitlistInvoice) => {
+      const invoicesByWaitlistId = invoices ? invoices.reduce<Record<string, WaitlistInvoice[]>>((acc, invoice: any) => {
         if (!acc[invoice.waitlist_id]) {
           acc[invoice.waitlist_id] = [];
         }
-        acc[invoice.waitlist_id].push(invoice);
+        acc[invoice.waitlist_id].push(invoice as WaitlistInvoice);
         return acc;
-      }, {});
+      }, {}) : {};
       
       setWaitlistEntries(entries as WaitlistEntry[] || []);
       setInvoicesMap(invoicesByWaitlistId);
@@ -101,8 +101,8 @@ const WaitlistPage = () => {
     if (!selectedEntry) return;
     
     try {
-      const { error } = await supabase
-        .from("waitlist")
+      const { error } = await (supabase
+        .from("waitlist") as any)
         .update({
           status: status,
           notes: notes

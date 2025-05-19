@@ -75,8 +75,9 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
         plan_type: plan,
       };
       
-      const { data: waitlistEntry, error: waitlistError } = await supabase
-        .from("waitlist")
+      // Use type assertion to bypass TypeScript type checking for our custom tables
+      const { data: waitlistEntry, error: waitlistError } = await (supabase
+        .from("waitlist") as any)
         .insert(waitlistData)
         .select()
         .single();
@@ -105,8 +106,9 @@ export const WaitlistForm = ({ plan, onComplete }: WaitlistFormProps) => {
           file_path: filePath,
         };
         
-        const { error: invoiceRecordError } = await supabase
-          .from("waitlist_invoices")
+        // Use type assertion again
+        const { error: invoiceRecordError } = await (supabase
+          .from("waitlist_invoices") as any)
           .insert(invoiceData);
         
         if (invoiceRecordError) throw invoiceRecordError;
