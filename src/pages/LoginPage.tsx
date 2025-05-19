@@ -13,7 +13,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [redirecting, setRedirecting] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
-  const [shouldCheckSession, setShouldCheckSession] = useState(true);
+  const [shouldCheckSession, setShouldCheckSession] = useState(false); // Changed default to false
   const {
     email,
     setEmail,
@@ -58,12 +58,6 @@ const LoginPage = () => {
 
     checkAuthStatus();
   }, [navigate, shouldCheckSession]);
-
-  // Add a handler for the Login button to prevent auto-redirect
-  const handleShowLoginForm = () => {
-    // Disable session check when showing login form
-    setShouldCheckSession(false);
-  };
 
   // Don't render the login form if we're redirecting or still checking session
   if (redirecting) {
@@ -126,7 +120,7 @@ const LoginPage = () => {
           
           <Tabs defaultValue="login" className="w-full">
             <TabsList className={cn("grid w-full grid-cols-2 mb-6", "hidden")}>
-              <TabsTrigger value="login" onClick={handleShowLoginForm}>Iniciar Sesión</TabsTrigger>
+              <TabsTrigger value="login" onClick={() => setShouldCheckSession(false)}>Iniciar Sesión</TabsTrigger>
               <TabsTrigger value="register">Registrarse</TabsTrigger>
             </TabsList>
 
