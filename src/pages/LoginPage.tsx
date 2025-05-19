@@ -49,7 +49,7 @@ const LoginPage = () => {
         <div className="w-full max-w-md">
           <div className="flex justify-center mb-8">
             <img 
-              src="/lovable-uploads/46924861-677a-4a17-b6fe-666de8979766.png" 
+              src="/lovable-uploads/a21e0ab8-46e2-4393-a7f4-c67f491d745e.png" 
               alt="Sergen Energy" 
               className="h-12"
             />
