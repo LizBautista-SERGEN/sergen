@@ -18,8 +18,11 @@ export const GeneralMetricsTab = ({
   avgTime 
 }: GeneralMetricsTabProps) => {
   return (
-    <TabsContent value="general" className="space-y-6">
-      <MetricsPageChart data={generalData} />
+    <TabsContent value="general" className="space-y-8 w-full">
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <h2 className="text-xl font-bold mb-4">Visitas por Página</h2>
+        <MetricsPageChart data={generalData} />
+      </div>
       <MetricsSummaryCards 
         totalVisits={totalVisits} 
         activeUsers={activeUsers} 

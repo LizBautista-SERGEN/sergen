@@ -32,14 +32,14 @@ export const MetricsTabs = () => {
   } = useMetricsData();
 
   return (
-    <div className="space-y-4">
-      <div>
+    <div className="space-y-4 w-full">
+      <div className="w-full">
         <Tabs 
           value={activeTab} 
           onValueChange={setActiveTab} 
-          className="w-[400px]"
+          className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="users">Usuarios</TabsTrigger>
           </TabsList>
@@ -62,7 +62,7 @@ export const MetricsTabs = () => {
             <LoadingSpinner />
           ) : (
             <>
-              <TabsContent value="general">
+              <TabsContent value="general" className="w-full">
                 <GeneralMetricsTab
                   generalData={generalData}
                   totalVisits={totalVisits}
@@ -71,7 +71,7 @@ export const MetricsTabs = () => {
                 />
               </TabsContent>
               
-              <TabsContent value="users">
+              <TabsContent value="users" className="w-full">
                 <UserMetricsTab users={users} />
               </TabsContent>
             </>

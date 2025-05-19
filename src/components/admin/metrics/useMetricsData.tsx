@@ -70,20 +70,40 @@ export const useMetricsData = () => {
         { page: "Control", visits: Math.round(480 * multiplier * (1 + offset)) },
         { page: "Configuración", visits: Math.round(120 * multiplier * (1 + offset)) },
         { page: "Perfil", visits: Math.round(60 * multiplier * (1 + offset)) },
+        { page: "Reportes", visits: Math.round(90 * multiplier * (1 + offset)) },
+        { page: "Lista de Espera", visits: Math.round(40 * multiplier * (1 + offset)) },
       ];
+      
+      // List of platform pages for time tracking
+      const platformPages = ["Perfil", "Control de Demanda", "Reportes", "Configuración", "Lista de Espera"];
       
       // Generate user metrics data based on real users if available, otherwise use sample data
       let userData: UserMetrics[] = [];
       
       if (realUserMetrics && realUserMetrics.length > 0) {
         // Use real user emails but simulated metrics
-        userData = realUserMetrics.map((user, index) => ({
-          id: user.id,
-          email: user.email,
-          lastVisit: `2023-${month.padStart(2, '0')}-${((index + 1) % 28 + 1).toString().padStart(2, '0')}`,
-          pageViews: Math.round((40 + index * 5) * (1 + offset)),
-          avgTimeMin: parseFloat(((4 + index * 0.5) * (1 + offset * 0.5)).toFixed(1))
-        }));
+        userData = realUserMetrics.map((user, index) => {
+          // Generate random time distribution across pages for each user
+          const totalTime = parseFloat(((4 + index * 0.5) * (1 + offset * 0.5)).toFixed(1));
+          const pageTimeData = platformPages.map(pageName => {
+            // Distribute time across pages based on a weighted random pattern
+            const timeWeight = pageName === "Control de Demanda" ? 0.4 : 0.15;
+            const timeSpentMin = parseFloat((totalTime * timeWeight * (0.8 + Math.random() * 0.4)).toFixed(1));
+            return {
+              pageName,
+              timeSpentMin
+            };
+          });
+          
+          return {
+            id: user.id,
+            email: user.email,
+            lastVisit: `2023-${month.padStart(2, '0')}-${((index + 1) % 28 + 1).toString().padStart(2, '0')}`,
+            pageViews: Math.round((40 + index * 5) * (1 + offset)),
+            avgTimeMin: totalTime,
+            pageTimeData
+          };
+        });
       } else {
         // Fallback to sample user data
         userData = [
@@ -92,42 +112,84 @@ export const useMetricsData = () => {
             email: "usuario1@sergen.pe", 
             lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 1).toString().padStart(2, '0')}`, 
             pageViews: Math.round(42 * (1 + offset)), 
-            avgTimeMin: parseFloat((5.2 * (1 + offset * 0.5)).toFixed(1)) 
+            avgTimeMin: parseFloat((5.2 * (1 + offset * 0.5)).toFixed(1)),
+            pageTimeData: [
+              { pageName: "Perfil", timeSpentMin: 0.8 },
+              { pageName: "Control de Demanda", timeSpentMin: 2.5 },
+              { pageName: "Reportes", timeSpentMin: 1.2 },
+              { pageName: "Configuración", timeSpentMin: 0.5 },
+              { pageName: "Lista de Espera", timeSpentMin: 0.2 }
+            ]
           },
           { 
             id: "2", 
             email: "usuario2@sergen.pe", 
             lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 3).toString().padStart(2, '0')}`, 
             pageViews: Math.round(36 * (1 + offset)), 
-            avgTimeMin: parseFloat((4.7 * (1 + offset * 0.5)).toFixed(1)) 
+            avgTimeMin: parseFloat((4.7 * (1 + offset * 0.5)).toFixed(1)),
+            pageTimeData: [
+              { pageName: "Perfil", timeSpentMin: 0.6 },
+              { pageName: "Control de Demanda", timeSpentMin: 2.2 },
+              { pageName: "Reportes", timeSpentMin: 1.0 },
+              { pageName: "Configuración", timeSpentMin: 0.7 },
+              { pageName: "Lista de Espera", timeSpentMin: 0.2 }
+            ]
           },
           { 
             id: "3", 
             email: "usuario3@sergen.pe", 
             lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 5).toString().padStart(2, '0')}`,
             pageViews: Math.round(21 * (1 + offset)), 
-            avgTimeMin: parseFloat((2.5 * (1 + offset * 0.5)).toFixed(1)) 
+            avgTimeMin: parseFloat((2.5 * (1 + offset * 0.5)).toFixed(1)),
+            pageTimeData: [
+              { pageName: "Perfil", timeSpentMin: 0.4 },
+              { pageName: "Control de Demanda", timeSpentMin: 1.2 },
+              { pageName: "Reportes", timeSpentMin: 0.5 },
+              { pageName: "Configuración", timeSpentMin: 0.3 },
+              { pageName: "Lista de Espera", timeSpentMin: 0.1 }
+            ]
           },
           { 
             id: "4", 
             email: "victoria_bautista@sergen.pe", 
             lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 2).toString().padStart(2, '0')}`, 
             pageViews: Math.round(58 * (1 + offset)), 
-            avgTimeMin: parseFloat((7.1 * (1 + offset * 0.5)).toFixed(1)) 
+            avgTimeMin: parseFloat((7.1 * (1 + offset * 0.5)).toFixed(1)),
+            pageTimeData: [
+              { pageName: "Perfil", timeSpentMin: 1.0 },
+              { pageName: "Control de Demanda", timeSpentMin: 3.1 },
+              { pageName: "Reportes", timeSpentMin: 1.5 },
+              { pageName: "Configuración", timeSpentMin: 1.3 },
+              { pageName: "Lista de Espera", timeSpentMin: 0.2 }
+            ]
           },
           { 
             id: "5", 
             email: "carlos.martinez@sergen.pe", 
             lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 7).toString().padStart(2, '0')}`, 
             pageViews: Math.round(15 * (1 + offset)), 
-            avgTimeMin: parseFloat((3.2 * (1 + offset * 0.5)).toFixed(1)) 
+            avgTimeMin: parseFloat((3.2 * (1 + offset * 0.5)).toFixed(1)),
+            pageTimeData: [
+              { pageName: "Perfil", timeSpentMin: 0.5 },
+              { pageName: "Control de Demanda", timeSpentMin: 1.5 },
+              { pageName: "Reportes", timeSpentMin: 0.7 },
+              { pageName: "Configuración", timeSpentMin: 0.3 },
+              { pageName: "Lista de Espera", timeSpentMin: 0.2 }
+            ]
           },
           { 
             id: "6", 
             email: "admin@sergen.com.pe", 
             lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 4).toString().padStart(2, '0')}`, 
             pageViews: Math.round(72 * (1 + offset)), 
-            avgTimeMin: parseFloat((8.3 * (1 + offset * 0.5)).toFixed(1)) 
+            avgTimeMin: parseFloat((8.3 * (1 + offset * 0.5)).toFixed(1)),
+            pageTimeData: [
+              { pageName: "Perfil", timeSpentMin: 1.2 },
+              { pageName: "Control de Demanda", timeSpentMin: 3.5 },
+              { pageName: "Reportes", timeSpentMin: 1.8 },
+              { pageName: "Configuración", timeSpentMin: 1.5 },
+              { pageName: "Lista de Espera", timeSpentMin: 0.3 }
+            ]
           },
         ];
       }

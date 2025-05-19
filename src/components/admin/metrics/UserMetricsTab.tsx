@@ -8,8 +8,9 @@ interface UserMetricsTabProps {
 
 export const UserMetricsTab = ({ users }: UserMetricsTabProps) => {
   return (
-    <TabsContent value="users">
+    <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <h2 className="text-xl font-bold mb-4">Actividad de Usuarios</h2>
       <MetricsUserTable users={users} />
-    </TabsContent>
+    </div>
   );
 };
