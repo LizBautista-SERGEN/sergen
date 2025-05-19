@@ -1,6 +1,7 @@
 
-import { Calendar } from "lucide-react";
+import { Calendar, FilterX } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ReportDateSelectorProps {
@@ -10,6 +11,7 @@ interface ReportDateSelectorProps {
   selectedMonth: string | null;
   onYearChange: (year: string) => void;
   onMonthChange: (month: string) => void;
+  onClearFilters: () => void;
 }
 
 export const ReportDateSelector = ({
@@ -18,7 +20,8 @@ export const ReportDateSelector = ({
   selectedYear,
   selectedMonth,
   onYearChange,
-  onMonthChange
+  onMonthChange,
+  onClearFilters
 }: ReportDateSelectorProps) => {
 
   // Spanish month name mapping (for display purposes)
@@ -71,11 +74,21 @@ export const ReportDateSelector = ({
           </Select>
         </div>
       </div>
-      <div className="mt-4 text-center text-sm text-gray-600">
-        {selectedYear && selectedMonth ? 
-          `Reporte seleccionado: ${selectedMonth} ${selectedYear}` : 
-          "Seleccione año y mes para filtrar reportes"}
-      </div>
+      
+      {/* Show clear filters button instead of the text message */}
+      {(selectedYear || selectedMonth) && (
+        <div className="mt-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onClearFilters}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <FilterX className="h-4 w-4" />
+            Quitar filtros
+          </Button>
+        </div>
+      )}
     </Card>
   );
 };

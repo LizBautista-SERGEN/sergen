@@ -112,6 +112,13 @@ const ReportsPage = () => {
     setSelectedMonth(month);
   };
 
+  // Add clear filters function
+  const handleClearFilters = () => {
+    setSelectedYear(null);
+    setSelectedMonth(null);
+    setAvailableMonths([]);
+  };
+
   // Update filtered reports when selection changes
   useEffect(() => {
     filterReports();
@@ -147,6 +154,7 @@ const ReportsPage = () => {
             selectedMonth={selectedMonth}
             onYearChange={handleYearChange}
             onMonthChange={handleMonthChange}
+            onClearFilters={handleClearFilters}
           />
 
           <ReportUploadCard 
@@ -162,7 +170,7 @@ const ReportsPage = () => {
           </h2>
           
           <ReportsList 
-            reports={filteredReports.length > 0 ? filteredReports : (selectedYear ? [] : reports)}
+            reports={selectedYear ? filteredReports : reports}
             isLoading={isLoading} 
             deletingId={deletingId}
             error={error}

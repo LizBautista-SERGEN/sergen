@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, X, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,12 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isInDashboard = location.pathname.startsWith('/perfil') || 
+                       location.pathname.startsWith('/servicios/control') || 
+                       location.pathname.startsWith('/reportes') || 
+                       location.pathname.startsWith('/configuracion') ||
+                       location.pathname.startsWith('/lista-espera');
 
   useEffect(() => {
     checkAuth();
@@ -61,6 +67,14 @@ const Navbar = () => {
     { text: "Contacto", href: "/contacto" },
   ];
 
+  // Only show dashboard link if user is logged in
+  const dashboardMenuItems = isLoggedIn ? [
+    { text: "Mi Plataforma", href: "/perfil" }
+  ] : [];
+
+  // Combine the menu items
+  const allMenuItems = [...menuItems, ...dashboardMenuItems];
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md shadow-sm">
       <div className="container mx-auto px-4">
@@ -74,7 +88,7 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
-            {menuItems.map((item) => (
+            {allMenuItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
@@ -119,7 +133,7 @@ const Navbar = () => {
           className="md:hidden bg-white border-t"
         >
           <div className="container mx-auto px-4 py-4 space-y-4">
-            {menuItems.map((item) => (
+            {allMenuItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
