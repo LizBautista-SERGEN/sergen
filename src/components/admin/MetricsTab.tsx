@@ -88,45 +88,45 @@ export const MetricsTab = () => {
         { page: "Perfil", visits: Math.round(60 * multiplier * (1 + offset)) },
       ];
       
-      // Generate user metrics data
-      const userData = [
+      // Generate user metrics data with string IDs instead of number IDs
+      const userData: UserMetrics[] = [
         { 
-          id: 1, 
+          id: "1", 
           email: "usuario1@sergen.pe", 
           lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 1).toString().padStart(2, '0')}`, 
           pageViews: Math.round(42 * (1 + offset)), 
           avgTimeMin: parseFloat((5.2 * (1 + offset * 0.5)).toFixed(1)) 
         },
         { 
-          id: 2, 
+          id: "2", 
           email: "usuario2@sergen.pe", 
           lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 3).toString().padStart(2, '0')}`, 
           pageViews: Math.round(36 * (1 + offset)), 
           avgTimeMin: parseFloat((4.7 * (1 + offset * 0.5)).toFixed(1)) 
         },
         { 
-          id: 3, 
+          id: "3", 
           email: "usuario3@sergen.pe", 
           lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 5).toString().padStart(2, '0')}`,
           pageViews: Math.round(21 * (1 + offset)), 
           avgTimeMin: parseFloat((2.5 * (1 + offset * 0.5)).toFixed(1)) 
         },
         { 
-          id: 4, 
+          id: "4", 
           email: "victoria_bautista@sergen.pe", 
           lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 2).toString().padStart(2, '0')}`, 
           pageViews: Math.round(58 * (1 + offset)), 
           avgTimeMin: parseFloat((7.1 * (1 + offset * 0.5)).toFixed(1)) 
         },
         { 
-          id: 5, 
+          id: "5", 
           email: "carlos.martinez@sergen.pe", 
           lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 7).toString().padStart(2, '0')}`, 
           pageViews: Math.round(15 * (1 + offset)), 
           avgTimeMin: parseFloat((3.2 * (1 + offset * 0.5)).toFixed(1)) 
         },
         { 
-          id: 6, 
+          id: "6", 
           email: "admin@sergen.com.pe", 
           lastVisit: `2023-${month.padStart(2, '0')}-${(parseInt(week) % 28 + 4).toString().padStart(2, '0')}`, 
           pageViews: Math.round(72 * (1 + offset)), 
