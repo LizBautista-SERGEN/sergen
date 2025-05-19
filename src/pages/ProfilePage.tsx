@@ -9,7 +9,6 @@ import { ContactInfo } from "@/components/profile/ContactInfo";
 import { ProfileLoading } from "@/components/profile/ProfileLoading";
 import { ProfileError } from "@/components/profile/ProfileError";
 import { UserDataForm } from "@/components/profile/UserDataForm";
-import { SecurityTab } from "@/components/profile/SecurityTab";
 
 const ProfilePage = () => {
   const { profile, isLoading, error, refetchProfile } = useUserProfile();
@@ -42,7 +41,6 @@ const ProfilePage = () => {
                 <TabsTrigger value="datos-contacto">Datos de contacto</TabsTrigger>
                 <TabsTrigger value="facturas">Facturas</TabsTrigger>
                 <TabsTrigger value="contratos">Contratos y Adendas</TabsTrigger>
-                <TabsTrigger value="seguridad">Seguridad</TabsTrigger>
               </TabsList>
 
               <TabsContent value="datos-usuario" className="mt-6">
@@ -59,10 +57,6 @@ const ProfilePage = () => {
               
               <TabsContent value="contratos" className="mt-6">
                 <ContractsTab />
-              </TabsContent>
-
-              <TabsContent value="seguridad" className="mt-6">
-                <SecurityTab />
               </TabsContent>
             </Tabs>
           </div>

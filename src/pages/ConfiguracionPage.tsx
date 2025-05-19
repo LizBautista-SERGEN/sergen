@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { toast } from "sonner";
+import WaitlistPage from "./WaitlistPage";
 
 const ConfiguracionPage = () => {
   const navigate = useNavigate();
@@ -67,12 +68,13 @@ const ConfiguracionPage = () => {
       <h1 className="text-2xl font-bold">Configuración</h1>
       <Card className="p-6">
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-fit grid-cols-5 gap-4">
+          <TabsList className="grid w-fit grid-cols-6 gap-4">
             <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="historical">Histórico</TabsTrigger>
             <TabsTrigger value="modulation">Modulación</TabsTrigger>
             <TabsTrigger value="publico">Público</TabsTrigger>
             <TabsTrigger value="metrics">Métricas</TabsTrigger>
+            <TabsTrigger value="waitlist">Lista de Espera</TabsTrigger>
           </TabsList>
           
           <TabsContent value="users">
@@ -93,6 +95,10 @@ const ConfiguracionPage = () => {
 
           <TabsContent value="metrics">
             <MetricsTab />
+          </TabsContent>
+          
+          <TabsContent value="waitlist">
+            <WaitlistPage />
           </TabsContent>
         </Tabs>
       </Card>
