@@ -1,13 +1,11 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { format, isAfter, startOfMonth, endOfMonth, addMonths, startOfYear } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
+import { format, addMonths, startOfYear } from "date-fns";
 import { toast } from "sonner";
-
-export interface ModulationDay {
-  date: string;
-  is_modulated: boolean;
-}
+import { supabase } from "@/integrations/supabase/client";
+import { ModulationDay } from "../types/modulationTypes";
+import { isDateInFuture, formatDateToString } from "../utils/dateUtils";
+import { fetchModulationData, toggleModulation } from "../services/modulationService";
 
 export const useModulationData = () => {
   const today = new Date();
@@ -21,26 +19,11 @@ export const useModulationData = () => {
   const [selectedDayData, setSelectedDayData] = useState<ModulationDay | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number>(Date.now());
 
-  const fetchModulationData = useCallback(async (month: Date) => {
+  const fetchData = useCallback(async (month: Date) => {
     setIsLoading(true);
     try {
-      const start = startOfMonth(month).toISOString().split('T')[0];
-      const end = endOfMonth(month).toISOString().split('T')[0];
-
-      const { data, error } = await supabase
-        .from('modulation_days')
-        .select('date, is_modulated')
-        .gte('date', start)
-        .lte('date', end)
-        .order('date', { ascending: true });
-
-      if (error) {
-        console.error('Error al cargar datos de modulación:', error);
-        toast.error("Error al cargar datos de modulación");
-        return;
-      }
-
-      setModulationData(data || []);
+      const data = await fetchModulationData(month);
+      setModulationData(data);
       
       // Update selected day data if there's a selected date
       if (selectedDate) {
@@ -50,17 +33,14 @@ export const useModulationData = () => {
       }
       
       setLastFetchTime(Date.now());
-    } catch (error) {
-      console.error('Error en fetchModulationData:', error);
-      toast.error('Error al cargar los datos de modulación');
     } finally {
       setIsLoading(false);
     }
   }, [selectedDate]);
 
   useEffect(() => {
-    fetchModulationData(selectedMonth);
-  }, [selectedMonth, fetchModulationData]);
+    fetchData(selectedMonth);
+  }, [selectedMonth, fetchData]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -71,7 +51,7 @@ export const useModulationData = () => {
   }, [selectedDate, modulationData]);
 
   const handleToggleModulation = async (date: Date, currentValue: boolean) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    const dateStr = formatDateToString(date);
     
     try {
       // Ensure we have an authenticated session before updating
@@ -100,62 +80,12 @@ export const useModulationData = () => {
         setSelectedDayData({ date: dateStr, is_modulated: !currentValue });
       }
 
-      // Check if the record exists - use eq with limit to avoid multiple rows issue
-      const { data: existingRecords, error: checkError } = await supabase
-        .from('modulation_days')
-        .select('id')
-        .eq('date', dateStr);
-        
-      if (checkError) {
-        console.error('Error checking existing modulation:', checkError);
-        toast.error('Error al verificar modulación existente');
-        fetchModulationData(selectedMonth); // Revert optimistic update
-        return;
-      }
+      // Call the API to update the data
+      const success = await toggleModulation(dateStr, currentValue);
       
-      let error;
-      
-      if (existingRecords && existingRecords.length > 0) {
-        // Get the first record's id (in case there are duplicates)
-        const recordId = existingRecords[0].id;
-        
-        // Update existing record
-        const { error: updateError } = await supabase
-          .from('modulation_days')
-          .update({ is_modulated: !currentValue })
-          .eq('id', recordId);
-          
-        error = updateError;
-        
-        // If there are multiple records with the same date, remove the duplicates
-        if (existingRecords.length > 1) {
-          // Get all ids except the first one (which we just updated)
-          const duplicateIds = existingRecords.slice(1).map(record => record.id);
-          
-          // Delete the duplicates
-          await supabase
-            .from('modulation_days')
-            .delete()
-            .in('id', duplicateIds);
-        }
-      } else {
-        // Insert new record
-        const { error: insertError } = await supabase
-          .from('modulation_days')
-          .insert([{
-            date: dateStr,
-            is_modulated: !currentValue
-          }]);
-          
-        error = insertError;
-      }
-
-      if (error) {
-        console.error('Error al actualizar modulación:', error);
-        toast.error('Error al actualizar la modulación: ' + error.message);
-        
+      if (!success) {
         // Revert optimistic update on error
-        fetchModulationData(selectedMonth);
+        fetchData(selectedMonth);
         return;
       }
       
@@ -165,7 +95,7 @@ export const useModulationData = () => {
       toast.error('Error al actualizar la modulación');
       
       // Revert optimistic update on error
-      fetchModulationData(selectedMonth);
+      fetchData(selectedMonth);
     }
   };
 
@@ -179,7 +109,7 @@ export const useModulationData = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (isAfter(date, today)) {
+    if (isDateInFuture(date)) {
       return "text-gray-400"; // Días futuros en gris
     }
     
@@ -188,12 +118,6 @@ export const useModulationData = () => {
     }
     
     return "text-green-500"; // Días no modulados en verde
-  };
-
-  const isDateInFuture = (date: Date): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return isAfter(date, today);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -209,7 +133,7 @@ export const useModulationData = () => {
 
   // Manual refresh function
   const refreshModulationData = () => {
-    fetchModulationData(selectedMonth);
+    fetchData(selectedMonth);
   };
 
   return {
