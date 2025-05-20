@@ -11,11 +11,11 @@ export const RiskLevelIndicator = ({ riskLevel }: RiskLevelIndicatorProps) => {
       case "ALTO":
         return "#C00000"; // Keep red with better contrast
       case "MEDIO":
-        return "#FF9F5A"; // Updated to softer orange
+        return "#0EA5E9"; // Changed to blue
       case "BAJO":
         return "#196B24"; // Keep green with better contrast
       default:
-        return "#FF9F5A"; // Default to softer orange
+        return "#0EA5E9"; // Default to blue
     }
   };
 
