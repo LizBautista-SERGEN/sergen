@@ -64,10 +64,10 @@ const ConfiguracionPage = () => {
   if (!isSuperUser) return null;
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <h1 className="text-2xl font-bold">Configuración</h1>
-      <Card className="p-6">
-        <Tabs defaultValue="users" className="space-y-4">
+    <div className="container mx-auto pt-10 pb-6 space-y-6">
+      <h1 className="text-2xl font-bold mb-6">Configuración</h1>
+      <Card className="p-8">
+        <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-fit grid-cols-6 gap-4">
             <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="historical">Histórico</TabsTrigger>

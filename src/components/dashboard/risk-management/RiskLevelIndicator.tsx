@@ -9,13 +9,13 @@ export const RiskLevelIndicator = ({ riskLevel }: RiskLevelIndicatorProps) => {
   const getRiskLevelColor = (level: string): string => {
     switch(level) {
       case "ALTO":
-        return "#C00000"; // Updated to red with better contrast
+        return "#C00000"; // Keep red with better contrast
       case "MEDIO":
-        return "#F97316"; // Keep orange/amber for medium
+        return "#FF9F5A"; // Updated to softer orange
       case "BAJO":
-        return "#196B24"; // Updated to green with better contrast
+        return "#196B24"; // Keep green with better contrast
       default:
-        return "#156082"; // Default blue
+        return "#FF9F5A"; // Default to softer orange
     }
   };
 
