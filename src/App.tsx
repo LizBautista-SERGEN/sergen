@@ -69,6 +69,7 @@ const App = () => {
                 </Routes>
               </TooltipProvider>
             </main>
+            <Footer />
             <Toaster />
             <Sonner />
           </div>

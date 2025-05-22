@@ -1,7 +1,6 @@
 
 import { Outlet } from "react-router-dom";
 import { DashboardSidebar } from "./DashboardSidebar";
-import Footer from "../Footer";
 
 export const DashboardLayout = () => {
   return (
@@ -14,7 +13,6 @@ export const DashboardLayout = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };
