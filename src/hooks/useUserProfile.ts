@@ -60,7 +60,7 @@ export const useUserProfile = () => {
           electricity_provider, contracted_power, contract_expiration, notice_period
         `)
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
