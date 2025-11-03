@@ -59,10 +59,16 @@ export const UserDataForm = ({ profile, onProfileUpdate }: UserDataFormProps) =>
         return;
       }
 
+      // Use upsert to insert if not exists or update if exists
       const { error } = await supabase
         .from('user_accounts')
-        .update(formData)
-        .eq('id', session.user.id);
+        .upsert({
+          id: session.user.id,
+          email: session.user.email || '',
+          ...formData
+        }, {
+          onConflict: 'id'
+        });
 
       if (error) throw error;
 
