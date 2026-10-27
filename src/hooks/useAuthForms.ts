@@ -192,7 +192,7 @@ export const useAuthForms = () => {
             ruc: ruc,
             role: 'user',
             has_access: true,
-            last_login: new Date().toISOString()
+            updated_at: new Date().toISOString()
           });
           
         if (insertError && !insertError.message.includes('duplicate key')) {
